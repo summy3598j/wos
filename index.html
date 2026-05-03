@@ -222,6 +222,13 @@ function glLabel1(g){
 function defLvs(){return {cap:0,watch:0,coat:0,pants:0,ring:0,staff:0};}
 function defGemLvs(){return {cap:[0,0,0],watch:[0,0,0],coat:[0,0,0],pants:[0,0,0],ring:[0,0,0],staff:[0,0,0]};}
 function defInv(){return {alloy:0,polish:0,plan:0,gemPlan:0,gemHb:0,gemSecret:0};}
+// 旧形式（数値フラット）→新形式（配列）へ移行
+function migrateGemLvs(d){
+  if(!d) return defGemLvs();
+  const r=defGemLvs();
+  PARTS.forEach(p=>{if(Array.isArray(d[p.id]))r[p.id]=d[p.id].slice(0,3).map(v=>Math.max(0,Math.min(JL_MAX,+v||0)));});
+  return r;
+}
 
 // 自動保存（変更のたびに呼ばれる）
 function saveBk(){try{localStorage.setItem("wos_bk",JSON.stringify({mode,gCur,gTgt,jCur,jTgt,inv}));}catch{}}
@@ -237,7 +244,7 @@ function loadData(){
     if(!s){alert("保存データがありません");return;}
     const d=JSON.parse(s);
     mode=d.mode||"gear"; gCur=d.gCur||defLvs(); gTgt=d.gTgt||defLvs();
-    jCur=d.jCur||defGemLvs(); jTgt=d.jTgt||defGemLvs(); inv=d.inv||defInv();
+    jCur=migrateGemLvs(d.jCur); jTgt=migrateGemLvs(d.jTgt); inv=d.inv||defInv();
     saveBk(); render(); closeSettings(); alert("復元しました");
   }catch{alert("復元に失敗しました");}
 }
@@ -248,8 +255,8 @@ const _auto=loadBk();
 let mode=_auto?.mode||"gear";
 let gCur=_auto?.gCur||defLvs();
 let gTgt=_auto?.gTgt||defLvs();
-let jCur=_auto?.jCur||defGemLvs();
-let jTgt=_auto?.jTgt||defGemLvs();
+let jCur=migrateGemLvs(_auto?.jCur);
+let jTgt=migrateGemLvs(_auto?.jTgt);
 let inv=_auto?.inv||defInv();
 let editKey=null;
 
