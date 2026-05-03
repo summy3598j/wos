@@ -67,9 +67,9 @@ input{outline:none;}
 <body>
 <div class="header">
   <span class="title">⚔️ WOS 装備計算機</span>
-  <button class="hbtn" onclick="recalc()" style="background:#1e3a5c;color:#60a5fa;margin-right:4px;">再計算</button>
   <button class="hbtn" onclick="resetAllTgt()" style="background:#334155;color:#94a3b8;margin-right:4px;">目標R</button>
-  <button class="hbtn" onclick="restoreBackup()" style="background:#7c3aed;color:#e9d5ff;">復元</button>
+  <button class="hbtn" onclick="openSettings()" style="background:#1e3a5c;color:#60a5fa;margin-right:4px;">⚙️ 設定</button>
+  <button class="hbtn" onclick="openHelp()" style="background:#1e3a5c;color:#93c5fd;">❓</button>
 </div>
 <div class="modebar">
   <button class="mbtn on" id="btn-gear" onclick="setMode('gear')">装備強化</button>
@@ -78,6 +78,56 @@ input{outline:none;}
 <div class="buff-wrap" id="buff-wrap"></div>
 <div class="mat-wrap"><div class="mat-row" id="mat-row"></div></div>
 <div class="pgrid" id="pgrid"></div>
+
+<!-- 設定モーダル -->
+
+<div id="modal-settings" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:100;align-items:flex-end;justify-content:center;">
+  <div style="background:#1e293b;width:100%;max-width:480px;border-radius:18px 18px 0 0;padding:20px 16px 36px;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;margin-bottom:16px;">
+      <span style="font-size:16px;font-weight:700;flex:1;color:#e2e8f0;">⚙️ 設定</span>
+      <button onclick="closeSettings()" style="background:#334155;color:#94a3b8;border:none;border-radius:20px;width:28px;height:28px;font-size:14px;cursor:pointer;">✕</button>
+    </div>
+    <button onclick="saveData()" style="width:100%;background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px;">💾 データを保存</button>
+    <button onclick="loadData()" style="width:100%;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:16px;">📂 保存データを復元</button>
+    <div style="border-top:1px solid #334155;padding-top:16px;">
+      <p style="font-size:14px;font-weight:700;color:#60a5fa;margin-bottom:12px;">📋 パラメータ一括設定</p>
+      <div id="bulk-form"></div>
+      <button onclick="applyBulk()" style="width:100%;background:linear-gradient(135deg,#065f46,#047857);color:#6ee7b7;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-top:12px;">✅ 適用</button>
+    </div>
+  </div>
+</div>
+
+<!-- ヘルプモーダル -->
+
+<div id="modal-help" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:100;align-items:flex-start;justify-content:center;overflow-y:auto;">
+  <div style="background:#1e293b;width:100%;max-width:480px;border-radius:0 0 18px 18px;padding:20px 16px 36px;margin-top:0;">
+    <div style="display:flex;align-items:center;margin-bottom:16px;">
+      <span style="font-size:16px;font-weight:700;flex:1;color:#e2e8f0;">❓ 使い方</span>
+      <button onclick="closeHelp()" style="background:#334155;color:#94a3b8;border:none;border-radius:20px;width:28px;height:28px;font-size:14px;cursor:pointer;">✕</button>
+    </div>
+    <div style="font-size:13px;color:#cbd5e1;line-height:1.8;">
+      <p style="color:#60a5fa;font-weight:700;margin-bottom:4px;">📱 基本操作</p>
+      <p>・起動時は前回終了時の状態を自動で復元します</p>
+      <p>・設定→データを保存 で現在の状態を保存できます</p>
+      <p>・設定→保存データを復元 で保存時の状態に戻せます</p>
+      <br>
+      <p style="color:#60a5fa;font-weight:700;margin-bottom:4px;">⚔️ 装備強化モード</p>
+      <p>・現在レベル：タップでドロップダウン選択、▲▼で変更</p>
+      <p>・目標レベル：▲▼で変更（現在レベル未満には設定不可）</p>
+      <p>・目標Rボタン：全部位の目標を現在レベルにリセット（ヘッダー右上）</p>
+      <p>・素材欄をタップすると所持数を入力できます</p>
+      <br>
+      <p style="color:#60a5fa;font-weight:700;margin-bottom:4px;">💎 宝石LvUPモード</p>
+      <p>・各部位に宝石スロットが3つあります</p>
+      <p>・スロットごとに独立してレベルアップできます</p>
+      <p>・▲▼ボタンで現在・目標レベルを設定</p>
+      <br>
+      <p style="color:#60a5fa;font-weight:700;margin-bottom:4px;">🔴🟡 通知ドット</p>
+      <p>・🔴 所持素材で今すぐ1段アップ可能</p>
+      <p>・🟡 目標達成に素材が不足</p>
+    </div>
+  </div>
+</div>
 
 <script>
 // ============================================================
@@ -170,22 +220,37 @@ function glLabel1(g){
 // STATE — 起動時は常にクリア
 // ============================================================
 function defLvs(){return {cap:0,watch:0,coat:0,pants:0,ring:0,staff:0};}
+function defGemLvs(){return {cap:[0,0,0],watch:[0,0,0],coat:[0,0,0],pants:[0,0,0],ring:[0,0,0],staff:[0,0,0]};}
 function defInv(){return {alloy:0,polish:0,plan:0,gemPlan:0,gemHb:0,gemSecret:0};}
 
+// 自動保存（変更のたびに呼ばれる）
 function saveBk(){try{localStorage.setItem("wos_bk",JSON.stringify({mode,gCur,gTgt,jCur,jTgt,inv}));}catch{}}
 function loadBk(){try{const s=localStorage.getItem("wos_bk");return s?JSON.parse(s):null;}catch{return null;}}
-function restoreBackup(){
-  const bk=loadBk();
-  if(!bk){alert("バックアップなし");return;}
-  mode=bk.mode||"gear"; gCur=bk.gCur||defLvs(); gTgt=bk.gTgt||defLvs();
-  jCur=bk.jCur||defLvs(); jTgt=bk.jTgt||defLvs(); inv=bk.inv||defInv();
-  render();
+// 手動保存/復元（設定画面から）
+function saveData(){
+  try{localStorage.setItem("wos_save",JSON.stringify({mode,gCur,gTgt,jCur,jTgt,inv}));alert("保存しました");}
+  catch{alert("保存に失敗しました");}
+}
+function loadData(){
+  try{
+    const s=localStorage.getItem("wos_save");
+    if(!s){alert("保存データがありません");return;}
+    const d=JSON.parse(s);
+    mode=d.mode||"gear"; gCur=d.gCur||defLvs(); gTgt=d.gTgt||defLvs();
+    jCur=d.jCur||defGemLvs(); jTgt=d.jTgt||defGemLvs(); inv=d.inv||defInv();
+    saveBk(); render(); closeSettings(); alert("復元しました");
+  }catch{alert("復元に失敗しました");}
 }
 function recalc(){render();}
 
-let mode="gear";
-let gCur=defLvs(), gTgt=defLvs(), jCur=defLvs(), jTgt=defLvs();
-let inv=defInv();
+// 起動時に自動復元
+const _auto=loadBk();
+let mode=_auto?.mode||"gear";
+let gCur=_auto?.gCur||defLvs();
+let gTgt=_auto?.gTgt||defLvs();
+let jCur=_auto?.jCur||defGemLvs();
+let jTgt=_auto?.jTgt||defGemLvs();
+let inv=_auto?.inv||defInv();
 let editKey=null;
 
 // ============================================================
@@ -215,11 +280,20 @@ function setTgt(id,v){
 }
 function setMode(m){mode=m; saveBk(); render();}
 function setInvKey(k,v){inv[k]=+v||0; saveBk(); renderMat();}
+function setGemCur(id,sl,v){
+  const nv=Math.max(0,Math.min(JL_MAX,+v));
+  jCur[id][sl]=nv; if(jTgt[id][sl]<nv)jTgt[id][sl]=nv;
+  saveBk(); render();
+}
+function setGemTgt(id,sl,v){
+  const nv=Math.max(jCur[id][sl],Math.min(JL_MAX,+v));
+  jTgt[id][sl]=nv; saveBk(); render();
+}
 function openEdit(k){editKey=k; renderMat();}
 function closeEdit(){editKey=null; saveBk(); renderMat();}
 function resetAllTgt(){
   if(mode==="gear") PARTS.forEach(p=>gTgt[p.id]=gCur[p.id]);
-  else PARTS.forEach(p=>jTgt[p.id]=jCur[p.id]);
+  else PARTS.forEach(p=>{jTgt[p.id]=[...jCur[p.id]];});
   saveBk(); render();
 }
 
@@ -278,11 +352,11 @@ function gearBuff(lvMap){
   return {lance:g("cap")+g("watch"),shield:g("coat")+g("pants"),bow:g("ring")+g("staff"),...sb};
 }
 function gemBuff(lvMap){
-  const g=id=>JL[lvMap[id]]||JL[0];
+  const slotLet=id=>lvMap[id].reduce((s,lv)=>s+(JL[lv]||JL[0]).lethality,0);
   return {
-    lance:(g("cap").lethality+g("watch").lethality)*3,
-    shield:(g("coat").lethality+g("pants").lethality)*3,
-    bow:(g("ring").lethality+g("staff").lethality)*3,
+    lance: slotLet("cap")+slotLet("watch"),
+    shield:slotLet("coat")+slotLet("pants"),
+    bow:   slotLet("ring")+slotLet("staff"),
   };
 }
 
@@ -296,7 +370,7 @@ function gearMatRange(from,to){
 }
 function gemMatRange(from,to){
   let p=0,h=0,s=0;
-  for(let i=from+1;i<=to;i++){p+=JL[i].plan*3;h+=JL[i].hb*3;s+=JL[i].secret*3;}
+  for(let i=from+1;i<=to;i++){p+=JL[i].plan;h+=JL[i].hb;s+=JL[i].secret;}
   return {plan:p,hb:h,secret:s};
 }
 function totalReq(){
@@ -306,7 +380,12 @@ function totalReq(){
     return {alloy:a,polish:po,plan:pl};
   } else {
     let p=0,h=0,s=0;
-    PARTS.forEach(pt=>{if(jTgt[pt.id]>jCur[pt.id]){const r=gemMatRange(jCur[pt.id],jTgt[pt.id]);p+=r.plan;h+=r.hb;s+=r.secret;}});
+    PARTS.forEach(pt=>{
+      for(let sl=0;sl<3;sl++){
+        const fr=jCur[pt.id][sl],to=jTgt[pt.id][sl];
+        if(to>fr){const r=gemMatRange(fr,to);p+=r.plan;h+=r.hb;s+=r.secret;}
+      }
+    });
     return {plan:p,hb:h,secret:s};
   }
 }
@@ -315,17 +394,35 @@ function partShort(id){
     const r=gearMatRange(gCur[id],gTgt[id]);
     return r.alloy>inv.alloy||r.polish>inv.polish||r.plan>inv.plan;
   } else {
-    const r=gemMatRange(jCur[id],jTgt[id]);
-    return r.plan>inv.gemPlan||r.hb>inv.gemHb||r.secret>inv.gemSecret;
+    let p=0,h=0,s=0;
+    for(let sl=0;sl<3;sl++){const r=gemMatRange(jCur[id][sl],jTgt[id][sl]);p+=r.plan;h+=r.hb;s+=r.secret;}
+    return p>inv.gemPlan||h>inv.gemHb||s>inv.gemSecret;
   }
 }
 function canUp(id){
+  // 目標達成後の残り素材で、目標の次の1段が上げられるか
   if(mode==="gear"){
-    const lv=gCur[id]; if(lv>=GL_MAX)return false;
-    const d=GL[lv+1]; return d.alloy<=inv.alloy&&d.polish<=inv.polish&&d.plan<=inv.plan;
+    const tgtLv=gTgt[id]; if(tgtLv>=GL_MAX)return false;
+    // 全部位の目標達成に必要な素材を差し引いた残り
+    const tr=totalReq();
+    const remAlloy=inv.alloy-tr.alloy;
+    const remPolish=inv.polish-tr.polish;
+    const remPlan=inv.plan-tr.plan;
+    if(remAlloy<0||remPolish<0||remPlan<0)return false; // 目標自体が不足
+    const d=GL[tgtLv+1];
+    return d.alloy<=remAlloy&&d.polish<=remPolish&&d.plan<=remPlan;
   } else {
-    const lv=jCur[id]; if(lv>=JL_MAX)return false;
-    const d=JL[lv+1]; return d.plan*3<=inv.gemPlan&&d.hb*3<=inv.gemHb&&d.secret*3<=inv.gemSecret;
+    // gem: 全スロットの目標達成後の残り素材で次の1段が上げられるか
+    const tr=totalReq();
+    const remPlan=inv.gemPlan-tr.plan;
+    const remHb=inv.gemHb-tr.hb;
+    const remSecret=inv.gemSecret-tr.secret;
+    if(remPlan<0||remHb<0||remSecret<0)return false;
+    return jTgt[id].some((tl)=>{
+      if(tl>=JL_MAX)return false;
+      const d=JL[tl+1];
+      return d.plan<=remPlan&&d.hb<=remHb&&d.secret<=remSecret;
+    });
   }
 }
 
@@ -348,11 +445,11 @@ function renderBuff(){
   // 兵種行（1行）
   function brow(label,cv,tv,c){
     const d=tv-cv,has=Math.abs(d)>0.001;
-    return `<div class="brow">
-      <span class="blbl">${label}</span>
-      <span class="bval" style="color:#e2e8f0">${fmtPct(cv)}</span>
-      ${has?`<span class="barr">→</span><span class="bval" style="color:#4ade80">${fmtPct(tv)}</span><span class="bdif">+${fmtPct(d)}</span>`:""}
-    </div>`;
+    return '<div class="brow">'
+      +'<span class="blbl">'+label+'</span>'
+      +'<span class="bval" style="color:#e2e8f0">'+fmtPct(cv)+'</span>'
+      +(has?'<span class="barr">→</span><span class="bval" style="color:#4ade80">'+fmtPct(tv)+'</span><span class="bdif">+'+fmtPct(d)+'</span>':"")
+      +'</div>';
   }
 
   // セット行: 左列(ラベル)と右列(値)をflex-columnで独立縦積み
@@ -361,19 +458,16 @@ function renderBuff(){
   function srow(label,setNum,cv,tv,curLbl,tgtLbl,curNxt,tgtNxt){
     const d=tv-cv,has=Math.abs(d)>0.001;
     const nxt=has?tgtNxt:curNxt;
-    return `<div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:2px">
-      <span class="blbl" style="display:flex;flex-direction:column;line-height:1.3">
-        <span>${label}</span>
-        <span class="bsub">${setNum+"set "+(curLbl||"—")}</span>
-      </span>
-      <span style="display:flex;flex-direction:column;line-height:1.3">
-        <span style="display:flex;align-items:baseline;gap:6px">
-          <span class="bval" style="color:#e2e8f0">${fmtPct(cv)}</span>
-          ${has?`<span class="barr">→</span><span class="bval" style="color:#4ade80">${fmtPct(tv)}</span><span class="bdif">+${fmtPct(d)}</span>`:""}
-        </span>
-        ${nxt?`<span class="binfo">${nxt}</span>`:""}
-      </span>
-    </div>`;
+    const setLbl=setNum+"set "+(curLbl||"—");
+    const arrowHtml=has?'<span class="barr">→</span><span class="bval" style="color:#4ade80">'+fmtPct(tv)+'</span><span class="bdif">+'+fmtPct(d)+'</span>':"";
+    const nxtHtml=nxt?'<span class="binfo">'+nxt+'</span>':"";
+    return '<div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:2px">'
+      +'<span class="blbl" style="display:flex;flex-direction:column;line-height:1.3">'
+      +'<span>'+label+'</span><span class="bsub">'+setLbl+'</span></span>'
+      +'<span style="display:flex;flex-direction:column;line-height:1.3">'
+      +'<span style="display:flex;align-items:baseline;gap:6px">'
+      +'<span class="bval" style="color:#e2e8f0">'+fmtPct(cv)+'</span>'+arrowHtml+'</span>'
+      +nxtHtml+'</span></div>';
   }
 
   if(mode==="gear"){
@@ -418,13 +512,25 @@ function renderMat(){
 
 function renderParts(){
   const el=document.getElementById("pgrid");
+  const tr=totalReq();
+  const _totalShort=mode==="gear"
+    ?(tr.alloy>inv.alloy||tr.polish>inv.polish||tr.plan>inv.plan)
+    :(tr.plan>inv.gemPlan||tr.hb>inv.gemHb||tr.secret>inv.gemSecret);
   function gOpts(sel){
-    return `<option value="0"${sel===0?" selected":""}>なし</option>`+
-      GL.slice(1).map((g,i)=>{const idx=i+1;const lb=glLabel(g);const t=lb.l2?`${lb.l1} ${lb.l2}`:lb.l1;return `<option value="${idx}"${sel===idx?" selected":""}>${t}</option>`;}).join("");
+    let r='<option value="0"'+(sel===0?' selected':'')+'>なし</option>';
+    GL.slice(1).forEach((g,i)=>{
+      const idx=i+1;const lb=glLabel(g);const t=lb.l2?lb.l1+" "+lb.l2:lb.l1;
+      r+='<option value="'+idx+'"'+(sel===idx?' selected':'')+'>'+t+'</option>';
+    });
+    return r;
   }
   function jOpts(sel){
-    return `<option value="0"${sel===0?" selected":""}>なし</option>`+
-      JL.slice(1).map((j,i)=>{const idx=i+1;return `<option value="${idx}"${sel===idx?" selected":""}>Lv${idx}</option>`;}).join("");
+    let r='<option value="0"'+(sel===0?' selected':'')+'>なし</option>';
+    JL.slice(1).forEach((j,i)=>{
+      const idx=i+1;
+      r+='<option value="'+idx+'"'+(sel===idx?' selected':'')+'>Lv'+idx+'</option>';
+    });
+    return r;
   }
 
   let html="";
@@ -436,24 +542,28 @@ function renderParts(){
     const rc=curG&&cur>0?RC[curG.rarity]:"#334155";
     const trc=tgtG&&tgt>0?RC[tgtG.rarity]:"#1e3a5c";
 
-    const up=canUp(p.id);
-    const sf=tgt>cur&&partShort(p.id);
-    const dot=up?`<div class="dot" style="background:#ef4444"></div>`
-              :sf?`<div class="dot" style="background:#eab308"></div>`:"";
+    // 🟡: 目標設定あり かつ 目標達成に素材不足
+    const hasTgt=mode==="gear"?gTgt[p.id]>gCur[p.id]:jTgt[p.id].some((t,sl)=>t>jCur[p.id][sl]);
+    const sf=hasTgt&&_totalShort;
+    // 🔴: 目標不足なし かつ 今すぐ1段上げられる
+    const up=!sf&&canUp(p.id);
+    // なし: 目標不足なし かつ 1段上げる素材も不足
+    const dot=sf?`<div class="dot" style="background:#eab308"></div>`
+              :up?`<div class="dot" style="background:#ef4444"></div>`:"";
 
     function lvHtml(g,lv,col,bc){
-      if(lv===0) return `<div class="lvbox" style="border-color:${bc}"><span class="lvl1" style="color:#475569">なし</span></div>`;
+      if(lv===0) return '<div class="lvbox" style="border-color:'+bc+'"><span class="lvl1" style="color:#475569">なし</span></div>';
       const lb=glLabel(g);
-      return `<div class="lvbox" style="border-color:${bc}">
-        <span class="lvl1" style="color:${col}">${lb.l1}</span>
-        ${lb.l2?`<span class="lvl2">${lb.l2}</span>`:""}
-      </div>`;
+      return '<div class="lvbox" style="border-color:'+bc+'">'
+        +'<span class="lvl1" style="color:'+col+'">'+lb.l1+'</span>'
+        +(lb.l2?'<span class="lvl2">'+lb.l2+'</span>':"")
+        +'</div>';
     }
     function gemHtml(lv,col,bc){
-      return `<div class="lvbox" style="border-color:${bc}">
-        <span class="lvl1" style="color:${lv>0?col:"#475569"}">${lv>0?"Lv":"なし"}</span>
-        ${lv>0?`<span class="lvl2">${lv}</span>`:""}
-      </div>`;
+      return '<div class="lvbox" style="border-color:'+bc+'">'
+        +'<span class="lvl1" style="color:'+(lv>0?col:"#475569")+'">'+(lv>0?"Lv":"なし")+'</span>'
+        +(lv>0?'<span class="lvl2">'+lv+'</span>':"")
+        +'</div>';
     }
 
     if(mode==="gear"){
@@ -495,46 +605,61 @@ function renderParts(){
         </div>
       </div>`;
     } else {
-      const curBox=gemHtml(jCur[p.id],tc,"#334155");
-      const tgtBox=gemHtml(jTgt[p.id],tc,"#1e3a5c");
-      const opts=jOpts(jCur[p.id]);
-      html+=`<div class="pcard">
-        ${dot}
-        <div class="icard" style="border-color:${tc}44;background:${tc}11">
-          <span class="iname">${p.label}</span>
-          <span class="itroop" style="color:${tc}">${p.troop}兵</span>
-        </div>
-        <div class="cbot">
-          <div class="cblock">
-            <div class="lvhdr">現在 (tap選択)</div>
-            <div style="position:relative">${curBox}<select class="hsel" onchange="setCur('${p.id}',this.value)">${opts}</select></div>
-            <button class="tbtn" oncontextmenu="return false"
-              onpointerdown="event.preventDefault();startRep('setCur','${p.id}',1)"
-              onpointerup="stopRep()" onpointerleave="stopRep()"
-              onclick="event.preventDefault();setCur('${p.id}',${jCur[p.id]+1})">▲</button>
-            <button class="tbtn" oncontextmenu="return false"
-              onpointerdown="event.preventDefault();startRep('setCur','${p.id}',-1)"
-              onpointerup="stopRep()" onpointerleave="stopRep()"
-              onclick="event.preventDefault();setCur('${p.id}',${jCur[p.id]-1})">▼</button>
-          </div>
-          <div class="arrsep">→</div>
-          <div class="tblock">
-            <div class="lvhdr">目標</div>
-            ${tgtBox}
-            <button class="tbtn" oncontextmenu="return false"
-              onpointerdown="event.preventDefault();startRep('setTgt','${p.id}',1)"
-              onpointerup="stopRep()" onpointerleave="stopRep()"
-              onclick="event.preventDefault();setTgt('${p.id}',${jTgt[p.id]+1})">▲</button>
-            <button class="tbtn" oncontextmenu="return false"
-              onpointerdown="event.preventDefault();startRep('setTgt','${p.id}',-1)"
-              onpointerup="stopRep()" onpointerleave="stopRep()"
-              onclick="event.preventDefault();setTgt('${p.id}',${jTgt[p.id]-1})">▼</button>
-          </div>
-        </div>
-      </div>`;
+      // 宝石モード: data-*属性でID/slotを渡し、onclick内のクォート問題を回避
+      const pid=p.id;
+      const cls=jCur[pid], tls=jTgt[pid];
+      function gemBtn(fn,sid,sl,dir,lbl,h){
+        return '<button class="tbtn" style="font-size:11px;height:'+h+'px;flex:1" oncontextmenu="return false"'
+          +' data-fn="'+fn+'" data-id="'+sid+'" data-sl="'+sl+'" data-dir="'+dir+'"'
+          +' onpointerdown="event.preventDefault();_gRep(this)" onpointerup="stopRep()" onpointerleave="stopRep()"'
+          +' onclick="event.preventDefault();_gTap(this)">'+lbl+'</button>';
+      }
+      let lv_row='<div style="display:flex;align-items:center;gap:2px">';
+      for(let sl=0;sl<3;sl++){
+        const cl=cls[sl],cbc=cl>0?tc:"#1e3a5c";
+        lv_row+='<div class="lvbox" style="border-color:'+cbc+';min-height:24px;padding:1px 3px;flex:1">'
+          +'<span style="font-size:9px;font-weight:700;color:'+(cl>0?tc:"#475569")+';line-height:1">'+(cl>0?"Lv":"—")+'</span>'
+          +(cl>0?'<span style="font-size:9px;font-weight:700;color:#e2e8f0;line-height:1">'+cl+'</span>':"")
+          +'</div>';
+      }
+      lv_row+='<span style="color:#334155;font-size:10px;flex-shrink:0;padding:0 2px">→</span>';
+      for(let sl=0;sl<3;sl++){
+        const tl=tls[sl],tbc=tl>cls[sl]?tc:"#1e3a5c";
+        lv_row+='<div class="lvbox" style="border-color:'+tbc+';min-height:24px;padding:1px 3px;flex:1">'
+          +'<span style="font-size:9px;font-weight:700;color:'+(tl>0?tc:"#475569")+';line-height:1">'+(tl>0?"Lv":"—")+'</span>'
+          +(tl>0?'<span style="font-size:9px;font-weight:700;color:#e2e8f0;line-height:1">'+tl+'</span>':"")
+          +'</div>';
+      }
+      lv_row+='</div>';
+      let up_row='<div style="display:flex;gap:2px">';
+      for(let sl=0;sl<3;sl++) up_row+=gemBtn("setGemCur",pid,sl,1,"▲",20);
+      up_row+='<span style="width:14px;flex-shrink:0"></span>';
+      for(let sl=0;sl<3;sl++) up_row+=gemBtn("setGemTgt",pid,sl,1,"▲",20);
+      up_row+='</div>';
+      let dn_row='<div style="display:flex;gap:2px">';
+      for(let sl=0;sl<3;sl++) dn_row+=gemBtn("setGemCur",pid,sl,-1,"▼",20);
+      dn_row+='<span style="width:14px;flex-shrink:0"></span>';
+      for(let sl=0;sl<3;sl++) dn_row+=gemBtn("setGemTgt",pid,sl,-1,"▼",20);
+      dn_row+='</div>';
+      html+='<div class="pcard">'+dot
+        +'<div class="icard" style="border-color:'+tc+'44;background:'+tc+'11">'
+        +'<span class="iname">'+p.label+'</span>'
+        +'<span class="itroop" style="color:'+tc+'">'+p.troop+'兵</span></div>'
+        +lv_row+up_row+dn_row+'</div>';
     }
   });
   el.innerHTML=html;
+}
+
+// gemボタン用ヘルパー（data-*属性経由でID/slotを取得）
+function _gTap(btn){
+  const fn=btn.dataset.fn,id=btn.dataset.id,sl=+btn.dataset.sl,dir=+btn.dataset.dir;
+  if(fn==="setGemCur") setGemCur(id,sl,jCur[id][sl]+dir);
+  else setGemTgt(id,sl,jTgt[id][sl]+dir);
+}
+function _gRep(btn){
+  const fn=btn.dataset.fn,id=btn.dataset.id,sl=+btn.dataset.sl,dir=+btn.dataset.dir;
+  startRepGem(fn,id,sl,dir);
 }
 
 // 長押し
@@ -547,7 +672,89 @@ function startRep(fn,id,dir){
     },120);
   },400);
 }
+function startRepGem(fn,id,sl,dir){
+  _rt=setTimeout(()=>{
+    _ri=setInterval(()=>{
+      if(fn==="setGemCur") setGemCur(id,sl,jCur[id][sl]+dir);
+      else setGemTgt(id,sl,jTgt[id][sl]+dir);
+    },120);
+  },400);
+}
 function stopRep(){clearTimeout(_rt);clearInterval(_ri);_rt=null;_ri=null;}
+
+function openSettings(){
+  document.getElementById("modal-settings").style.display="flex";
+  renderBulkForm();
+}
+function closeSettings(){document.getElementById("modal-settings").style.display="none";}
+
+function renderBulkForm(){
+  const el=document.getElementById("bulk-form");
+  const sel=(id,val,opts)=>{
+    let s='<select id="'+id+'" style="background:#0d1b2a;color:#e2e8f0;border:1px solid #334155;border-radius:6px;padding:3px 4px;font-size:12px;width:100%">';
+    opts.forEach(o=>{s+='<option value="'+o.v+'"'+(o.v===val?' selected':'')+'>'+o.l+'</option>';});
+    s+='</select>';
+    return s;
+  };
+  const numIn=(id,val,min,max)=>'<input type="number" id="'+id+'" value="'+val+'" min="'+min+'" max="'+max+'" style="background:#0d1b2a;color:#e2e8f0;border:1px solid #334155;border-radius:6px;padding:3px 6px;font-size:12px;width:100%;text-align:right">';
+  const row=(label,input)=>'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:12px;color:#94a3b8;min-width:72px;flex-shrink:0">'+label+'</span><div style="flex:1">'+input+'</div></div>';
+  const row3=(label,in0,in1,in2)=>'<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px"><span style="font-size:12px;color:#94a3b8;min-width:72px;flex-shrink:0">'+label+'</span><div style="flex:1;display:flex;gap:4px">'+in0+in1+in2+'</div></div>';
+
+  // 装備現在レベル選択肢
+  const gearOpts=[{v:0,l:"なし"},...GL.slice(1).map((g,i)=>{const lb=glLabel(g);return {v:i+1,l:lb.l2?lb.l1+" "+lb.l2:lb.l1};})];
+
+  let html='<p style="font-size:11px;color:#64748b;margin-bottom:8px;">⚔️ 装備 現在レベル</p>';
+  PARTS.forEach(p=>{ html+=row(p.label,sel("bulk-g-"+p.id,gCur[p.id],gearOpts)); });
+
+  html+='<p style="font-size:11px;color:#64748b;margin:12px 0 8px;">💎 宝石 現在レベル（スロット1/2/3）</p>';
+  PARTS.forEach(p=>{
+    html+=row3(p.label,
+      numIn("bulk-j-"+p.id+"-0",jCur[p.id][0],0,JL_MAX),
+      numIn("bulk-j-"+p.id+"-1",jCur[p.id][1],0,JL_MAX),
+      numIn("bulk-j-"+p.id+"-2",jCur[p.id][2],0,JL_MAX)
+    );
+  });
+
+  html+='<p style="font-size:11px;color:#64748b;margin:12px 0 8px;">🎒 所持アイテム数</p>';
+  const matFields=[
+    {k:"alloy",l:"強靱な合金"},{k:"polish",l:"研磨剤"},{k:"plan",l:"設計図面"},
+    {k:"gemPlan",l:"宝石図面"},{k:"gemHb",l:"宝石HB"},{k:"gemSecret",l:"宝石秘典"},
+  ];
+  matFields.forEach(f=>{ html+=row(f.l,numIn("bulk-inv-"+f.k,inv[f.k],0,9999999)); });
+
+  el.innerHTML=html;
+}
+
+function applyBulk(){
+  // 装備現在レベル
+  PARTS.forEach(p=>{
+    const el=document.getElementById("bulk-g-"+p.id);
+    if(el){
+      const nv=Math.max(0,Math.min(GL_MAX,+el.value));
+      gCur[p.id]=nv;
+      if(gTgt[p.id]<nv) gTgt[p.id]=nv;
+    }
+  });
+  // 宝石現在レベル
+  PARTS.forEach(p=>{
+    for(let sl=0;sl<3;sl++){
+      const el=document.getElementById("bulk-j-"+p.id+"-"+sl);
+      if(el){
+        const nv=Math.max(0,Math.min(JL_MAX,+el.value));
+        jCur[p.id][sl]=nv;
+        if(jTgt[p.id][sl]<nv) jTgt[p.id][sl]=nv;
+      }
+    }
+  });
+  // 所持アイテム数
+  ["alloy","polish","plan","gemPlan","gemHb","gemSecret"].forEach(k=>{
+    const el=document.getElementById("bulk-inv-"+k);
+    if(el) inv[k]=Math.max(0,+el.value)||0;
+  });
+  saveBk(); render(); closeSettings();
+}
+function openHelp(){document.getElementById("modal-help").style.display="flex";}
+function closeHelp(){document.getElementById("modal-help").style.display="none";}
 
 render();
 </script>
