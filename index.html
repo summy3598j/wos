@@ -81,7 +81,7 @@ input{outline:none;}
   <span class="title">⚔️ WOS 装備計算機</span>
   <button class="hbtn" onclick="resetAllTgt()" style="background:#334155;color:#94a3b8;margin-right:4px;">目標R</button>
   <button class="hbtn" onclick="openSettings()" style="background:#1e3a5c;color:#60a5fa;margin-right:4px;">⚙️ 設定</button>
-  <button class="hbtn" onclick="openHelp()" style="background:#1e3a5c;color:#93c5fd;">❓</button>
+  <button class="hbtn" onclick="openHelp()" style="background:#1e3a5c;color:#93c5fd;">ヘルプ</button>
 </div>
 <div class="modebar">
   <button class="mbtn on" id="btn-gear" onclick="setMode('gear')">装備強化</button>
@@ -133,6 +133,10 @@ input{outline:none;}
       <p>・各部位に宝石スロットが3つあります</p>
       <p>・スロットごとに独立してレベルアップできます</p>
       <p>・▲▼ボタンで現在・目標レベルを設定</p>
+      <br>
+      <p style="color:#60a5fa;font-weight:700;margin-bottom:4px;">⚙️ 一括設定</p>
+      <p>・⚙️設定 → パラメータ一括設定で装備・宝石レベルと素材所持数をまとめて入力できます</p>
+      <p>・宝石スロットは上下スワイプまたは▲▼ボタンで変更できます</p>
       <br>
       <p style="color:#60a5fa;font-weight:700;margin-bottom:4px;">🔴🟡 通知ドット</p>
       <p>・🔴 所持素材で今すぐ1段アップ可能</p>
@@ -271,6 +275,7 @@ let jCur=migrateGemLvs(_auto?.jCur);
 let jTgt=migrateGemLvs(_auto?.jTgt);
 let inv=_auto?.inv||defInv();
 let editKey=null;
+let _bulkJ=null;
 
 // ============================================================
 // HELPERS
@@ -702,6 +707,8 @@ function startRepGem(fn,id,sl,dir){
 function stopRep(){clearTimeout(_rt);clearInterval(_ri);_rt=null;_ri=null;}
 
 function openSettings(){
+  _bulkJ={};
+  PARTS.forEach(p=>{_bulkJ[p.id]=[...jCur[p.id]];});
   document.getElementById("modal-settings").style.display="flex";
   renderBulkForm();
 }
@@ -725,13 +732,28 @@ function renderBulkForm(){
   let html='<p style="font-size:11px;color:#64748b;margin-bottom:8px;">⚔️ 装備 現在レベル</p>';
   PARTS.forEach(p=>{ html+=row(p.label,sel("bulk-g-"+p.id,gCur[p.id],gearOpts)); });
 
-  html+='<p style="font-size:11px;color:#64748b;margin:12px 0 8px;">💎 宝石 現在レベル（スロット1/2/3）</p>';
+  html+='<p style="font-size:11px;color:#64748b;margin:12px 0 8px;">💎 宝石 現在レベル（スワイプ or ▲▼）</p>';
   PARTS.forEach(p=>{
-    html+=row3(p.label,
-      numIn("bulk-j-"+p.id+"-0",jCur[p.id][0],0,JL_MAX),
-      numIn("bulk-j-"+p.id+"-1",jCur[p.id][1],0,JL_MAX),
-      numIn("bulk-j-"+p.id+"-2",jCur[p.id][2],0,JL_MAX)
-    );
+    const tc=TC[p.troop];
+    html+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">';
+    html+='<span style="font-size:12px;color:#94a3b8;min-width:72px;flex-shrink:0">'+p.label+'</span>';
+    html+='<div style="flex:1;display:flex;gap:4px">';
+    for(let sl=0;sl<3;sl++){
+      const v=_bulkJ[p.id][sl];
+      const bc=v>0?tc:'#334155';
+      html+='<div style="flex:1;display:flex;flex-direction:column;align-items:stretch;gap:1px">';
+      html+='<button style="background:#1e3a5c;color:#60a5fa;border:none;border-radius:4px;font-size:11px;padding:2px 0;cursor:pointer;font-weight:700"'
+           +' onclick="setBulkJ(\''+p.id+'\','+sl+',(_bulkJ[\''+p.id+'\']['+sl+']+1))">▲</button>';
+      html+='<div id="bjbox-'+p.id+'-'+sl+'" data-id="'+p.id+'" data-sl="'+sl+'"'
+           +' style="text-align:center;border:1.5px solid '+bc+';border-radius:5px;background:#0d1b2a;'
+           +'padding:3px 0;font-size:12px;font-weight:700;color:'+(v>0?'#e2e8f0':'#475569')+';touch-action:none;cursor:ns-resize;"'
+           +' ontouchstart="_bSwipeStart(event,this)" ontouchmove="_bSwipeMove(event,this)" ontouchend="_bSwY=null">'
+           +(v>0?v:'—')+'</div>';
+      html+='<button style="background:#1e3a5c;color:#60a5fa;border:none;border-radius:4px;font-size:11px;padding:2px 0;cursor:pointer;font-weight:700"'
+           +' onclick="setBulkJ(\''+p.id+'\','+sl+',(_bulkJ[\''+p.id+'\']['+sl+']-1))">▼</button>';
+      html+='</div>';
+    }
+    html+='</div></div>';
   });
 
   html+='<p style="font-size:11px;color:#64748b;margin:12px 0 8px;">🎒 所持アイテム数</p>';
@@ -755,16 +777,15 @@ function applyBulk(){
     }
   });
   // 宝石現在レベル
-  PARTS.forEach(p=>{
-    for(let sl=0;sl<3;sl++){
-      const el=document.getElementById("bulk-j-"+p.id+"-"+sl);
-      if(el){
-        const nv=Math.max(0,Math.min(JL_MAX,+el.value));
+  if(_bulkJ){
+    PARTS.forEach(p=>{
+      for(let sl=0;sl<3;sl++){
+        const nv=_bulkJ[p.id][sl];
         jCur[p.id][sl]=nv;
         if(jTgt[p.id][sl]<nv) jTgt[p.id][sl]=nv;
       }
-    }
-  });
+    });
+  }
   // 所持アイテム数
   ["alloy","polish","plan","gemPlan","gemHb","gemSecret"].forEach(k=>{
     const el=document.getElementById("bulk-inv-"+k);
@@ -774,6 +795,28 @@ function applyBulk(){
 }
 function openHelp(){document.getElementById("modal-help").style.display="flex";}
 function closeHelp(){document.getElementById("modal-help").style.display="none";}
+function setBulkJ(id,sl,v){
+  if(!_bulkJ)return;
+  _bulkJ[id][sl]=Math.max(0,Math.min(JL_MAX,+v||0));
+  const val=_bulkJ[id][sl];
+  const box=document.getElementById('bjbox-'+id+'-'+sl);
+  if(!box)return;
+  box.textContent=val>0?val:'—';
+  box.style.color=val>0?'#e2e8f0':'#475569';
+  box.style.borderColor=val>0?TC[PARTS.find(p=>p.id===id).troop]:'#334155';
+}
+let _bSwY=null,_bSwV=null;
+function _bSwipeStart(e,el){
+  _bSwY=e.touches[0].clientY;
+  _bSwV=_bulkJ[el.dataset.id][+el.dataset.sl];
+  e.preventDefault();
+}
+function _bSwipeMove(e,el){
+  if(_bSwY===null)return;
+  const delta=Math.round((_bSwY-e.touches[0].clientY)/15);
+  setBulkJ(el.dataset.id,+el.dataset.sl,_bSwV+delta);
+  e.preventDefault();
+}
 function checkPw(){
   if(document.getElementById('pw-input').value==='inu'){
     localStorage.setItem('wos_auth','1');
