@@ -23,7 +23,6 @@ input{outline:none;}
 .mbtn{flex:1;padding:7px 0;background:#0d1b2a;border:none;color:#64748b;font-size:13px;font-weight:600;cursor:pointer;border-bottom:3px solid transparent;}
 .mbtn.on{color:#e2e8f0;background:#1a3a5c;border-bottom:3px solid #3b82f6;}
 
-/* バフ欄 */
 .buff-wrap{background:#112233;padding:6px 10px;border-bottom:1px solid #1e3a5c;}
 .brow{display:flex;align-items:baseline;gap:6px;margin-bottom:2px;}
 .brow:last-child{margin-bottom:0;}
@@ -35,7 +34,6 @@ input{outline:none;}
 .binfo{font-size:10px;color:#94a3b8;}
 .bdiv{border:none;border-top:1px solid #1e3a5c;margin:3px 0;}
 
-/* 素材欄 */
 .mat-wrap{background:#0d1b2a;padding:5px 8px;border-bottom:2px solid #1e3a5c;}
 .mat-row{display:flex;gap:5px;}
 .mcell{flex:1;background:#112233;border-radius:7px;padding:4px 5px;border:1px solid #1e3a5c;min-width:0;cursor:pointer;}
@@ -44,7 +42,6 @@ input{outline:none;}
 .mstat{font-size:10px;font-weight:700;margin-top:1px;}
 .minput{width:100%;background:#0d1b2a;border:1px solid #3b82f6;border-radius:4px;color:#fff;font-size:16px;padding:2px 3px;margin-top:2px;}
 
-/* 部位グリッド */
 .pgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:6px 8px;align-content:start;}
 .pcard{background:#112233;border-radius:10px;border:1px solid #1e3a5c;padding:5px;display:flex;flex-direction:column;gap:4px;position:relative;}
 .dot{position:absolute;top:-5px;right:-5px;width:12px;height:12px;border-radius:50%;z-index:3;box-shadow:0 0 0 2px #0d1b2a;}
@@ -81,7 +78,7 @@ input{outline:none;}
   <span class="title">⚔️ WOS 装備計算機</span>
   <button class="hbtn" onclick="resetAllTgt()" style="background:#334155;color:#94a3b8;margin-right:4px;">目標R</button>
   <button class="hbtn" onclick="openSettings()" style="background:#1e3a5c;color:#60a5fa;margin-right:4px;">⚙️ 設定</button>
-  <button class="hbtn" onclick="openHelp()" style="background:#1e3a5c;color:#93c5fd;">❓</button>
+  <button class="hbtn" onclick="openHelp()" style="background:#1e3a5c;color:#93c5fd;">ヘルプ</button>
 </div>
 <div class="modebar">
   <button class="mbtn on" id="btn-gear" onclick="setMode('gear')">装備強化</button>
@@ -90,8 +87,6 @@ input{outline:none;}
 <div class="buff-wrap" id="buff-wrap"></div>
 <div class="mat-wrap"><div class="mat-row" id="mat-row"></div></div>
 <div class="pgrid" id="pgrid"></div>
-
-<!-- 設定モーダル -->
 
 <div id="modal-settings" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:100;align-items:flex-end;justify-content:center;">
   <div style="background:#1e293b;width:100%;max-width:480px;border-radius:18px 18px 0 0;padding:20px 16px 36px;max-height:90vh;overflow-y:auto;">
@@ -108,8 +103,6 @@ input{outline:none;}
     </div>
   </div>
 </div>
-
-<!-- ヘルプモーダル -->
 
 <div id="modal-help" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:100;align-items:flex-start;justify-content:center;overflow-y:auto;">
   <div style="background:#1e293b;width:100%;max-width:480px;border-radius:0 0 18px 18px;padding:20px 16px 36px;margin-top:0;">
@@ -133,6 +126,10 @@ input{outline:none;}
       <p>・各部位に宝石スロットが3つあります</p>
       <p>・スロットごとに独立してレベルアップできます</p>
       <p>・▲▼ボタンで現在・目標レベルを設定</p>
+      <br>
+      <p style="color:#60a5fa;font-weight:700;margin-bottom:4px;">⚙️ 一括設定</p>
+      <p>・⚙️設定 → パラメータ一括設定で装備・宝石レベルと素材所持数をまとめて入力できます</p>
+      <p>・宝石スロットは上下スワイプまたは▲▼ボタンで変更できます</p>
       <br>
       <p style="color:#60a5fa;font-weight:700;margin-bottom:4px;">🔴🟡 通知ドット</p>
       <p>・🔴 所持素材で今すぐ1段アップ可能</p>
@@ -201,21 +198,20 @@ const GL_MAX=GL.length-1, JL_MAX=JL.length-1;
 const fmt=n=>Number(n).toLocaleString();
 function fmtPct(v){return parseFloat(v.toFixed(2)).toString()+"%";}
 const stars=n=>n>0?"★".repeat(n):"";
-const GL_TIERS = GL.slice(1).filter((g,i,a)=>i===0||g.def3!==a[i-1].def3);
+const GL_TIERS=GL.slice(1).filter((g,i,a)=>i===0||g.def3!==a[i-1].def3);
 function glLabel(g){
-  if(!g||g.rank===0) return {l1:"なし",l2:""};
-  const l2parts=[g.tier, stars(g.stars)].filter(Boolean);
-  return {l1:g.rarity, l2:l2parts.join(" ")};
+  if(!g||g.rank===0)return{l1:"なし",l2:""};
+  return{l1:g.rarity,l2:[g.tier,stars(g.stars)].filter(Boolean).join(" ")};
 }
 function glLabel1(g){
-  if(!g||g.rank===0) return "";
-  return [g.rarity, g.tier, stars(g.stars)].filter(Boolean).join("");
+  if(!g||g.rank===0)return"";
+  return[g.rarity,g.tier,stars(g.stars)].filter(Boolean).join("");
 }
-function defLvs(){return {cap:0,watch:0,coat:0,pants:0,ring:0,staff:0};}
-function defGemLvs(){return {cap:[0,0,0],watch:[0,0,0],coat:[0,0,0],pants:[0,0,0],ring:[0,0,0],staff:[0,0,0]};}
-function defInv(){return {alloy:0,polish:0,plan:0,gemPlan:0,gemHb:0,gemSecret:0};}
+function defLvs(){return{cap:0,watch:0,coat:0,pants:0,ring:0,staff:0};}
+function defGemLvs(){return{cap:[0,0,0],watch:[0,0,0],coat:[0,0,0],pants:[0,0,0],ring:[0,0,0],staff:[0,0,0]};}
+function defInv(){return{alloy:0,polish:0,plan:0,gemPlan:0,gemHb:0,gemSecret:0};}
 function migrateGemLvs(d){
-  if(!d) return defGemLvs();
+  if(!d)return defGemLvs();
   const r=defGemLvs();
   PARTS.forEach(p=>{if(Array.isArray(d[p.id]))r[p.id]=d[p.id].slice(0,3).map(v=>Math.max(0,Math.min(JL_MAX,+v||0)));});
   return r;
@@ -231,12 +227,11 @@ function loadData(){
     const s=localStorage.getItem("wos_save");
     if(!s){alert("保存データがありません");return;}
     const d=JSON.parse(s);
-    mode=d.mode||"gear"; gCur=d.gCur||defLvs(); gTgt=d.gTgt||defLvs();
-    jCur=migrateGemLvs(d.jCur); jTgt=migrateGemLvs(d.jTgt); inv=d.inv||defInv();
-    saveBk(); render(); closeSettings(); alert("復元しました");
+    mode=d.mode||"gear";gCur=d.gCur||defLvs();gTgt=d.gTgt||defLvs();
+    jCur=migrateGemLvs(d.jCur);jTgt=migrateGemLvs(d.jTgt);inv=d.inv||defInv();
+    saveBk();render();closeSettings();alert("復元しました");
   }catch{alert("復元に失敗しました");}
 }
-function recalc(){render();}
 const _auto=loadBk();
 let mode=_auto?.mode||"gear";
 let gCur=_auto?.gCur||defLvs();
@@ -245,194 +240,105 @@ let jCur=migrateGemLvs(_auto?.jCur);
 let jTgt=migrateGemLvs(_auto?.jTgt);
 let inv=_auto?.inv||defInv();
 let editKey=null;
+let _bulkJ=null;
 function curOf(id){return mode==="gear"?gCur[id]:jCur[id];}
 function tgtOf(id){return mode==="gear"?gTgt[id]:jTgt[id];}
 function setCur(id,v){
-  if(mode==="gear"){
-    const nv=Math.max(0,Math.min(GL_MAX,+v));
-    gCur[id]=nv; if(gTgt[id]<nv)gTgt[id]=nv;
-  } else {
-    const nv=Math.max(0,Math.min(JL_MAX,+v));
-    jCur[id]=nv; if(jTgt[id]<nv)jTgt[id]=nv;
-  }
-  saveBk(); render();
+  if(mode==="gear"){const nv=Math.max(0,Math.min(GL_MAX,+v));gCur[id]=nv;if(gTgt[id]<nv)gTgt[id]=nv;}
+  else{const nv=Math.max(0,Math.min(JL_MAX,+v));jCur[id]=nv;if(jTgt[id]<nv)jTgt[id]=nv;}
+  saveBk();render();
 }
 function setTgt(id,v){
-  if(mode==="gear"){
-    const nv=Math.max(gCur[id],Math.min(GL_MAX,+v));
-    gTgt[id]=nv;
-  } else {
-    const nv=Math.max(jCur[id],Math.min(JL_MAX,+v));
-    jTgt[id]=nv;
-  }
-  saveBk(); render();
+  if(mode==="gear"){const nv=Math.max(gCur[id],Math.min(GL_MAX,+v));gTgt[id]=nv;}
+  else{const nv=Math.max(jCur[id],Math.min(JL_MAX,+v));jTgt[id]=nv;}
+  saveBk();render();
 }
-function setMode(m){mode=m; saveBk(); render();}
-function setInvKey(k,v){inv[k]=+v||0; saveBk(); renderMat();}
+function setMode(m){mode=m;saveBk();render();}
+function setInvKey(k,v){inv[k]=+v||0;saveBk();renderMat();}
 function setGemCur(id,sl,v){
   const nv=Math.max(0,Math.min(JL_MAX,+v));
-  jCur[id][sl]=nv; if(jTgt[id][sl]<nv)jTgt[id][sl]=nv;
-  saveBk(); render();
+  jCur[id][sl]=nv;if(jTgt[id][sl]<nv)jTgt[id][sl]=nv;
+  saveBk();render();
 }
 function setGemTgt(id,sl,v){
   const nv=Math.max(jCur[id][sl],Math.min(JL_MAX,+v));
-  jTgt[id][sl]=nv; saveBk(); render();
+  jTgt[id][sl]=nv;saveBk();render();
 }
-function openEdit(k){editKey=k; renderMat();}
-function closeEdit(){editKey=null; saveBk(); renderMat();}
+function openEdit(k){editKey=k;renderMat();}
+function closeEdit(){editKey=null;saveBk();renderMat();}
 function resetAllTgt(){
-  if(mode==="gear") PARTS.forEach(p=>gTgt[p.id]=gCur[p.id]);
+  if(mode==="gear")PARTS.forEach(p=>gTgt[p.id]=gCur[p.id]);
   else PARTS.forEach(p=>{jTgt[p.id]=[...jCur[p.id]];});
-  saveBk(); render();
+  saveBk();render();
 }
 function setBonus(lvMap){
   const eq=PARTS.map(p=>lvMap[p.id]).filter(lv=>lv>0).map(lv=>GL[lv]).sort((a,b)=>b.def3-a.def3);
   let def3=0,atk6=0,lbl3="",lbl6="",nxt3="",nxt6="";
   if(eq.length>=3){
-    const ref=eq[2];
-    def3=ref.def3;
-    const minG=GL_TIERS.find(g=>g.def3===ref.def3)||ref;
-    lbl3=glLabel1(minG);
+    const ref=eq[2];def3=ref.def3;
+    const minG=GL_TIERS.find(g=>g.def3===ref.def3)||ref;lbl3=glLabel1(minG);
     const nextG=GL_TIERS.find(g=>g.def3>ref.def3);
-    if(nextG){
-      const top3=eq.slice(0,3);
-      const need=top3.filter(g=>g.def3===ref.def3).length;
-      const nlb=glLabel(nextG);
-      const nlabel=nlb.l2?`${nlb.l1} ${nlb.l2}`:nlb.l1;
-      nxt3=`${nlabel}: あと${need}個`;
-    }
-  } else {
-    nxt3=`3set: あと${3-eq.length}部位`;
-  }
+    if(nextG){const top3=eq.slice(0,3);const need=top3.filter(g=>g.def3===ref.def3).length;const nlb=glLabel(nextG);nxt3=`${nlb.l2?nlb.l1+" "+nlb.l2:nlb.l1}: あと${need}個`;}
+  }else nxt3=`3set: あと${3-eq.length}部位`;
   if(eq.length>=6){
-    const ref=eq[5];
-    atk6=ref.atk6;
-    const minG=GL_TIERS.find(g=>g.atk6===ref.atk6)||ref;
-    lbl6=glLabel1(minG);
+    const ref=eq[5];atk6=ref.atk6;
+    const minG=GL_TIERS.find(g=>g.atk6===ref.atk6)||ref;lbl6=glLabel1(minG);
     const nextG=GL_TIERS.find(g=>g.atk6>ref.atk6);
-    if(nextG){
-      const need=eq.filter(g=>g.atk6===ref.atk6).length;
-      const nlb=glLabel(nextG);
-      const nlabel=nlb.l2?`${nlb.l1} ${nlb.l2}`:nlb.l1;
-      nxt6=`${nlabel}: あと${need}個`;
-    }
-  } else {
-    nxt6=`6set: あと${6-eq.length}部位`;
-  }
-  return {def3,atk6,lbl3,lbl6,nxt3,nxt6};
+    if(nextG){const need=eq.filter(g=>g.atk6===ref.atk6).length;const nlb=glLabel(nextG);nxt6=`${nlb.l2?nlb.l1+" "+nlb.l2:nlb.l1}: あと${need}個`;}
+  }else nxt6=`6set: あと${6-eq.length}部位`;
+  return{def3,atk6,lbl3,lbl6,nxt3,nxt6};
 }
 function gearBuff(lvMap){
   const g=id=>(GL[lvMap[id]]||GL[0]).buff;
   const sb=setBonus(lvMap);
-  return {lance:g("cap")+g("watch"),shield:g("coat")+g("pants"),bow:g("ring")+g("staff"),...sb};
+  return{lance:g("cap")+g("watch"),shield:g("coat")+g("pants"),bow:g("ring")+g("staff"),...sb};
 }
 function gemBuff(lvMap){
   const slotLet=id=>lvMap[id].reduce((s,lv)=>s+(JL[lv]||JL[0]).lethality,0);
-  return {lance:slotLet("cap")+slotLet("watch"),shield:slotLet("coat")+slotLet("pants"),bow:slotLet("ring")+slotLet("staff")};
+  return{lance:slotLet("cap")+slotLet("watch"),shield:slotLet("coat")+slotLet("pants"),bow:slotLet("ring")+slotLet("staff")};
 }
-function gearMatRange(from,to){
-  let a=0,po=0,pl=0;
-  for(let i=from+1;i<=to;i++){a+=GL[i].alloy;po+=GL[i].polish;pl+=GL[i].plan;}
-  return {alloy:a,polish:po,plan:pl};
-}
-function gemMatRange(from,to){
-  let p=0,h=0,s=0;
-  for(let i=from+1;i<=to;i++){p+=JL[i].plan;h+=JL[i].hb;s+=JL[i].secret;}
-  return {plan:p,hb:h,secret:s};
-}
+function gearMatRange(from,to){let a=0,po=0,pl=0;for(let i=from+1;i<=to;i++){a+=GL[i].alloy;po+=GL[i].polish;pl+=GL[i].plan;}return{alloy:a,polish:po,plan:pl};}
+function gemMatRange(from,to){let p=0,h=0,s=0;for(let i=from+1;i<=to;i++){p+=JL[i].plan;h+=JL[i].hb;s+=JL[i].secret;}return{plan:p,hb:h,secret:s};}
 function totalReq(){
-  if(mode==="gear"){
-    let a=0,po=0,pl=0;
-    PARTS.forEach(p=>{if(gTgt[p.id]>gCur[p.id]){const r=gearMatRange(gCur[p.id],gTgt[p.id]);a+=r.alloy;po+=r.polish;pl+=r.plan;}});
-    return {alloy:a,polish:po,plan:pl};
-  } else {
-    let p=0,h=0,s=0;
-    PARTS.forEach(pt=>{
-      for(let sl=0;sl<3;sl++){
-        const fr=jCur[pt.id][sl],to=jTgt[pt.id][sl];
-        if(to>fr){const r=gemMatRange(fr,to);p+=r.plan;h+=r.hb;s+=r.secret;}
-      }
-    });
-    return {plan:p,hb:h,secret:s};
-  }
-}
-function partShort(id){
-  if(mode==="gear"){
-    const r=gearMatRange(gCur[id],gTgt[id]);
-    return r.alloy>inv.alloy||r.polish>inv.polish||r.plan>inv.plan;
-  } else {
-    let p=0,h=0,s=0;
-    for(let sl=0;sl<3;sl++){const r=gemMatRange(jCur[id][sl],jTgt[id][sl]);p+=r.plan;h+=r.hb;s+=r.secret;}
-    return p>inv.gemPlan||h>inv.gemHb||s>inv.gemSecret;
-  }
+  if(mode==="gear"){let a=0,po=0,pl=0;PARTS.forEach(p=>{if(gTgt[p.id]>gCur[p.id]){const r=gearMatRange(gCur[p.id],gTgt[p.id]);a+=r.alloy;po+=r.polish;pl+=r.plan;}});return{alloy:a,polish:po,plan:pl};}
+  else{let p=0,h=0,s=0;PARTS.forEach(pt=>{for(let sl=0;sl<3;sl++){const fr=jCur[pt.id][sl],to=jTgt[pt.id][sl];if(to>fr){const r=gemMatRange(fr,to);p+=r.plan;h+=r.hb;s+=r.secret;}}});return{plan:p,hb:h,secret:s};}
 }
 function canUp(id){
   if(mode==="gear"){
-    const tgtLv=gTgt[id]; if(tgtLv>=GL_MAX)return false;
-    const tr=totalReq();
-    const remAlloy=inv.alloy-tr.alloy;
-    const remPolish=inv.polish-tr.polish;
-    const remPlan=inv.plan-tr.plan;
-    if(remAlloy<0||remPolish<0||remPlan<0)return false;
-    const d=GL[tgtLv+1];
-    return d.alloy<=remAlloy&&d.polish<=remPolish&&d.plan<=remPlan;
-  } else {
-    const tr=totalReq();
-    const remPlan=inv.gemPlan-tr.plan;
-    const remHb=inv.gemHb-tr.hb;
-    const remSecret=inv.gemSecret-tr.secret;
-    if(remPlan<0||remHb<0||remSecret<0)return false;
-    return jTgt[id].some((tl)=>{
-      if(tl>=JL_MAX)return false;
-      const d=JL[tl+1];
-      return d.plan<=remPlan&&d.hb<=remHb&&d.secret<=remSecret;
-    });
+    const tgtLv=gTgt[id];if(tgtLv>=GL_MAX)return false;
+    const tr=totalReq(),remA=inv.alloy-tr.alloy,remP=inv.polish-tr.polish,remPl=inv.plan-tr.plan;
+    if(remA<0||remP<0||remPl<0)return false;
+    const d=GL[tgtLv+1];return d.alloy<=remA&&d.polish<=remP&&d.plan<=remPl;
+  }else{
+    const tr=totalReq(),remP=inv.gemPlan-tr.plan,remH=inv.gemHb-tr.hb,remS=inv.gemSecret-tr.secret;
+    if(remP<0||remH<0||remS<0)return false;
+    return jTgt[id].some(tl=>{if(tl>=JL_MAX)return false;const d=JL[tl+1];return d.plan<=remP&&d.hb<=remH&&d.secret<=remS;});
   }
 }
 function render(){renderMode();renderBuff();renderMat();renderParts();}
 function renderMode(){
   document.getElementById("btn-gear").className="mbtn"+(mode==="gear"?" on":"");
-  document.getElementById("btn-gem").className ="mbtn"+(mode==="gem"?" on":"");
+  document.getElementById("btn-gem").className="mbtn"+(mode==="gem"?" on":"");
 }
 function renderBuff(){
   const el=document.getElementById("buff-wrap");
   const cur=mode==="gear"?gearBuff(gCur):gemBuff(jCur);
   const tgt=mode==="gear"?gearBuff(gTgt):gemBuff(jTgt);
-  function brow(label,cv,tv,c){
+  function brow(label,cv,tv){
     const d=tv-cv,has=Math.abs(d)>0.001;
-    return '<div class="brow">'
-      +'<span class="blbl">'+label+'</span>'
-      +'<span class="bval" style="color:#e2e8f0">'+fmtPct(cv)+'</span>'
-      +(has?'<span class="barr">→</span><span class="bval" style="color:#4ade80">'+fmtPct(tv)+'</span><span class="bdif">+'+fmtPct(d)+'</span>':"")
-      +'</div>';
+    return'<div class="brow"><span class="blbl">'+label+'</span><span class="bval" style="color:#e2e8f0">'+fmtPct(cv)+'</span>'+(has?'<span class="barr">→</span><span class="bval" style="color:#4ade80">'+fmtPct(tv)+'</span><span class="bdif">+'+fmtPct(d)+'</span>':"")+"</div>";
   }
   function srow(label,setNum,cv,tv,curLbl,tgtLbl,curNxt,tgtNxt){
     const d=tv-cv,has=Math.abs(d)>0.001;
     const nxt=has?tgtNxt:curNxt;
-    const setLbl=setNum+"set "+(curLbl||"—");
     const arrowHtml=has?'<span class="barr">→</span><span class="bval" style="color:#4ade80">'+fmtPct(tv)+'</span><span class="bdif">+'+fmtPct(d)+'</span>':"";
     const nxtHtml=nxt?'<span class="binfo">'+nxt+'</span>':"";
-    return '<div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:2px">'
-      +'<span class="blbl" style="display:flex;flex-direction:column;line-height:1.3">'
-      +'<span>'+label+'</span><span class="bsub">'+setLbl+'</span></span>'
-      +'<span style="display:flex;flex-direction:column;line-height:1.3">'
-      +'<span style="display:flex;align-items:baseline;gap:6px">'
-      +'<span class="bval" style="color:#e2e8f0">'+fmtPct(cv)+'</span>'+arrowHtml+'</span>'
-      +nxtHtml+'</span></div>';
+    return'<div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:2px"><span class="blbl" style="display:flex;flex-direction:column;line-height:1.3"><span>'+label+'</span><span class="bsub">'+setNum+'set '+(curLbl||'—')+'</span></span><span style="display:flex;flex-direction:column;line-height:1.3"><span style="display:flex;align-items:baseline;gap:6px"><span class="bval" style="color:#e2e8f0">'+fmtPct(cv)+'</span>'+arrowHtml+'</span>'+nxtHtml+'</span></div>';
   }
   if(mode==="gear"){
-    el.innerHTML=
-      brow("槍兵 攻/防",cur.lance, tgt.lance, TC["槍"])+
-      brow("盾兵 攻/防",cur.shield,tgt.shield,TC["盾"])+
-      brow("弓兵 攻/防",cur.bow,   tgt.bow,   TC["弓"])+
-      `<hr class="bdiv">`+
-      srow("全兵 防御","3",cur.def3,tgt.def3,cur.lbl3,tgt.lbl3,cur.nxt3,tgt.nxt3)+
-      srow("全兵 攻撃","6",cur.atk6,tgt.atk6,cur.lbl6,tgt.lbl6,cur.nxt6,tgt.nxt6);
-  } else {
-    el.innerHTML=
-      brow("槍兵 殺傷/HP",cur.lance,tgt.lance,TC["槍"])+
-      brow("盾兵 殺傷/HP",cur.shield,tgt.shield,TC["盾"])+
-      brow("弓兵 殺傷/HP",cur.bow,tgt.bow,TC["弓"]);
+    el.innerHTML=brow("槍兵 攻/防",cur.lance,tgt.lance)+brow("盾兵 攻/防",cur.shield,tgt.shield)+brow("弓兵 攻/防",cur.bow,tgt.bow)+'<hr class="bdiv">'+srow("全兵 防御","3",cur.def3,tgt.def3,cur.lbl3,tgt.lbl3,cur.nxt3,tgt.nxt3)+srow("全兵 攻撃","6",cur.atk6,tgt.atk6,cur.lbl6,tgt.lbl6,cur.nxt6,tgt.nxt6);
+  }else{
+    el.innerHTML=brow("槍兵 殺傷/HP",cur.lance,tgt.lance)+brow("盾兵 殺傷/HP",cur.shield,tgt.shield)+brow("弓兵 殺傷/HP",cur.bow,tgt.bow);
   }
 }
 function renderMat(){
@@ -443,15 +349,9 @@ function renderMat(){
     const statColor=none?"#475569":ok?"#4ade80":"#f87171";
     const statText=none?("所持: "+fmt(have)):ok?("✓ "+fmt(have)):("不足 -"+fmt(s));
     const inp=editKey===hk
-      ?'<input class="minput" type="number" min="0" value="'+have+'" id="ei-'+hk+'"'
-       +' oninput="setInvKey(\''+hk+'\',this.value)" onblur="closeEdit()" onclick="event.stopPropagation()">'
+      ?'<input class="minput" type="number" min="0" value="'+have+'" id="ei-'+hk+'" oninput="setInvKey(\''+hk+'\',this.value)" onblur="closeEdit()" onclick="event.stopPropagation()">'
       :'<div class="mstat" style="color:'+statColor+'">'+statText+'</div>';
-    const needColor=none?"#334155":"#e2e8f0";
-    const needText=none?"—":fmt(need);
-    return '<div class="mcell" onclick="openEdit(\''+hk+'\')">'  
-      +'<div class="mlbl">'+label+'</div>'
-      +'<div class="mneed" style="color:'+needColor+'">'+needText+'</div>'
-      +inp+'</div>';
+    return'<div class="mcell" onclick="openEdit(\''+hk+'\')">'+'<div class="mlbl">'+label+'</div>'+'<div class="mneed" style="color:'+(none?"#334155":"#e2e8f0")+'">'+(none?"—":fmt(need))+'</div>'+inp+'</div>';
   }
   el.innerHTML=mode==="gear"
     ?mc("強靱な合金",tr.alloy,"alloy")+mc("研磨剤",tr.polish,"polish")+mc("設計図面",tr.plan,"plan")
@@ -461,215 +361,116 @@ function renderMat(){
 function renderParts(){
   const el=document.getElementById("pgrid");
   const tr=totalReq();
-  const _totalShort=mode==="gear"
-    ?(tr.alloy>inv.alloy||tr.polish>inv.polish||tr.plan>inv.plan)
-    :(tr.plan>inv.gemPlan||tr.hb>inv.gemHb||tr.secret>inv.gemSecret);
-  function gOpts(sel){
-    let r='<option value="0"'+(sel===0?' selected':'')+'>なし</option>';
-    GL.slice(1).forEach((g,i)=>{
-      const idx=i+1;const lb=glLabel(g);const t=lb.l2?lb.l1+" "+lb.l2:lb.l1;
-      r+='<option value="'+idx+'"'+(sel===idx?' selected':'')+'>'+t+'</option>';
-    });
-    return r;
-  }
-  function jOpts(sel){
-    let r='<option value="0"'+(sel===0?' selected':'')+'>なし</option>';
-    JL.slice(1).forEach((j,i)=>{
-      const idx=i+1;
-      r+='<option value="'+idx+'"'+(sel===idx?' selected':'')+'>Lv'+idx+'</option>';
-    });
-    return r;
-  }
+  const _ts=mode==="gear"?(tr.alloy>inv.alloy||tr.polish>inv.polish||tr.plan>inv.plan):(tr.plan>inv.gemPlan||tr.hb>inv.gemHb||tr.secret>inv.gemSecret);
+  function gOpts(sel){let r='<option value="0"'+(sel===0?' selected':'')+'>なし</option>';GL.slice(1).forEach((g,i)=>{const idx=i+1;const lb=glLabel(g);r+='<option value="'+idx+'"'+(sel===idx?' selected':'')+'>'+(lb.l2?lb.l1+" "+lb.l2:lb.l1)+'</option>';});return r;}
   let html="";
   PARTS.forEach(p=>{
-    const cur=curOf(p.id), tgt=tgtOf(p.id);
+    const cur=curOf(p.id),tgt=tgtOf(p.id);
     const tc=TC[p.troop];
     const curG=mode==="gear"?GL[cur]:null;
     const tgtG=mode==="gear"?GL[tgt]:null;
     const rc=curG&&cur>0?RC[curG.rarity]:"#334155";
     const trc=tgtG&&tgt>0?RC[tgtG.rarity]:"#1e3a5c";
     const hasTgt=mode==="gear"?gTgt[p.id]>gCur[p.id]:jTgt[p.id].some((t,sl)=>t>jCur[p.id][sl]);
-    const sf=hasTgt&&_totalShort;
+    const sf=hasTgt&&_ts;
     const up=!sf&&canUp(p.id);
-    const dot=sf?`<div class="dot" style="background:#eab308"></div>`
-              :up?`<div class="dot" style="background:#ef4444"></div>`:"";
+    const dot=sf?`<div class="dot" style="background:#eab308"></div>`:up?`<div class="dot" style="background:#ef4444"></div>`:"";
     function lvHtml(g,lv,col,bc){
-      if(lv===0) return '<div class="lvbox" style="border-color:'+bc+'"><span class="lvl1" style="color:#475569">なし</span></div>';
+      if(lv===0)return'<div class="lvbox" style="border-color:'+bc+'"><span class="lvl1" style="color:#475569">なし</span></div>';
       const lb=glLabel(g);
-      return '<div class="lvbox" style="border-color:'+bc+'">'
-        +'<span class="lvl1" style="color:'+col+'">'+lb.l1+'</span>'
-        +(lb.l2?'<span class="lvl2">'+lb.l2+'</span>':"")
-        +'</div>';
+      return'<div class="lvbox" style="border-color:'+bc+'"><span class="lvl1" style="color:'+col+'">'+lb.l1+'</span>'+(lb.l2?'<span class="lvl2">'+lb.l2+'</span>':"")+"</div>";
     }
     if(mode==="gear"){
-      const curBox=lvHtml(curG,cur,rc,rc||"#334155");
-      const tgtBox=lvHtml(tgtG,tgt,trc,trc);
-      const opts=gOpts(cur);
-      html+=`<div class="pcard">
-        ${dot}
-        <div class="icard" style="border-color:${rc};background:${rc}18">
-          <span class="iname">${p.label}</span>
-          <span class="itroop" style="color:${tc}">${p.troop}兵</span>
-        </div>
-        <div class="cbot">
-          <div class="cblock">
-            <div class="lvhdr">現在 (tap選択)</div>
-            <div style="position:relative">${curBox}<select class="hsel" onchange="setCur('${p.id}',this.value)">${opts}</select></div>
-            <button class="tbtn" oncontextmenu="return false"
-              onpointerdown="event.preventDefault();startRep('setCur','${p.id}',1)"
-              onpointerup="stopRep()" onpointerleave="stopRep()"
-              onclick="event.preventDefault();setCur('${p.id}',${cur+1})">▲</button>
-            <button class="tbtn" oncontextmenu="return false"
-              onpointerdown="event.preventDefault();startRep('setCur','${p.id}',-1)"
-              onpointerup="stopRep()" onpointerleave="stopRep()"
-              onclick="event.preventDefault();setCur('${p.id}',${cur-1})">▼</button>
-          </div>
-          <div class="arrsep">→</div>
-          <div class="tblock">
-            <div class="lvhdr">目標</div>
-            ${tgtBox}
-            <button class="tbtn" oncontextmenu="return false"
-              onpointerdown="event.preventDefault();startRep('setTgt','${p.id}',1)"
-              onpointerup="stopRep()" onpointerleave="stopRep()"
-              onclick="event.preventDefault();setTgt('${p.id}',${tgt+1})">▲</button>
-            <button class="tbtn" oncontextmenu="return false"
-              onpointerdown="event.preventDefault();startRep('setTgt','${p.id}',-1)"
-              onpointerup="stopRep()" onpointerleave="stopRep()"
-              onclick="event.preventDefault();setTgt('${p.id}',${tgt-1})">▼</button>
-          </div>
-        </div>
-      </div>`;
-    } else {
-      const pid=p.id;
-      const cls=jCur[pid], tls=jTgt[pid];
-      function gemBtn(fn,sid,sl,dir,lbl,h){
-        return '<button class="tbtn" style="font-size:11px;height:'+h+'px;flex:1" oncontextmenu="return false"'
-          +' data-fn="'+fn+'" data-id="'+sid+'" data-sl="'+sl+'" data-dir="'+dir+'"'
-          +' onpointerdown="event.preventDefault();_gRep(this)" onpointerup="stopRep()" onpointerleave="stopRep()"'
-          +' onclick="event.preventDefault();_gTap(this)">'+lbl+'</button>';
-      }
+      html+=`<div class="pcard">${dot}<div class="icard" style="border-color:${rc};background:${rc}18"><span class="iname">${p.label}</span><span class="itroop" style="color:${tc}">${p.troop}兵</span></div><div class="cbot"><div class="cblock"><div class="lvhdr">現在 (tap選択)</div><div style="position:relative">${lvHtml(curG,cur,rc,rc||"#334155")}<select class="hsel" onchange="setCur('${p.id}',this.value)">${gOpts(cur)}</select></div><button class="tbtn" oncontextmenu="return false" onpointerdown="event.preventDefault();startRep('setCur','${p.id}',1)" onpointerup="stopRep()" onpointerleave="stopRep()" onclick="event.preventDefault();setCur('${p.id}',${cur+1})">▲</button><button class="tbtn" oncontextmenu="return false" onpointerdown="event.preventDefault();startRep('setCur','${p.id}',-1)" onpointerup="stopRep()" onpointerleave="stopRep()" onclick="event.preventDefault();setCur('${p.id}',${cur-1})">▼</button></div><div class="arrsep">→</div><div class="tblock"><div class="lvhdr">目標</div>${lvHtml(tgtG,tgt,trc,trc)}<button class="tbtn" oncontextmenu="return false" onpointerdown="event.preventDefault();startRep('setTgt','${p.id}',1)" onpointerup="stopRep()" onpointerleave="stopRep()" onclick="event.preventDefault();setTgt('${p.id}',${tgt+1})">▲</button><button class="tbtn" oncontextmenu="return false" onpointerdown="event.preventDefault();startRep('setTgt','${p.id}',-1)" onpointerup="stopRep()" onpointerleave="stopRep()" onclick="event.preventDefault();setTgt('${p.id}',${tgt-1})">▼</button></div></div></div>`;
+    }else{
+      const pid=p.id,cls=jCur[pid],tls=jTgt[pid];
+      function gemBtn(fn,sid,sl,dir,lbl){return'<button class="tbtn" style="font-size:11px;height:20px;flex:1" oncontextmenu="return false" data-fn="'+fn+'" data-id="'+sid+'" data-sl="'+sl+'" data-dir="'+dir+'" onpointerdown="event.preventDefault();_gRep(this)" onpointerup="stopRep()" onpointerleave="stopRep()" onclick="event.preventDefault();_gTap(this)">'+lbl+'</button>';}
       let lv_row='<div style="display:flex;align-items:center;gap:2px">';
-      for(let sl=0;sl<3;sl++){
-        const cl=cls[sl],cbc=cl>0?tc:"#1e3a5c";
-        lv_row+='<div class="lvbox" style="border-color:'+cbc+';min-height:24px;padding:1px 3px;flex:1">'
-          +'<span style="font-size:9px;font-weight:700;color:'+(cl>0?tc:"#475569")+';line-height:1">'+(cl>0?"Lv":"—")+'</span>'
-          +(cl>0?'<span style="font-size:9px;font-weight:700;color:#e2e8f0;line-height:1">'+cl+'</span>':"")
-          +'</div>';
-      }
+      for(let sl=0;sl<3;sl++){const cl=cls[sl],cbc=cl>0?tc:"#1e3a5c";lv_row+='<div class="lvbox" style="border-color:'+cbc+';min-height:24px;padding:1px 3px;flex:1"><span style="font-size:9px;font-weight:700;color:'+(cl>0?tc:"#475569")+';line-height:1">'+(cl>0?"Lv":"—")+'</span>'+(cl>0?'<span style="font-size:9px;font-weight:700;color:#e2e8f0;line-height:1">'+cl+'</span>':"")+"</div>";}
       lv_row+='<span style="color:#334155;font-size:10px;flex-shrink:0;padding:0 2px">→</span>';
-      for(let sl=0;sl<3;sl++){
-        const tl=tls[sl],tbc=tl>cls[sl]?tc:"#1e3a5c";
-        lv_row+='<div class="lvbox" style="border-color:'+tbc+';min-height:24px;padding:1px 3px;flex:1">'
-          +'<span style="font-size:9px;font-weight:700;color:'+(tl>0?tc:"#475569")+';line-height:1">'+(tl>0?"Lv":"—")+'</span>'
-          +(tl>0?'<span style="font-size:9px;font-weight:700;color:#e2e8f0;line-height:1">'+tl+'</span>':"")
-          +'</div>';
-      }
+      for(let sl=0;sl<3;sl++){const tl=tls[sl],tbc=tl>cls[sl]?tc:"#1e3a5c";lv_row+='<div class="lvbox" style="border-color:'+tbc+';min-height:24px;padding:1px 3px;flex:1"><span style="font-size:9px;font-weight:700;color:'+(tl>0?tc:"#475569")+';line-height:1">'+(tl>0?"Lv":"—")+'</span>'+(tl>0?'<span style="font-size:9px;font-weight:700;color:#e2e8f0;line-height:1">'+tl+'</span>':"")+"</div>";}
       lv_row+='</div>';
       let up_row='<div style="display:flex;gap:2px">';
-      for(let sl=0;sl<3;sl++) up_row+=gemBtn("setGemCur",pid,sl,1,"▲",20);
+      for(let sl=0;sl<3;sl++)up_row+=gemBtn("setGemCur",pid,sl,1,"▲");
       up_row+='<span style="width:14px;flex-shrink:0"></span>';
-      for(let sl=0;sl<3;sl++) up_row+=gemBtn("setGemTgt",pid,sl,1,"▲",20);
+      for(let sl=0;sl<3;sl++)up_row+=gemBtn("setGemTgt",pid,sl,1,"▲");
       up_row+='</div>';
       let dn_row='<div style="display:flex;gap:2px">';
-      for(let sl=0;sl<3;sl++) dn_row+=gemBtn("setGemCur",pid,sl,-1,"▼",20);
+      for(let sl=0;sl<3;sl++)dn_row+=gemBtn("setGemCur",pid,sl,-1,"▼");
       dn_row+='<span style="width:14px;flex-shrink:0"></span>';
-      for(let sl=0;sl<3;sl++) dn_row+=gemBtn("setGemTgt",pid,sl,-1,"▼",20);
+      for(let sl=0;sl<3;sl++)dn_row+=gemBtn("setGemTgt",pid,sl,-1,"▼");
       dn_row+='</div>';
-      html+='<div class="pcard">'+dot
-        +'<div class="icard" style="border-color:'+tc+'44;background:'+tc+'11">'
-        +'<span class="iname">'+p.label+'</span>'
-        +'<span class="itroop" style="color:'+tc+'">'+p.troop+'兵</span></div>'
-        +lv_row+up_row+dn_row+'</div>';
+      html+='<div class="pcard">'+dot+'<div class="icard" style="border-color:'+tc+'44;background:'+tc+'11"><span class="iname">'+p.label+'</span><span class="itroop" style="color:'+tc+'">'+p.troop+'兵</span></div>'+lv_row+up_row+dn_row+'</div>';
     }
   });
   el.innerHTML=html;
 }
-function _gTap(btn){
-  const fn=btn.dataset.fn,id=btn.dataset.id,sl=+btn.dataset.sl,dir=+btn.dataset.dir;
-  if(fn==="setGemCur") setGemCur(id,sl,jCur[id][sl]+dir);
-  else setGemTgt(id,sl,jTgt[id][sl]+dir);
-}
-function _gRep(btn){
-  const fn=btn.dataset.fn,id=btn.dataset.id,sl=+btn.dataset.sl,dir=+btn.dataset.dir;
-  startRepGem(fn,id,sl,dir);
-}
+function _gTap(btn){const fn=btn.dataset.fn,id=btn.dataset.id,sl=+btn.dataset.sl,dir=+btn.dataset.dir;if(fn==="setGemCur")setGemCur(id,sl,jCur[id][sl]+dir);else setGemTgt(id,sl,jTgt[id][sl]+dir);}
+function _gRep(btn){const fn=btn.dataset.fn,id=btn.dataset.id,sl=+btn.dataset.sl,dir=+btn.dataset.dir;startRepGem(fn,id,sl,dir);}
 let _rt=null,_ri=null;
-function startRep(fn,id,dir){
-  _rt=setTimeout(()=>{
-    _ri=setInterval(()=>{
-      if(fn==="setCur") setCur(id,gCur[id]+dir);
-      else setTgt(id,gTgt[id]+dir);
-    },120);
-  },400);
-}
-function startRepGem(fn,id,sl,dir){
-  _rt=setTimeout(()=>{
-    _ri=setInterval(()=>{
-      if(fn==="setGemCur") setGemCur(id,sl,jCur[id][sl]+dir);
-      else setGemTgt(id,sl,jTgt[id][sl]+dir);
-    },120);
-  },400);
-}
+function startRep(fn,id,dir){_rt=setTimeout(()=>{_ri=setInterval(()=>{if(fn==="setCur")setCur(id,gCur[id]+dir);else setTgt(id,gTgt[id]+dir);},120);},400);}
+function startRepGem(fn,id,sl,dir){_rt=setTimeout(()=>{_ri=setInterval(()=>{if(fn==="setGemCur")setGemCur(id,sl,jCur[id][sl]+dir);else setGemTgt(id,sl,jTgt[id][sl]+dir);},120);},400);}
 function stopRep(){clearTimeout(_rt);clearInterval(_ri);_rt=null;_ri=null;}
 function openSettings(){
+  _bulkJ={};
+  PARTS.forEach(p=>{_bulkJ[p.id]=[...jCur[p.id]];});
   document.getElementById("modal-settings").style.display="flex";
   renderBulkForm();
 }
 function closeSettings(){document.getElementById("modal-settings").style.display="none";}
 function renderBulkForm(){
   const el=document.getElementById("bulk-form");
-  const sel=(id,val,opts)=>{
-    let s='<select id="'+id+'" style="background:#0d1b2a;color:#e2e8f0;border:1px solid #334155;border-radius:6px;padding:3px 4px;font-size:12px;width:100%">';
-    opts.forEach(o=>{s+='<option value="'+o.v+'"'+(o.v===val?' selected':'')+'>'+o.l+'</option>';});
-    s+='</select>';
-    return s;
-  };
+  const sel=(id,val,opts)=>{let s='<select id="'+id+'" style="background:#0d1b2a;color:#e2e8f0;border:1px solid #334155;border-radius:6px;padding:3px 4px;font-size:12px;width:100%">';opts.forEach(o=>{s+='<option value="'+o.v+'"'+(o.v===val?' selected':'')+'>'+o.l+'</option>';});return s+'</select>';};
   const numIn=(id,val,min,max)=>'<input type="number" id="'+id+'" value="'+val+'" min="'+min+'" max="'+max+'" style="background:#0d1b2a;color:#e2e8f0;border:1px solid #334155;border-radius:6px;padding:3px 6px;font-size:12px;width:100%;text-align:right">';
   const row=(label,input)=>'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:12px;color:#94a3b8;min-width:72px;flex-shrink:0">'+label+'</span><div style="flex:1">'+input+'</div></div>';
-  const row3=(label,in0,in1,in2)=>'<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px"><span style="font-size:12px;color:#94a3b8;min-width:72px;flex-shrink:0">'+label+'</span><div style="flex:1;display:flex;gap:4px">'+in0+in1+in2+'</div></div>';
-  const gearOpts=[{v:0,l:"なし"},...GL.slice(1).map((g,i)=>{const lb=glLabel(g);return {v:i+1,l:lb.l2?lb.l1+" "+lb.l2:lb.l1};})];
+  const gearOpts=[{v:0,l:"なし"},...GL.slice(1).map((g,i)=>{const lb=glLabel(g);return{v:i+1,l:lb.l2?lb.l1+" "+lb.l2:lb.l1};})];
   let html='<p style="font-size:11px;color:#64748b;margin-bottom:8px;">⚔️ 装備 現在レベル</p>';
-  PARTS.forEach(p=>{ html+=row(p.label,sel("bulk-g-"+p.id,gCur[p.id],gearOpts)); });
-  html+='<p style="font-size:11px;color:#64748b;margin:12px 0 8px;">💎 宝石 現在レベル（スロット1/2/3）</p>';
+  PARTS.forEach(p=>{html+=row(p.label,sel("bulk-g-"+p.id,gCur[p.id],gearOpts));});
+  html+='<p style="font-size:11px;color:#64748b;margin:12px 0 8px;">💎 宝石 現在レベル（スワイプ or ▲▼）</p>';
   PARTS.forEach(p=>{
-    html+=row3(p.label,
-      numIn("bulk-j-"+p.id+"-0",jCur[p.id][0],0,JL_MAX),
-      numIn("bulk-j-"+p.id+"-1",jCur[p.id][1],0,JL_MAX),
-      numIn("bulk-j-"+p.id+"-2",jCur[p.id][2],0,JL_MAX)
-    );
+    const tc=TC[p.troop];
+    html+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px"><span style="font-size:12px;color:#94a3b8;min-width:72px;flex-shrink:0">'+p.label+'</span><div style="flex:1;display:flex;gap:4px">';
+    for(let sl=0;sl<3;sl++){
+      const v=_bulkJ[p.id][sl],bc=v>0?tc:'#334155';
+      html+='<div style="flex:1;display:flex;flex-direction:column;align-items:stretch;gap:1px">';
+      html+='<button style="background:#1e3a5c;color:#60a5fa;border:none;border-radius:4px;font-size:11px;padding:2px 0;cursor:pointer;font-weight:700" onclick="setBulkJ(\''+p.id+'\','+sl+',(_bulkJ[\''+p.id+'\']['+sl+']+1))">▲</button>';
+      html+='<div id="bjbox-'+p.id+'-'+sl+'" data-id="'+p.id+'" data-sl="'+sl+'" style="text-align:center;border:1.5px solid '+bc+';border-radius:5px;background:#0d1b2a;padding:3px 0;font-size:12px;font-weight:700;color:'+(v>0?'#e2e8f0':'#475569')+';touch-action:none;cursor:ns-resize;" ontouchstart="_bSwipeStart(event,this)" ontouchmove="_bSwipeMove(event,this)" ontouchend="_bSwY=null">'+(v>0?v:'—')+'</div>';
+      html+='<button style="background:#1e3a5c;color:#60a5fa;border:none;border-radius:4px;font-size:11px;padding:2px 0;cursor:pointer;font-weight:700" onclick="setBulkJ(\''+p.id+'\','+sl+',(_bulkJ[\''+p.id+'\']['+sl+']-1))">▼</button>';
+      html+='</div>';
+    }
+    html+='</div></div>';
   });
   html+='<p style="font-size:11px;color:#64748b;margin:12px 0 8px;">🎒 所持アイテム数</p>';
-  const matFields=[
-    {k:"alloy",l:"強靱な合金"},{k:"polish",l:"研磨剤"},{k:"plan",l:"設計図面"},
-    {k:"gemPlan",l:"宝石図面"},{k:"gemHb",l:"宝石HB"},{k:"gemSecret",l:"宝石秘典"},
-  ];
-  matFields.forEach(f=>{ html+=row(f.l,numIn("bulk-inv-"+f.k,inv[f.k],0,9999999)); });
+  [{k:"alloy",l:"強靱な合金"},{k:"polish",l:"研磨剤"},{k:"plan",l:"設計図面"},{k:"gemPlan",l:"宝石図面"},{k:"gemHb",l:"宝石HB"},{k:"gemSecret",l:"宝石秘典"}]
+    .forEach(f=>{html+=row(f.l,numIn("bulk-inv-"+f.k,inv[f.k],0,9999999));});
   el.innerHTML=html;
 }
 function applyBulk(){
-  PARTS.forEach(p=>{
-    const el=document.getElementById("bulk-g-"+p.id);
-    if(el){const nv=Math.max(0,Math.min(GL_MAX,+el.value));gCur[p.id]=nv;if(gTgt[p.id]<nv)gTgt[p.id]=nv;}
-  });
-  PARTS.forEach(p=>{
-    for(let sl=0;sl<3;sl++){
-      const el=document.getElementById("bulk-j-"+p.id+"-"+sl);
-      if(el){const nv=Math.max(0,Math.min(JL_MAX,+el.value));jCur[p.id][sl]=nv;if(jTgt[p.id][sl]<nv)jTgt[p.id][sl]=nv;}
-    }
-  });
-  ["alloy","polish","plan","gemPlan","gemHb","gemSecret"].forEach(k=>{
-    const el=document.getElementById("bulk-inv-"+k);
-    if(el) inv[k]=Math.max(0,+el.value)||0;
-  });
-  saveBk(); render(); closeSettings();
+  PARTS.forEach(p=>{const el=document.getElementById("bulk-g-"+p.id);if(el){const nv=Math.max(0,Math.min(GL_MAX,+el.value));gCur[p.id]=nv;if(gTgt[p.id]<nv)gTgt[p.id]=nv;}});
+  if(_bulkJ){PARTS.forEach(p=>{for(let sl=0;sl<3;sl++){const nv=_bulkJ[p.id][sl];jCur[p.id][sl]=nv;if(jTgt[p.id][sl]<nv)jTgt[p.id][sl]=nv;}});}
+  ["alloy","polish","plan","gemPlan","gemHb","gemSecret"].forEach(k=>{const el=document.getElementById("bulk-inv-"+k);if(el)inv[k]=Math.max(0,+el.value)||0;});
+  saveBk();render();closeSettings();
 }
 function openHelp(){document.getElementById("modal-help").style.display="flex";}
 function closeHelp(){document.getElementById("modal-help").style.display="none";}
+function setBulkJ(id,sl,v){
+  if(!_bulkJ)return;
+  _bulkJ[id][sl]=Math.max(0,Math.min(JL_MAX,+v||0));
+  const val=_bulkJ[id][sl];
+  const box=document.getElementById('bjbox-'+id+'-'+sl);
+  if(!box)return;
+  box.textContent=val>0?val:'—';
+  box.style.color=val>0?'#e2e8f0':'#475569';
+  box.style.borderColor=val>0?TC[PARTS.find(p=>p.id===id).troop]:'#334155';
+}
+let _bSwY=null,_bSwV=null;
+function _bSwipeStart(e,el){_bSwY=e.touches[0].clientY;_bSwV=_bulkJ[el.dataset.id][+el.dataset.sl];e.preventDefault();}
+function _bSwipeMove(e,el){if(_bSwY===null)return;const delta=Math.round((_bSwY-e.touches[0].clientY)/15);setBulkJ(el.dataset.id,+el.dataset.sl,_bSwV+delta);e.preventDefault();}
 function checkPw(){
   if(document.getElementById('pw-input').value==='inu'){
     localStorage.setItem('wos_auth','1');
     document.getElementById('pw-gate').style.display='none';
-  } else {
+  }else{
     document.getElementById('pw-err').style.display='block';
     document.getElementById('pw-input').value='';
     document.getElementById('pw-input').focus();
@@ -677,7 +478,7 @@ function checkPw(){
 }
 render();
 if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>{ navigator.serviceWorker.register('./sw.js'); });
+  window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js');});
 }
 </script>
 
