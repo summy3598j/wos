@@ -1,0 +1,11 @@
+{
+  "name": "WOS 装備計算機",
+  "short_name": "WOS計算機",
+  "description": "Whiteout Survival 装備強化計算機",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d1b2a",
+  "theme_color": "#1a3a5c"
+}
