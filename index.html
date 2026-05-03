@@ -80,7 +80,6 @@ input{outline:none;}
 <div class="pgrid" id="pgrid"></div>
 
 <!-- 設定モーダル -->
-
 <div id="modal-settings" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:100;align-items:flex-end;justify-content:center;">
   <div style="background:#1e293b;width:100%;max-width:480px;border-radius:18px 18px 0 0;padding:20px 16px 36px;max-height:90vh;overflow-y:auto;">
     <div style="display:flex;align-items:center;margin-bottom:16px;">
@@ -98,7 +97,6 @@ input{outline:none;}
 </div>
 
 <!-- ヘルプモーダル -->
-
 <div id="modal-help" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:100;align-items:flex-start;justify-content:center;overflow-y:auto;">
   <div style="background:#1e293b;width:100%;max-width:480px;border-radius:0 0 18px 18px;padding:20px 16px 36px;margin-top:0;">
     <div style="display:flex;align-items:center;margin-bottom:16px;">
@@ -202,6 +200,13 @@ function glLabel1(g){
 function defLvs(){return {cap:0,watch:0,coat:0,pants:0,ring:0,staff:0};}
 function defGemLvs(){return {cap:[0,0,0],watch:[0,0,0],coat:[0,0,0],pants:[0,0,0],ring:[0,0,0],staff:[0,0,0]};}
 function defInv(){return {alloy:0,polish:0,plan:0,gemPlan:0,gemHb:0,gemSecret:0};}
+// 旧形式（数値フラット）→新形式（配列）へ移行
+function migrateGemLvs(d){
+  if(!d) return defGemLvs();
+  const r=defGemLvs();
+  PARTS.forEach(p=>{if(Array.isArray(d[p.id]))r[p.id]=d[p.id].slice(0,3).map(v=>Math.max(0,Math.min(JL_MAX,+v||0)));});
+  return r;
+}
 function saveBk(){try{localStorage.setItem("wos_bk",JSON.stringify({mode,gCur,gTgt,jCur,jTgt,inv}));}catch{}}
 function loadBk(){try{const s=localStorage.getItem("wos_bk");return s?JSON.parse(s):null;}catch{return null;}}
 function saveData(){
@@ -214,7 +219,7 @@ function loadData(){
     if(!s){alert("保存データがありません");return;}
     const d=JSON.parse(s);
     mode=d.mode||"gear"; gCur=d.gCur||defLvs(); gTgt=d.gTgt||defLvs();
-    jCur=d.jCur||defGemLvs(); jTgt=d.jTgt||defGemLvs(); inv=d.inv||defInv();
+    jCur=migrateGemLvs(d.jCur); jTgt=migrateGemLvs(d.jTgt); inv=d.inv||defInv();
     saveBk(); render(); closeSettings(); alert("復元しました");
   }catch{alert("復元に失敗しました");}
 }
@@ -222,8 +227,8 @@ const _auto=loadBk();
 let mode=_auto?.mode||"gear";
 let gCur=_auto?.gCur||defLvs();
 let gTgt=_auto?.gTgt||defLvs();
-let jCur=_auto?.jCur||defGemLvs();
-let jTgt=_auto?.jTgt||defGemLvs();
+let jCur=migrateGemLvs(_auto?.jCur);
+let jTgt=migrateGemLvs(_auto?.jTgt);
 let inv=_auto?.inv||defInv();
 let editKey=null;
 function curOf(id){return mode==="gear"?gCur[id]:jCur[id];}
@@ -351,7 +356,6 @@ function renderParts(){
   const el=document.getElementById("pgrid");const tr=totalReq();
   const _ts=mode==="gear"?(tr.alloy>inv.alloy||tr.polish>inv.polish||tr.plan>inv.plan):(tr.plan>inv.gemPlan||tr.hb>inv.gemHb||tr.secret>inv.gemSecret);
   function gOpts(sel){let r='<option value="0"'+(sel===0?' selected':'')+'>なし</option>';GL.slice(1).forEach((g,i)=>{const idx=i+1;const lb=glLabel(g);r+='<option value="'+idx+'"'+(sel===idx?' selected':'')+'>'+(lb.l2?lb.l1+" "+lb.l2:lb.l1)+'</option>';});return r;}
-  function jOpts(sel){let r='<option value="0"'+(sel===0?' selected':'')+'>なし</option>';JL.slice(1).forEach((j,i)=>{const idx=i+1;r+='<option value="'+idx+'"'+(sel===idx?' selected':'')+'>Lv'+idx+'</option>';});return r;}
   let html="";
   PARTS.forEach(p=>{
     const cur=curOf(p.id),tgt=tgtOf(p.id),tc=TC[p.troop];
