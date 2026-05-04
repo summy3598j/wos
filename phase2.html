@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>スクショ解析 Phase 2 — テンプレートマッチ</title>
+<style>
+:root {
+  --bg:#0d1117; --card:#161b22; --border:#30363d;
+  --accent:#58a6ff; --green:#3fb950; --red:#f78166;
+  --yellow:#d29922; --text:#e6edf3; --muted:#8b949e;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,sans-serif;font-size:14px;padding:10px;min-height:100vh}
+h1{font-size:17px;font-weight:700;color:var(--accent);text-align:center;margin-bottom:4px}
+.sub{text-align:center;font-size:11px;color:var(--muted);margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px}
+.card-title{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px}
+
+.upload-area{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:8px;border:2px dashed var(--border);border-radius:8px;padding:24px 12px;cursor:pointer}
+.upload-area:active{border-color:var(--accent)}
+.upload-area input{display:none}
+
+.tabs{display:flex;gap:6px;margin-bottom:12px}
+.tab{flex:1;padding:8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;
+  color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;text-align:center}
+.tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+.cvs-outer{position:relative;overflow:hidden;border-radius:6px;background:#000}
+#main-cvs{display:block;width:100%;height:auto;touch-action:none}
+
+.ctrl{display:flex;align-items:center;gap:8px;margin-top:8px}
+.sl-lbl{font-size:11px;color:var(--muted);white-space:nowrap}
+input[type=range]{flex:1;accent-color:var(--accent)}
+.sl-val{font-size:11px;color:var(--text);min-width:28px}
+
+button{background:var(--accent);color:#fff;border:none;border-radius:6px;
+  padding:8px 12px;font-size:12px;font-weight:600;cursor:pointer}
+button:active{opacity:.8}
+button.sec{background:var(--card);color:var(--text);border:1px solid var(--border)}
+button.danger{background:#922b21;color:#fff;border:none}
+
+.zoom-wrap{display:flex;justify-content:center;align-items:center;background:#000;
+  border-radius:6px;padding:8px;min-height:80px;margin:10px 0}
+#zoom-cvs{image-rendering:pixelated;display:block}
+
+.inp-row{display:flex;gap:6px}
+.inp-row input{flex:1;background:var(--bg);color:var(--text);border:1px solid var(--border);
+  border-radius:6px;padding:9px;font-size:16px;text-align:center}
+.btn-row{display:flex;gap:6px;margin-top:8px}
+.btn-row button{flex:1}
+
+.tpl-grid{display:flex;flex-wrap:wrap;gap:8px}
+.tpl-item{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px;
+  display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
+.tpl-item:active{border-color:var(--red)}
+.tpl-label{font-size:15px;font-weight:700;color:var(--yellow)}
+.tpl-count{font-size:10px;color:var(--muted)}
+
+.res-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;
+  border-bottom:1px solid var(--border);font-size:13px}
+.res-row:last-child{border-bottom:none}
+.res-num{font-weight:700;font-size:20px;color:var(--yellow)}
+.res-pos{font-size:11px;color:var(--muted)}
+.res-conf{font-size:11px;font-weight:600}
+.conf-hi{color:var(--green)}.conf-mid{color:var(--accent)}.conf-lo{color:var(--red)}
+
+.empty{color:var(--muted);text-align:center;font-size:12px;padding:14px}
+.badge{display:inline-block;background:var(--accent);color:#fff;border-radius:99px;
+  font-size:10px;font-weight:700;padding:1px 6px;margin-left:4px}
+.status{font-size:11px;color:var(--muted);margin-top:6px;text-align:center;min-height:16px}
+.info{font-size:12px;color:var(--muted);line-height:1.9}
+.info b{color:var(--text)}
+.sep{border:none;border-top:1px solid var(--border);margin:10px 0}
+</style>
+</head>
+<body>
+
+<h1>📸 スクショ解析 — テンプレートマッチ</h1>
+<p class="sub">Phase 2 — 数字テンプレート学習・認識（外部ライブラリ不使用）</p>
+
+<!-- ── Upload ── -->
+<div class="card">
+  <div class="card-title">スクショを選択</div>
+  <label class="upload-area">
+    <span style="font-size:36px">🖼️</span>
+    <span style="color:var(--muted);font-size:13px">タップしてスクショを選択<br><span style="font-size:11px">バッグ画面・領主ファイル など</span></span>
+    <input type="file" id="file-in" accept="image/*">
+  </label>
+</div>
+
+<!-- ── Main Work Area ── -->
+<div class="card" id="work-card" hidden>
+  <div class="tabs">
+    <div class="tab active" id="tab-cal" onclick="setMode('cal')">🎯 キャリブレーション</div>
+    <div class="tab"        id="tab-rec" onclick="setMode('rec')">🔍 認識</div>
+  </div>
+
+  <div class="cvs-outer">
+    <canvas id="main-cvs"></canvas>
+  </div>
+
+  <div class="ctrl">
+    <span class="sl-lbl">しきい値</span>
+    <input type="range" id="thresh-sl" min="60" max="240" value="160">
+    <span class="sl-val" id="thresh-val">160</span>
+    <button class="sec" onclick="toggleBin()" id="bin-btn">2値</button>
+    <button class="sec" onclick="runDetect()">再検出</button>
+  </div>
+  <p class="status" id="status-msg"></p>
+
+  <!-- Calibration panel -->
+  <div id="cal-panel">
+    <hr class="sep">
+    <p style="font-size:12px;color:var(--muted);margin-bottom:8px">
+      青い枠をタップ → ラベル（数字）を入力 → 保存<br>
+      0〜9 を2〜3枚ずつ保存すると精度が上がります
+    </p>
+    <div class="zoom-wrap">
+      <canvas id="zoom-cvs" width="72" height="96"></canvas>
+    </div>
+    <div id="sel-info" style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:6px"></div>
+    <div class="inp-row">
+      <input type="text" id="label-in" placeholder="ラベル（例: 0〜9）" maxlength="4" inputmode="numeric">
+    </div>
+    <div class="btn-row">
+      <button class="sec" onclick="navDigit(-1)">◀ 前</button>
+      <button onclick="saveLabel()">✓ 保存</button>
+      <button class="sec" onclick="navDigit(1)">次 ▶</button>
+    </div>
+  </div>
+
+  <!-- Recognition panel -->
+  <div id="rec-panel" style="display:none">
+    <hr class="sep">
+    <div class="btn-row">
+      <button onclick="recognizeAll()">🔍 全て認識</button>
+      <button class="sec" onclick="copyResults()">📋 コピー</button>
+    </div>
+    <div id="rec-results" style="margin-top:10px">
+      <div class="empty">「全て認識」を押してください</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Templates Gallery ── -->
+<div class="card">
+  <div class="card-title">保存済みテンプレート<span class="badge" id="tpl-badge">0</span></div>
+  <div class="tpl-grid" id="tpl-grid"><div class="empty">テンプレートがありません</div></div>
+  <div style="display:flex;gap:6px;margin-top:10px">
+    <button class="sec" onclick="exportTpl()" style="flex:1">エクスポート</button>
+    <button class="sec" onclick="document.getElementById('imp-in').click()" style="flex:1">インポート</button>
+    <button class="danger" onclick="clearAllTpl()" style="flex:1">全削除</button>
+  </div>
+</div>
+<input type="file" id="imp-in" accept=".json" style="display:none">
+
+<!-- ── How-to ── -->
+<div class="card">
+  <div class="card-title">使い方</div>
+  <div class="info">
+    <b>① キャリブレーション（初回のみ）</b><br>
+    スクショを読み込む → 青い枠をタップ → 数字を入力して「保存」<br>
+    各数字（0〜9）を複数枚保存するほど精度向上<br>
+    <br>
+    <b>② 認識</b><br>
+    「認識」タブ → 「全て認識」で自動読み取り<br>
+    <br>
+    <b>しきい値：</b>白い文字が検出されない場合は下げる<br>
+    <b>2値ボタン：</b>二値化結果を確認して調整<br>
+    <b>エクスポート：</b>テンプレートを .json で保存・共有可能
+  </div>
+</div>
+
+<script>
+// ──────────────────────────────────────────
+//  Constants
+// ──────────────────────────────────────────
+const TPLW = 24, TPLH = 32;
+const STORE = 'wos_tpl_v2';
+const MAX_DIM = 1200;
+
+// ──────────────────────────────────────────
+//  State
+// ──────────────────────────────────────────
+let imgCvs = null, imgData = null, imgW = 0, imgH = 0;
+let binArr = null, thresh = 160, showBin = false;
+let digits = [], selIdx = -1;
+let templates = {}, mode = 'cal';
+
+// ──────────────────────────────────────────
+//  DOM refs
+// ──────────────────────────────────────────
+const mainCvs  = document.getElementById('main-cvs');
+const mCtx     = mainCvs.getContext('2d');
+const zoomCvs  = document.getElementById('zoom-cvs');
+const zCtx     = zoomCvs.getContext('2d');
+const threshSl = document.getElementById('thresh-sl');
+const threshValEl = document.getElementById('thresh-val');
+const statusEl = document.getElementById('status-msg');
+
+// ──────────────────────────────────────────
+//  Boot
+// ──────────────────────────────────────────
+loadTpl();
+renderTpl();
+
+document.getElementById('file-in').onchange = e => { if (e.target.files[0]) loadImg(e.target.files[0]); };
+threshSl.oninput = () => { thresh = +threshSl.value; threshValEl.textContent = thresh; if (imgCvs) runDetect(); };
+document.getElementById('label-in').onkeydown = e => { if (e.key === 'Enter') saveLabel(); };
+document.getElementById('imp-in').onchange = e => { if (e.target.files[0]) importTpl(e.target.files[0]); };
+
+mainCvs.addEventListener('click', e => {
+  const r = mainCvs.getBoundingClientRect();
+  hitDigit((e.clientX - r.left) / mainCvs.getBoundingClientRect().width * imgW,
+           (e.clientY - r.top)  / mainCvs.getBoundingClientRect().height * imgH);
+});
+mainCvs.addEventListener('touchend', e => {
+  e.preventDefault();
+  const r = mainCvs.getBoundingClientRect();
+  const t = e.changedTouches[0];
+  const scaleX = imgW / r.width;
+  const scaleY = imgH / r.height;
+  hitDigit((t.clientX - r.left) * scaleX, (t.clientY - r.top) * scaleY);
+}, {passive: false});
+
+// ──────────────────────────────────────────
+//  Image load
+// ──────────────────────────────────────────
+function loadImg(file) {
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => {
+    URL.revokeObjectURL(url);
+    let w = img.naturalWidth, h = img.naturalHeight;
+    if (Math.max(w, h) > MAX_DIM) { const s = MAX_DIM / Math.max(w, h); w = (w*s)|0; h = (h*s)|0; }
+    imgW = w; imgH = h;
+    imgCvs = document.createElement('canvas');
+    imgCvs.width = w; imgCvs.height = h;
+    imgCvs.getContext('2d').drawImage(img, 0, 0, w, h);
+    imgData = imgCvs.getContext('2d').getImageData(0, 0, w, h);
+    document.getElementById('work-card').hidden = false;
+    runDetect();
+  };
+  img.onerror = () => alert('画像の読み込みに失敗しました');
+  img.src = url;
+}
+
+// ──────────────────────────────────────────
+//  Binary threshold
+// ──────────────────────────────────────────
+function buildBinary() {
+  const {data} = imgData;
+  binArr = new Uint8Array(imgW * imgH);
+  for (let i = 0; i < imgW * imgH; i++) {
+    const g = 0.299*data[i*4] + 0.587*data[i*4+1] + 0.114*data[i*4+2];
+    binArr[i] = g > thresh ? 1 : 0;
+  }
+}
+
+// ──────────────────────────────────────────
+//  Detection pipeline
+// ──────────────────────────────────────────
+function runDetect() {
+  buildBinary();
+  const comps = findComponents();
+  digits = [];
+  for (const c of comps) digits.push(...segmentDigits(c));
+  selIdx = -1;
+  clearZoom();
+  render();
+  statusEl.textContent = digits.length + ' 個の文字領域を検出';
+}
+
+// Connected-component labeling (4-connectivity, DFS with typed stack)
+function findComponents() {
+  const W = imgW, H = imgH, bin = binArr;
+  const vis = new Uint8Array(W * H);
+  const stk = new Int32Array(W * H); // reusable DFS stack
+  const res = [];
+  const minH = Math.max(6, (H * 0.007)|0);
+  const maxH = (H * 0.09)|0;
+
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const s = y*W + x;
+      if (!bin[s] || vis[s]) continue;
+
+      let top = 0;
+      stk[top++] = s; vis[s] = 1;
+      let x0=x, y0=y, x1=x, y1=y, cnt=0;
+
+      while (top > 0) {
+        const c = stk[--top]; cnt++;
+        const cx = c%W, cy = (c/W)|0;
+        if (cx < x0) x0=cx; else if (cx > x1) x1=cx;
+        if (cy < y0) y0=cy; else if (cy > y1) y1=cy;
+        // 4-neighbors (bounds + wrap checked)
+        if (cx>0   && !vis[c-1] && bin[c-1]) { vis[c-1]=1; stk[top++]=c-1; }
+        if (cx<W-1 && !vis[c+1] && bin[c+1]) { vis[c+1]=1; stk[top++]=c+1; }
+        if (cy>0   && !vis[c-W] && bin[c-W]) { vis[c-W]=1; stk[top++]=c-W; }
+        if (cy<H-1 && !vis[c+W] && bin[c+W]) { vis[c+W]=1; stk[top++]=c+W; }
+      }
+
+      const bw = x1-x0+1, bh = y1-y0+1;
+      if (bh < minH || bh > maxH) continue;
+      if (cnt < bw*bh*0.12) continue;           // too sparse → noise
+      const asp = bw/bh;
+      if (asp < 0.1 || asp > 8) continue;       // extreme aspect → not a digit
+      res.push({x0, y0, x1, y1, w:bw, h:bh});
+    }
+  }
+  return res;
+}
+
+// Split wide components into individual digits using vertical projection
+function segmentDigits(c) {
+  const {x0, y0, x1, y1, w, h} = c;
+  if (w <= h * 1.3) return [c]; // single digit: aspect ≤ 1.3
+
+  const proj = new Int32Array(w);
+  for (let dx=0; dx<w; dx++)
+    for (let dy=0; dy<h; dy++)
+      proj[dx] += binArr[(y0+dy)*imgW + (x0+dx)];
+
+  const gapThr = Math.max(1, (h * 0.1)|0);
+  const segs = []; let start = -1;
+  for (let dx=0; dx<w; dx++) {
+    if (proj[dx] > gapThr) { if (start < 0) start = dx; }
+    else if (start >= 0) {
+      segs.push({x0:x0+start, y0, x1:x0+dx-1, y1, w:dx-start, h});
+      start = -1;
+    }
+  }
+  if (start >= 0) segs.push({x0:x0+start, y0, x1, y1, w:w-start, h});
+
+  const minSw = Math.max(3, (h*0.15)|0);
+  const valid = segs.filter(s => s.w >= minSw);
+  return valid.length > 1 ? valid : [c];
+}
+
+// ──────────────────────────────────────────
+//  Patch extraction & matching
+// ──────────────────────────────────────────
+function extractPatch(x0, y0, x1, y1) {
+  const {data} = imgData;
+  const srcW = x1-x0+1, srcH = y1-y0+1;
+  const patch = new Float32Array(TPLW * TPLH);
+  for (let dy=0; dy<TPLH; dy++) {
+    for (let dx=0; dx<TPLW; dx++) {
+      const sx = x0 + Math.min(((dx*srcW/TPLW)|0), srcW-1);
+      const sy = y0 + Math.min(((dy*srcH/TPLH)|0), srcH-1);
+      const i = (sy*imgW + sx)*4;
+      patch[dy*TPLW+dx] = (0.299*data[i] + 0.587*data[i+1] + 0.114*data[i+2]) / 255;
+    }
+  }
+  return patch;
+}
+
+function matchPatch(patch) {
+  const keys = Object.keys(templates);
+  if (!keys.length) return null;
+  let best = null, bestSSD = Infinity;
+  for (const k of keys) {
+    const t = templates[k].avg;
+    let ssd = 0;
+    for (let i=0; i<patch.length; i++) { const d=patch[i]-t[i]; ssd+=d*d; }
+    ssd /= patch.length; // normalize to [0,1]
+    if (ssd < bestSSD) { bestSSD = ssd; best = {label:k, score:ssd}; }
+  }
+  return best;
+}
+
+// ──────────────────────────────────────────
+//  Template CRUD
+// ──────────────────────────────────────────
+function loadTpl() {
+  try {
+    const raw = localStorage.getItem(STORE);
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    templates = {};
+    for (const [k,v] of Object.entries(saved))
+      templates[k] = {avg: new Float32Array(v.avg), count: v.count};
+  } catch(e) { templates = {}; }
+}
+
+function saveTplStorage() {
+  const out = {};
+  for (const [k,v] of Object.entries(templates)) out[k] = {avg: Array.from(v.avg), count: v.count};
+  localStorage.setItem(STORE, JSON.stringify(out));
+}
+
+function addTpl(label, patch) {
+  if (!templates[label]) {
+    templates[label] = {avg: new Float32Array(patch), count: 1};
+  } else {
+    const {avg, count: n} = templates[label];
+    for (let i=0; i<avg.length; i++) avg[i] = (avg[i]*n + patch[i]) / (n+1);
+    templates[label].count = n+1;
+  }
+  saveTplStorage();
+  renderTpl();
+}
+
+function deleteTpl(label) {
+  delete templates[label];
+  saveTplStorage();
+  renderTpl();
+}
+
+function clearAllTpl() {
+  if (!confirm('全テンプレートを削除しますか?')) return;
+  templates = {};
+  localStorage.removeItem(STORE);
+  renderTpl();
+}
+
+function exportTpl() {
+  const out = {};
+  for (const [k,v] of Object.entries(templates)) out[k] = {avg:Array.from(v.avg), count:v.count};
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(out)], {type:'application/json'}));
+  a.download = 'wos-digit-templates.json';
+  a.click();
+}
+
+function importTpl(file) {
+  const r = new FileReader();
+  r.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      for (const [k,v] of Object.entries(data))
+        templates[k] = {avg: new Float32Array(v.avg), count: v.count};
+      saveTplStorage();
+      renderTpl();
+      alert('インポート完了: ' + Object.keys(data).length + ' 種');
+    } catch(e) { alert('読み込みエラー'); }
+  };
+  r.readAsText(file);
+}
+
+// ──────────────────────────────────────────
+//  Template gallery rendering
+// ──────────────────────────────────────────
+function renderTpl() {
+  const keys = Object.keys(templates).sort((a,b) => (+a||Infinity)-(+b||Infinity) || a.localeCompare(b));
+  document.getElementById('tpl-badge').textContent = keys.length;
+  const grid = document.getElementById('tpl-grid');
+  grid.innerHTML = '';
+
+  if (!keys.length) {
+    grid.innerHTML = '<div class="empty">テンプレートがありません</div>';
+    return;
+  }
+
+  for (const k of keys) {
+    const {avg, count} = templates[k];
+    // Render template as mini canvas
+    const c = document.createElement('canvas');
+    c.width = TPLW; c.height = TPLH;
+    const ctx2 = c.getContext('2d');
+    const id = ctx2.createImageData(TPLW, TPLH);
+    for (let i=0; i<TPLW*TPLH; i++) {
+      const v = (avg[i]*255)|0;
+      id.data[i*4] = id.data[i*4+1] = id.data[i*4+2] = v;
+      id.data[i*4+3] = 255;
+    }
+    ctx2.putImageData(id, 0, 0);
+    c.style.width = TPLW*2+'px'; c.style.height = TPLH*2+'px';
+
+    const div = document.createElement('div');
+    div.className = 'tpl-item';
+    div.title = '長押しで削除';
+
+    const lbl = document.createElement('div'); lbl.className='tpl-label'; lbl.textContent=k;
+    const cnt = document.createElement('div'); cnt.className='tpl-count'; cnt.textContent='×'+count;
+
+    div.appendChild(lbl);
+    div.appendChild(c);
+    div.appendChild(cnt);
+
+    // Long-press to delete
+    let pressTimer;
+    div.addEventListener('touchstart', () => { pressTimer = setTimeout(() => { if (confirm('"'+k+'" を削除?')) deleteTpl(k); }, 700); }, {passive:true});
+    div.addEventListener('touchend', () => clearTimeout(pressTimer), {passive:true});
+    div.addEventListener('contextmenu', e => { e.preventDefault(); if (confirm('"'+k+'" を削除?')) deleteTpl(k); });
+
+    grid.appendChild(div);
+  }
+}
+
+// ──────────────────────────────────────────
+//  Canvas render
+// ──────────────────────────────────────────
+function render() {
+  if (!imgCvs) return;
+  const dispW = mainCvs.parentElement.clientWidth || window.innerWidth - 24;
+  const sc = Math.min(1, dispW / imgW);
+  mainCvs.width  = (imgW * sc)|0;
+  mainCvs.height = (imgH * sc)|0;
+
+  if (showBin && binArr) {
+    const tmp = document.createElement('canvas'); tmp.width=imgW; tmp.height=imgH;
+    const tCtx = tmp.getContext('2d');
+    const id = tCtx.createImageData(imgW, imgH);
+    for (let i=0; i<imgW*imgH; i++) {
+      const v = binArr[i] ? 255 : 0;
+      id.data[i*4]=id.data[i*4+1]=id.data[i*4+2]=v; id.data[i*4+3]=255;
+    }
+    tCtx.putImageData(id, 0, 0);
+    mCtx.drawImage(tmp, 0, 0, mainCvs.width, mainCvs.height);
+  } else {
+    mCtx.drawImage(imgCvs, 0, 0, mainCvs.width, mainCvs.height);
+  }
+
+  // Draw bounding boxes
+  for (let i=0; i<digits.length; i++) {
+    const {x0,y0,x1,y1} = digits[i];
+    const sel = i === selIdx;
+    mCtx.strokeStyle = sel ? '#f78166' : '#58a6ff';
+    mCtx.lineWidth   = sel ? 2.5 : 1;
+    mCtx.strokeRect(x0*sc - .5, y0*sc - .5, (x1-x0+1)*sc+1, (y1-y0+1)*sc+1);
+  }
+}
+
+function toggleBin() {
+  showBin = !showBin;
+  document.getElementById('bin-btn').textContent = showBin ? '元画像' : '2値';
+  render();
+}
+
+// ──────────────────────────────────────────
+//  Mode switching
+// ──────────────────────────────────────────
+function setMode(m) {
+  mode = m;
+  document.getElementById('tab-cal').classList.toggle('active', m==='cal');
+  document.getElementById('tab-rec').classList.toggle('active', m==='rec');
+  document.getElementById('cal-panel').style.display = m==='cal' ? '' : 'none';
+  document.getElementById('rec-panel').style.display = m==='rec' ? '' : 'none';
+}
+
+// ──────────────────────────────────────────
+//  Calibration
+// ──────────────────────────────────────────
+function hitDigit(ix, iy) {
+  if (!digits.length) return;
+  let best = -1, bestArea = Infinity;
+  for (let i=0; i<digits.length; i++) {
+    const {x0,y0,x1,y1} = digits[i];
+    if (ix>=x0 && ix<=x1 && iy>=y0 && iy<=y1) {
+      const a = (x1-x0)*(y1-y0);
+      if (a < bestArea) { bestArea=a; best=i; }
+    }
+  }
+  if (best < 0) { selIdx=-1; clearZoom(); render(); return; }
+  selIdx = best;
+  showZoom(digits[best]);
+  render();
+  updateSelInfo();
+
+  if (mode==='rec' && Object.keys(templates).length) {
+    const m = matchPatch(extractPatch(digits[best].x0, digits[best].y0, digits[best].x1, digits[best].y1));
+    if (m) document.getElementById('label-in').value = m.label;
+  }
+}
+
+function showZoom(d) {
+  const {x0,y0,x1,y1} = d;
+  const sw=x1-x0+1, sh=y1-y0+1;
+  const zoom = Math.min(10, Math.max(2, (80/sh)|0));
+  zoomCvs.width=sw*zoom; zoomCvs.height=sh*zoom;
+  zCtx.imageSmoothingEnabled = false;
+  zCtx.drawImage(imgCvs, x0,y0,sw,sh, 0,0,sw*zoom,sh*zoom);
+}
+function clearZoom() { zCtx.clearRect(0,0,zoomCvs.width,zoomCvs.height); }
+
+function updateSelInfo() {
+  const el = document.getElementById('sel-info');
+  if (selIdx < 0) { el.textContent=''; return; }
+  el.textContent = (selIdx+1) + ' / ' + digits.length;
+}
+
+function navDigit(dir) {
+  if (!digits.length) return;
+  selIdx = ((selIdx + dir) + digits.length) % digits.length;
+  showZoom(digits[selIdx]);
+  render();
+  updateSelInfo();
+}
+
+function saveLabel() {
+  if (selIdx < 0) { alert('枠を選択してください'); return; }
+  const lbl = document.getElementById('label-in').value.trim();
+  if (!lbl) { alert('ラベルを入力してください'); return; }
+  addTpl(lbl, extractPatch(digits[selIdx].x0, digits[selIdx].y0, digits[selIdx].x1, digits[selIdx].y1));
+  document.getElementById('label-in').value = '';
+  statusEl.textContent = '"' + lbl + '" を保存しました (×' + templates[lbl].count + ')';
+  navDigit(1);
+}
+
+// ──────────────────────────────────────────
+//  Recognition
+// ──────────────────────────────────────────
+function recognizeAll() {
+  if (!digits.length) { alert('先にスクショを読み込んでください'); return; }
+  if (!Object.keys(templates).length) { alert('テンプレートがありません。先にキャリブレーションしてください'); return; }
+
+  const matched = [];
+  for (const d of digits) {
+    const m = matchPatch(extractPatch(d.x0, d.y0, d.x1, d.y1));
+    if (m) matched.push({...d, label:m.label, score:m.score});
+  }
+
+  const groups = groupIntoNumbers(matched);
+  renderRecResults(groups);
+
+  // Overlay labels on canvas
+  render();
+  const sc = mainCvs.width / imgW;
+  mCtx.font = `bold ${Math.max(9, (13*sc)|0)}px monospace`;
+  mCtx.textBaseline = 'bottom';
+  for (const g of groups) {
+    const conf = scoreToConf(g.avgScore);
+    mCtx.fillStyle = conf==='hi' ? '#3fb950' : conf==='mid' ? '#58a6ff' : '#f78166';
+    mCtx.fillText(g.number, g.x0*sc, g.y0*sc - 1);
+  }
+}
+
+function groupIntoNumbers(matched) {
+  if (!matched.length) return [];
+  const sorted = [...matched].sort((a,b) => a.y0!==b.y0 ? a.y0-b.y0 : a.x0-b.x0);
+  const groups = [[sorted[0]]];
+
+  for (let i=1; i<sorted.length; i++) {
+    const last = groups[groups.length-1].at(-1);
+    const cur  = sorted[i];
+    const avgH = ((last.y1-last.y0) + (cur.y1-cur.y0)) / 2;
+    const sameRow = Math.abs(cur.y0 - last.y0) < avgH * 0.6;
+    const adjacent = (cur.x0 - last.x1) < avgH * 1.2;
+    if (sameRow && adjacent) groups[groups.length-1].push(cur);
+    else groups.push([cur]);
+  }
+
+  return groups.map(g => ({
+    x0: Math.min(...g.map(d=>d.x0)),
+    y0: Math.min(...g.map(d=>d.y0)),
+    x1: Math.max(...g.map(d=>d.x1)),
+    y1: Math.max(...g.map(d=>d.y1)),
+    number: g.map(d=>d.label).join(''),
+    avgScore: g.reduce((s,d)=>s+d.score,0) / g.length,
+  }));
+}
+
+function scoreToConf(s) { return s < 0.04 ? 'hi' : s < 0.10 ? 'mid' : 'lo'; }
+
+function renderRecResults(groups) {
+  const el = document.getElementById('rec-results');
+  if (!groups.length) { el.innerHTML = '<div class="empty">認識できませんでした<br>テンプレートを増やしてください</div>'; return; }
+  const confLabel = {hi:'高精度', mid:'中精度', lo:'低精度'};
+  el.innerHTML = groups.map(g => {
+    const c = scoreToConf(g.avgScore);
+    return `<div class="res-row">
+      <div class="res-num">${g.number}</div>
+      <div class="res-pos">(${g.x0}, ${g.y0})</div>
+      <div class="res-conf conf-${c}">${confLabel[c]}</div>
+    </div>`;
+  }).join('');
+}
+
+function copyResults() {
+  const nums = document.getElementById('rec-results').querySelectorAll('.res-num');
+  if (!nums.length) { alert('認識結果がありません'); return; }
+  const text = Array.from(nums).map(e=>e.textContent).join('\n');
+  navigator.clipboard.writeText(text)
+    .then(() => alert('コピーしました'))
+    .catch(() => prompt('コピーしてください:', text));
+}
+</script>
+</body>
+</html>
