@@ -1,4 +1,4 @@
-const CACHE='wos-v2';
+const CACHE='wos-v3';
 const FILES=['./','./index.html','./manifest.json','./sw.js'];
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)));
