@@ -252,8 +252,12 @@ let mode = 'icon';
 
 // Icon calibration
 let tapStep = 0;   // 0=idle, 1=icon_set, 2=count_set
-let tapData = {};  // {iconX, iconY, iconSz, countX, countY}
+let tapData = {};  // {iconX, iconY, countX, countY}
 let iconSzPx = 60;
+
+// Drag state
+let dragTarget = null; // null | 'icon' | 'count'
+let dragSX = 0, dragSY = 0, dragOX = 0, dragOY = 0, didDrag = false;
 
 // Digit calibration
 let digits = [], selDigitIdx = -1;
@@ -290,18 +294,63 @@ document.getElementById('icon-sz').oninput = () => {
   document.getElementById('icon-sz-val').textContent = iconSzPx;
 };
 
-mainCvs.addEventListener('click', e => {
-  const r = mainCvs.getBoundingClientRect();
-  const sc = imgW / r.width;
-  onTap((e.clientX - r.left)*sc, (e.clientY - r.top)*sc);
-});
-mainCvs.addEventListener('touchend', e => {
-  e.preventDefault();
-  const r = mainCvs.getBoundingClientRect();
-  const t = e.changedTouches[0];
-  const sc = imgW / r.width;
-  onTap((t.clientX - r.left)*sc, (t.clientY - r.top)*sc);
-}, {passive:false});
+// ── drag/tap unified handlers ──
+function getIC(clientX, clientY){
+  const r=mainCvs.getBoundingClientRect();
+  return {ix:(clientX-r.left)*imgW/r.width, iy:(clientY-r.top)*imgH/r.height};
+}
+function hitRadius(clientX, clientY){ // tap hit radius in image px
+  return 20 * imgW / mainCvs.getBoundingClientRect().width;
+}
+function startPointer(clientX, clientY){
+  const {ix,iy}=getIC(clientX,clientY);
+  dragSX=ix; dragSY=iy; didDrag=false; dragTarget=null;
+  if(mode==='icon'){
+    if(tapStep>=2){
+      const dx=ix-tapData.countX, dy=iy-tapData.countY;
+      if(Math.sqrt(dx*dx+dy*dy)<hitRadius(clientX,clientY)){
+        dragTarget='count'; dragOX=tapData.countX; dragOY=tapData.countY; return;
+      }
+    }
+    if(tapStep>=1){
+      const {iconX,iconY}=tapData;
+      if(ix>=iconX&&ix<=iconX+iconSzPx&&iy>=iconY&&iy<=iconY+iconSzPx){
+        dragTarget='icon'; dragOX=iconX; dragOY=iconY; return;
+      }
+    }
+  }
+}
+function movePointer(clientX, clientY){
+  if(!dragTarget) return;
+  const {ix,iy}=getIC(clientX,clientY);
+  const dx=ix-dragSX, dy=iy-dragSY;
+  if(Math.abs(dx)+Math.abs(dy)>2) didDrag=true;
+  if(dragTarget==='icon'){
+    tapData.iconX=dragOX+dx; tapData.iconY=dragOY+dy;
+    refreshIconZoom();
+    if(tapStep>=2) refreshRoiZoom();
+  } else {
+    tapData.countX=dragOX+dx; tapData.countY=dragOY+dy;
+    refreshRoiZoom();
+  }
+  render();
+}
+function endPointer(clientX, clientY){
+  const wasDrag=didDrag;
+  dragTarget=null;
+  if(!wasDrag){
+    const {ix,iy}=getIC(clientX,clientY);
+    onTap(ix,iy);
+  }
+}
+// Mouse
+mainCvs.addEventListener('mousedown', e=>startPointer(e.clientX,e.clientY));
+mainCvs.addEventListener('mousemove', e=>{if(dragTarget)movePointer(e.clientX,e.clientY);});
+mainCvs.addEventListener('mouseup',   e=>endPointer(e.clientX,e.clientY));
+// Touch
+mainCvs.addEventListener('touchstart', e=>{e.preventDefault();startPointer(e.touches[0].clientX,e.touches[0].clientY);},{passive:false});
+mainCvs.addEventListener('touchmove',  e=>{e.preventDefault();movePointer(e.touches[0].clientX,e.touches[0].clientY);},{passive:false});
+mainCvs.addEventListener('touchend',   e=>{e.preventDefault();endPointer(e.changedTouches[0].clientX,e.changedTouches[0].clientY);},{passive:false});
 
 // ==============================
 //  Image load
@@ -582,18 +631,38 @@ function render(){
   if(mode==='icon'){
     if(tapStep>=1){
       const {iconX,iconY}=tapData;
+      const bx=iconX*sc, by=iconY*sc, bw=iconSzPx*sc, bh=iconSzPx*sc;
+      // Box
       mCtx.strokeStyle='#f78166'; mCtx.lineWidth=2;
-      mCtx.strokeRect(iconX*sc,iconY*sc,iconSzPx*sc,iconSzPx*sc);
+      mCtx.strokeRect(bx,by,bw,bh);
+      // Corner drag handles
+      const hs=Math.max(6,8*sc);
+      mCtx.fillStyle='#f78166';
+      [[bx,by],[bx+bw,by],[bx,by+bh],[bx+bw,by+bh]].forEach(([hx,hy])=>{
+        mCtx.fillRect(hx-hs/2,hy-hs/2,hs,hs);
+      });
+      // Hint label
+      mCtx.font=`bold ${Math.max(9,(11*sc)|0)}px sans-serif`;
+      mCtx.fillStyle='#f78166'; mCtx.textBaseline='bottom';
+      mCtx.fillText('↔ドラッグで移動', bx+2, by-2);
     }
     if(tapStep>=2){
       const {countX,countY}=tapData;
+      // Count circle with drag hint
+      const cr=Math.max(8,10*sc);
       mCtx.strokeStyle='#3fb950'; mCtx.lineWidth=2;
-      const r=8*sc;
-      mCtx.beginPath();mCtx.arc(countX*sc,countY*sc,r,0,Math.PI*2);mCtx.stroke();
-      // Draw count ROI rectangle
+      mCtx.beginPath();mCtx.arc(countX*sc,countY*sc,cr,0,Math.PI*2);mCtx.stroke();
+      mCtx.fillStyle='#3fb95044';
+      mCtx.beginPath();mCtx.arc(countX*sc,countY*sc,cr,0,Math.PI*2);mCtx.fill();
+      mCtx.font=`bold ${Math.max(9,(11*sc)|0)}px sans-serif`;
+      mCtx.fillStyle='#3fb950'; mCtx.textBaseline='top';
+      mCtx.fillText('↔ドラッグ', countX*sc+cr+2, countY*sc-4);
+      // ROI rectangle
       const roi=computeROI(tapData);
-      mCtx.strokeStyle='#d2992288'; mCtx.lineWidth=1.5;
+      mCtx.strokeStyle='#d2992299'; mCtx.lineWidth=1.5;
+      mCtx.setLineDash([4,3]);
       mCtx.strokeRect(roi.x0*sc,roi.y0*sc,(roi.x1-roi.x0)*sc,(roi.y1-roi.y0)*sc);
+      mCtx.setLineDash([]);
     }
   }
 
@@ -643,7 +712,7 @@ function onTap(ix,iy){
       tapStep=1;
       updateSteps();
       refreshIconZoom();
-      statusEl.textContent='次に、カウント数字の位置をタップしてください';
+      statusEl.textContent='枠をドラッグで移動 → 次にカウント数字の位置をタップ';
     } else if(tapStep===1){
       // Second tap: set count position
       tapData.countX=ix; tapData.countY=iy;
