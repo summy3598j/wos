@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>WOS スクショ解析 Phase 3</title>
+<style>
+:root{
+  --bg:#0d1117;--card:#161b22;--border:#30363d;
+  --accent:#58a6ff;--green:#3fb950;--red:#f78166;
+  --yellow:#d29922;--text:#e6edf3;--muted:#8b949e;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,sans-serif;font-size:14px;padding:10px;min-height:100vh}
+h1{font-size:17px;font-weight:700;color:var(--accent);text-align:center;margin-bottom:4px}
+.sub{text-align:center;font-size:11px;color:var(--muted);margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px}
+.card-title{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px}
+.upload-area{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:8px;border:2px dashed var(--border);border-radius:8px;padding:24px 12px;cursor:pointer}
+.upload-area:active{border-color:var(--accent)}
+.upload-area input{display:none}
+.tabs{display:flex;gap:6px;margin-bottom:12px}
+.tab{flex:1;padding:8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;
+  color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;text-align:center}
+.tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.cvs-outer{position:relative;border-radius:6px;background:#000;overflow:hidden}
+#main-cvs{display:block;width:100%;height:auto;touch-action:none}
+.ctrl{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+.sl-lbl{font-size:11px;color:var(--muted);white-space:nowrap}
+input[type=range]{flex:1;min-width:60px;accent-color:var(--accent)}
+.sl-val{font-size:11px;color:var(--text);min-width:28px}
+button{background:var(--accent);color:#fff;border:none;border-radius:6px;
+  padding:8px 12px;font-size:12px;font-weight:600;cursor:pointer}
+button:active{opacity:.8}
+button.sec{background:var(--card);color:var(--text);border:1px solid var(--border)}
+button.danger{background:#922b21;color:#fff;border:none}
+.zoom-wrap{display:flex;gap:8px;align-items:flex-start;margin:10px 0}
+.zoom-box{display:flex;flex-direction:column;align-items:center;gap:3px}
+.zoom-lbl{font-size:10px;color:var(--muted)}
+canvas.zoom{image-rendering:pixelated;display:block;border:1px solid var(--border);border-radius:4px}
+.inp-row{display:flex;gap:6px}
+.inp-row input{flex:1;background:var(--bg);color:var(--text);border:1px solid var(--border);
+  border-radius:6px;padding:9px;font-size:15px}
+.btn-row{display:flex;gap:6px;margin-top:8px}
+.btn-row button{flex:1}
+.tpl-grid{display:flex;flex-wrap:wrap;gap:8px}
+.tpl-item{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px;
+  display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;min-width:60px}
+.tpl-item:active{border-color:var(--red)}
+.tpl-label{font-size:12px;font-weight:700;color:var(--yellow);text-align:center;word-break:break-all;max-width:70px}
+.tpl-sub{font-size:10px;color:var(--muted)}
+.res-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)}
+.res-row:last-child{border-bottom:none}
+.res-icon{width:36px;height:36px;image-rendering:pixelated;border-radius:4px;flex-shrink:0}
+.res-name{flex:1;font-size:13px;font-weight:600}
+.res-count{font-size:22px;font-weight:700;color:var(--yellow);min-width:50px;text-align:right}
+.res-conf{font-size:10px;font-weight:600}
+.conf-hi{color:var(--green)}.conf-mid{color:var(--accent)}.conf-lo{color:var(--red)}
+.step-indicator{display:flex;gap:6px;margin-bottom:10px}
+.step{flex:1;text-align:center;padding:6px;border-radius:6px;font-size:11px;font-weight:600;
+  background:var(--bg);border:1px solid var(--border);color:var(--muted)}
+.step.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.step.done{background:#1a3a1a;color:var(--green);border-color:var(--green)}
+.status{font-size:12px;color:var(--muted);margin-top:6px;text-align:center;min-height:18px}
+.info{font-size:12px;color:var(--muted);line-height:1.9}
+.info b{color:var(--text)}
+.empty{color:var(--muted);text-align:center;font-size:12px;padding:14px}
+.badge{display:inline-block;background:var(--accent);color:#fff;border-radius:99px;
+  font-size:10px;font-weight:700;padding:1px 6px;margin-left:4px}
+.sep{border:none;border-top:1px solid var(--border);margin:10px 0}
+.warn{background:#2d1f00;border:1px solid var(--yellow);border-radius:6px;
+  padding:8px;font-size:12px;color:var(--yellow);margin-bottom:10px}
+</style>
+</head>
+<body>
+
+<h1>📸 WOS スクショ解析 Phase 3</h1>
+<p class="sub">アイコンマッチング + ROI 数字認識</p>
+
+<div class="card">
+  <div class="card-title">スクショを選択</div>
+  <label class="upload-area">
+    <span style="font-size:36px">🖼️</span>
+    <span style="color:var(--muted);font-size:13px">タップしてスクショを選択</span>
+    <input type="file" id="file-in" accept="image/*">
+  </label>
+</div>
+
+<div class="card" id="work-card" hidden>
+  <div class="tabs">
+    <div class="tab active" id="tab-icon" onclick="setMode('icon')">🖼️ アイコン登録</div>
+    <div class="tab" id="tab-digit" onclick="setMode('digit')">🔢 数字登録</div>
+    <div class="tab" id="tab-recog" onclick="setMode('recog')">🔍 認識</div>
+  </div>
+
+  <div class="cvs-outer">
+    <canvas id="main-cvs"></canvas>
+  </div>
+
+  <!-- shared controls -->
+  <div class="ctrl" id="ctrl-thresh">
+    <span class="sl-lbl">しきい値</span>
+    <input type="range" id="thresh-sl" min="60" max="240" value="160">
+    <span class="sl-val" id="thresh-val">160</span>
+    <button class="sec" onclick="toggleBin()" id="bin-btn">2値</button>
+  </div>
+  <p class="status" id="status-msg"></p>
+
+  <!-- Icon calibration panel -->
+  <div id="panel-icon">
+    <hr class="sep">
+    <div class="step-indicator">
+      <div class="step" id="s1">① アイコンをタップ</div>
+      <div class="step" id="s2">② カウント位置をタップ</div>
+      <div class="step" id="s3">③ 名前を入力</div>
+    </div>
+    <div class="ctrl">
+      <span class="sl-lbl">アイコンサイズ</span>
+      <input type="range" id="icon-sz" min="20" max="200" value="60">
+      <span class="sl-val" id="icon-sz-val">60</span>
+      <span style="font-size:11px;color:var(--muted)">px</span>
+    </div>
+    <div class="zoom-wrap">
+      <div class="zoom-box">
+        <div class="zoom-lbl">アイコン</div>
+        <canvas class="zoom" id="zoom-icon" width="80" height="80"></canvas>
+      </div>
+      <div class="zoom-box">
+        <div class="zoom-lbl">カウント ROI</div>
+        <canvas class="zoom" id="zoom-roi" width="80" height="40"></canvas>
+      </div>
+    </div>
+    <div class="inp-row">
+      <input type="text" id="item-name" placeholder="アイテム名（例: 食料, 木材）" maxlength="20">
+    </div>
+    <div class="btn-row">
+      <button onclick="saveIcon()">✓ 保存</button>
+      <button class="sec" onclick="resetIconCal()">リセット</button>
+    </div>
+  </div>
+
+  <!-- Digit calibration panel (simplified from Phase 2) -->
+  <div id="panel-digit" style="display:none">
+    <hr class="sep">
+    <div id="digit-warn" class="warn" hidden>
+      アイコンが未登録です。先にアイコンを登録するとROI内の数字だけ表示されます。
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:8px">
+      青枠をタップ → ラベル入力 → 保存
+    </p>
+    <div class="zoom-wrap">
+      <div class="zoom-box">
+        <div class="zoom-lbl">選択中の数字</div>
+        <canvas class="zoom" id="zoom-digit" width="72" height="96"></canvas>
+      </div>
+    </div>
+    <div id="sel-info" style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:6px"></div>
+    <div class="inp-row">
+      <input type="text" id="label-in" placeholder="ラベル（0〜9）" maxlength="4" inputmode="numeric">
+    </div>
+    <div class="btn-row">
+      <button class="sec" onclick="navDigit(-1)">◀ 前</button>
+      <button onclick="saveDigit()">✓ 保存</button>
+      <button class="sec" onclick="navDigit(1)">次 ▶</button>
+    </div>
+    <div class="btn-row" style="margin-top:6px">
+      <button class="sec" onclick="runDetect()">再検出</button>
+    </div>
+  </div>
+
+  <!-- Recognition panel -->
+  <div id="panel-recog" style="display:none">
+    <hr class="sep">
+    <div class="btn-row">
+      <button onclick="recognizeAll()">🔍 スキャン開始</button>
+      <button class="sec" onclick="copyResults()">📋 コピー</button>
+    </div>
+    <div id="recog-results" style="margin-top:10px">
+      <div class="empty">「スキャン開始」を押してください</div>
+    </div>
+  </div>
+</div>
+
+<!-- Icon Templates -->
+<div class="card">
+  <div class="card-title">登録アイコン<span class="badge" id="icon-badge">0</span></div>
+  <div class="tpl-grid" id="icon-grid"><div class="empty">アイコンがありません</div></div>
+  <div style="display:flex;gap:6px;margin-top:10px">
+    <button class="sec" onclick="exportIcons()" style="flex:1">エクスポート</button>
+    <button class="sec" onclick="document.getElementById('icon-imp').click()" style="flex:1">インポート</button>
+    <button class="danger" onclick="clearIcons()" style="flex:1">全削除</button>
+  </div>
+</div>
+<input type="file" id="icon-imp" accept=".json" style="display:none">
+
+<!-- Digit Templates (compact) -->
+<div class="card">
+  <div class="card-title">数字テンプレート<span class="badge" id="digit-badge">0</span>
+    <span style="font-size:10px;color:var(--muted);font-weight:normal;margin-left:6px">Phase 2 と共有</span>
+  </div>
+  <div class="tpl-grid" id="digit-grid"><div class="empty">数字テンプレートがありません</div></div>
+  <div style="display:flex;gap:6px;margin-top:10px">
+    <button class="sec" onclick="exportDigits()" style="flex:1">エクスポート</button>
+    <button class="sec" onclick="document.getElementById('digit-imp').click()" style="flex:1">インポート</button>
+    <button class="danger" onclick="clearDigits()" style="flex:1">全削除</button>
+  </div>
+</div>
+<input type="file" id="digit-imp" accept=".json" style="display:none">
+
+<!-- How-to -->
+<div class="card">
+  <div class="card-title">使い方</div>
+  <div class="info">
+    <b>① アイコン登録（初回のみ）</b><br>
+    スクショを読み込む → アイコンをタップ → カウント数字の位置をタップ → アイテム名を入力して保存<br>
+    <br>
+    <b>② 数字登録（初回のみ）</b><br>
+    Phase 2 で登録済みなら不要。未登録なら「数字登録」タブで 0〜9 を保存<br>
+    <br>
+    <b>③ 認識</b><br>
+    「認識」タブ → 「スキャン開始」でアイコンを探してアイテム数を読み取る<br>
+    <br>
+    <b>アイコンサイズ：</b>スライダーでアイコンの大きさを調整してください<br>
+    <b>NCC しきい値：</b>誤検出が多い場合は精度スライダーを上げてください
+  </div>
+</div>
+
+<script>
+// ==============================
+//  Constants
+// ==============================
+const DIGIT_STORE = 'wos_tpl_v2';
+const ICON_STORE  = 'wos_icon_v1';
+const DTPLW = 24, DTPLH = 32;   // digit template size
+const ITPLW = 48, ITPLH = 48;   // icon template normalized size
+const MAX_DIM    = 1200;
+const NCC_DIM    = 500;          // scale for NCC sliding window
+const NCC_STEP   = 3;
+const NCC_THRESH = 0.80;
+
+// ==============================
+//  State
+// ==============================
+let imgCvs = null, imgData = null, imgW = 0, imgH = 0;
+let binArr = null, grayImg = null;
+let thresh = 160, showBin = false;
+
+let digitTpls = {};
+let iconTpls  = {};
+let mode = 'icon';
+
+// Icon calibration
+let tapStep = 0;   // 0=idle, 1=icon_set, 2=count_set
+let tapData = {};  // {iconX, iconY, iconSz, countX, countY}
+let iconSzPx = 60;
+
+// Digit calibration
+let digits = [], selDigitIdx = -1;
+
+// ==============================
+//  DOM refs
+// ==============================
+const mainCvs  = document.getElementById('main-cvs');
+const mCtx     = mainCvs.getContext('2d');
+const zoomIcon = document.getElementById('zoom-icon');
+const zoomRoi  = document.getElementById('zoom-roi');
+const zoomDig  = document.getElementById('zoom-digit');
+const threshSl = document.getElementById('thresh-sl');
+const threshValEl = document.getElementById('thresh-val');
+const statusEl = document.getElementById('status-msg');
+
+// ==============================
+//  Boot
+// ==============================
+loadDigits(); loadIcons();
+renderDigitTpl(); renderIconTpl();
+
+document.getElementById('file-in').onchange     = e => { if (e.target.files[0]) loadImg(e.target.files[0]); };
+document.getElementById('icon-imp').onchange    = e => { if (e.target.files[0]) importIcons(e.target.files[0]); };
+document.getElementById('digit-imp').onchange   = e => { if (e.target.files[0]) importDigits(e.target.files[0]); };
+document.getElementById('label-in').onkeydown   = e => { if (e.key === 'Enter') saveDigit(); };
+document.getElementById('item-name').onkeydown  = e => { if (e.key === 'Enter') saveIcon(); };
+threshSl.oninput = () => {
+  thresh = +threshSl.value; threshValEl.textContent = thresh;
+  if (imgCvs) { buildBinary(); if (mode==='digit') runDetect(); else render(); }
+};
+document.getElementById('icon-sz').oninput = () => {
+  iconSzPx = +document.getElementById('icon-sz').value;
+  document.getElementById('icon-sz-val').textContent = iconSzPx;
+};
+
+mainCvs.addEventListener('click', e => {
+  const r = mainCvs.getBoundingClientRect();
+  const sc = imgW / r.width;
+  onTap((e.clientX - r.left)*sc, (e.clientY - r.top)*sc);
+});
+mainCvs.addEventListener('touchend', e => {
+  e.preventDefault();
+  const r = mainCvs.getBoundingClientRect();
+  const t = e.changedTouches[0];
+  const sc = imgW / r.width;
+  onTap((t.clientX - r.left)*sc, (t.clientY - r.top)*sc);
+}, {passive:false});
+
+// ==============================
+//  Image load
+// ==============================
+function loadImg(file) {
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => {
+    URL.revokeObjectURL(url);
+    let w = img.naturalWidth, h = img.naturalHeight;
+    if (Math.max(w,h) > MAX_DIM) { const s=MAX_DIM/Math.max(w,h); w=(w*s)|0; h=(h*s)|0; }
+    imgW=w; imgH=h;
+    imgCvs = document.createElement('canvas');
+    imgCvs.width=w; imgCvs.height=h;
+    imgCvs.getContext('2d').drawImage(img,0,0,w,h);
+    imgData = imgCvs.getContext('2d').getImageData(0,0,w,h);
+    buildBinary();
+    buildGray();
+    resetIconCal();
+    document.getElementById('work-card').hidden = false;
+    runDetect();
+    render();
+  };
+  img.src = url;
+}
+
+// ==============================
+//  Preprocessing
+// ==============================
+function buildBinary() {
+  const {data} = imgData;
+  binArr = new Uint8Array(imgW*imgH);
+  for (let i=0; i<imgW*imgH; i++) {
+    const g=0.299*data[i*4]+0.587*data[i*4+1]+0.114*data[i*4+2];
+    binArr[i] = g>thresh ? 1 : 0;
+  }
+}
+
+function buildGray() {
+  const {data} = imgData;
+  grayImg = new Float32Array(imgW*imgH);
+  for (let i=0; i<imgW*imgH; i++)
+    grayImg[i] = (0.299*data[i*4]+0.587*data[i*4+1]+0.114*data[i*4+2])/255;
+}
+
+// ==============================
+//  Digit detection (ROI-aware)
+// ==============================
+function runDetect() {
+  if (!imgCvs) return;
+  const rois = getDigitROIs();
+  digits = [];
+  for (const roi of rois) {
+    const comps = findComponentsInROI(roi.x0, roi.y0, roi.x1, roi.y1);
+    for (const c of comps) digits.push(...segmentDigits(c));
+  }
+  selDigitIdx = -1;
+  clearCanvas(zoomDig);
+  render();
+  statusEl.textContent = digits.length + ' 個の文字領域を検出';
+}
+
+// If icons are registered, limit to their count ROIs; otherwise scan full image
+function getDigitROIs() {
+  const keys = Object.keys(iconTpls);
+  if (!keys.length) return [{x0:0, y0:0, x1:imgW, y1:imgH}];
+  // Expand icon template ROIs across full image (approximate positions)
+  // During digit calibration, just scan a full pass so user can label anywhere
+  return [{x0:0, y0:0, x1:imgW, y1:imgH}];
+}
+
+function findComponentsInROI(rx0, ry0, rx1, ry1) {
+  const W=imgW, H=imgH, bin=binArr;
+  const vis=new Uint8Array(W*H);
+  const stk=new Int32Array(W*H);
+  const res=[];
+  const minH=Math.max(5,(H*0.006)|0), maxH=(H*0.09)|0;
+  const x0c=Math.max(0,rx0), y0c=Math.max(0,ry0);
+  const x1c=Math.min(W-1,rx1), y1c=Math.min(H-1,ry1);
+
+  for (let y=y0c; y<=y1c; y++) {
+    for (let x=x0c; x<=x1c; x++) {
+      const s=y*W+x;
+      if (!bin[s]||vis[s]) continue;
+      let top=0; stk[top++]=s; vis[s]=1;
+      let bx0=x,by0=y,bx1=x,by1=y,cnt=0;
+      while (top>0) {
+        const c=stk[--top]; cnt++;
+        const cx=c%W, cy=(c/W)|0;
+        if(cx<bx0)bx0=cx; else if(cx>bx1)bx1=cx;
+        if(cy<by0)by0=cy; else if(cy>by1)by1=cy;
+        if(cx>0   &&!vis[c-1]&&bin[c-1]){vis[c-1]=1;stk[top++]=c-1;}
+        if(cx<W-1 &&!vis[c+1]&&bin[c+1]){vis[c+1]=1;stk[top++]=c+1;}
+        if(cy>0   &&!vis[c-W]&&bin[c-W]){vis[c-W]=1;stk[top++]=c-W;}
+        if(cy<H-1 &&!vis[c+W]&&bin[c+W]){vis[c+W]=1;stk[top++]=c+W;}
+      }
+      const bw=bx1-bx0+1, bh=by1-by0+1;
+      if(bh<minH||bh>maxH) continue;
+      if(cnt<bw*bh*0.12) continue;
+      const asp=bw/bh;
+      if(asp<0.1||asp>8) continue;
+      res.push({x0:bx0,y0:by0,x1:bx1,y1:by1,w:bw,h:bh});
+    }
+  }
+  return res;
+}
+
+function segmentDigits(c) {
+  const {x0,y0,x1,y1,w,h}=c;
+  if (w<=h*1.3) return [c];
+  const proj=new Int32Array(w);
+  for(let dx=0;dx<w;dx++) for(let dy=0;dy<h;dy++) proj[dx]+=binArr[(y0+dy)*imgW+(x0+dx)];
+  const gap=Math.max(1,(h*0.1)|0);
+  const segs=[];let start=-1;
+  for(let dx=0;dx<w;dx++){
+    if(proj[dx]>gap){if(start<0)start=dx;}
+    else if(start>=0){segs.push({x0:x0+start,y0,x1:x0+dx-1,y1,w:dx-start,h});start=-1;}
+  }
+  if(start>=0) segs.push({x0:x0+start,y0,x1,y1,w:w-start,h});
+  const minSw=Math.max(3,(h*0.15)|0);
+  const valid=segs.filter(s=>s.w>=minSw);
+  return valid.length>1?valid:[c];
+}
+
+// ==============================
+//  Patch extraction
+// ==============================
+function extractDigitPatch(x0,y0,x1,y1){
+  const {data}=imgData;
+  const srcW=x1-x0+1, srcH=y1-y0+1;
+  const patch=new Float32Array(DTPLW*DTPLH);
+  for(let dy=0;dy<DTPLH;dy++) for(let dx=0;dx<DTPLW;dx++){
+    const sx=x0+Math.min(((dx*srcW/DTPLW)|0),srcW-1);
+    const sy=y0+Math.min(((dy*srcH/DTPLH)|0),srcH-1);
+    const i=(sy*imgW+sx)*4;
+    patch[dy*DTPLW+dx]=(0.299*data[i]+0.587*data[i+1]+0.114*data[i+2])/255;
+  }
+  return patch;
+}
+
+function extractIconPatchAt(ix,iy,isz){
+  const {data}=imgData;
+  const patch=new Float32Array(ITPLW*ITPLH);
+  for(let dy=0;dy<ITPLH;dy++) for(let dx=0;dx<ITPLW;dx++){
+    const sx=ix+Math.min(((dx*isz/ITPLW)|0),isz-1);
+    const sy=iy+Math.min(((dy*isz/ITPLH)|0),isz-1);
+    if(sx<0||sx>=imgW||sy<0||sy>=imgH) continue;
+    const i=(sy*imgW+sx)*4;
+    patch[dy*ITPLW+dx]=(0.299*data[i]+0.587*data[i+1]+0.114*data[i+2])/255;
+  }
+  return patch;
+}
+
+function matchDigitPatch(patch){
+  const keys=Object.keys(digitTpls);
+  if(!keys.length) return null;
+  let best=null,bestSSD=Infinity;
+  for(const k of keys){
+    const t=digitTpls[k].avg; let ssd=0;
+    for(let i=0;i<patch.length;i++){const d=patch[i]-t[i];ssd+=d*d;}
+    ssd/=patch.length;
+    if(ssd<bestSSD){bestSSD=ssd;best={label:k,score:ssd};}
+  }
+  return best;
+}
+
+// ==============================
+//  NCC icon search
+// ==============================
+function nccSearch(name){
+  const tpl = iconTpls[name];
+  if(!tpl) return [];
+
+  // Build scaled gray image for NCC
+  const scaleF = Math.min(1, NCC_DIM/Math.max(imgW,imgH));
+  const sw=(imgW*scaleF)|0, sh=(imgH*scaleF)|0;
+  const stplW=Math.max(4,(tpl.origSz*scaleF)|0);
+  const stplH=stplW;
+
+  // Build scaled gray image
+  const sg=new Float32Array(sw*sh);
+  for(let y=0;y<sh;y++) for(let x=0;x<sw;x++){
+    const sx=Math.min(((x/scaleF)|0),imgW-1);
+    const sy=Math.min(((y/scaleF)|0),imgH-1);
+    sg[y*sw+x]=grayImg[sy*imgW+sx];
+  }
+
+  // Build scaled template
+  const st=new Float32Array(stplW*stplH);
+  for(let dy=0;dy<stplH;dy++) for(let dx=0;dx<stplW;dx++){
+    const tx=Math.min(((dx*ITPLW/stplW)|0),ITPLW-1);
+    const ty=Math.min(((dy*ITPLH/stplH)|0),ITPLH-1);
+    st[dy*stplW+dx]=tpl.patch[ty*ITPLW+tx];
+  }
+
+  // Precompute template stats
+  const tn=stplW*stplH;
+  let tsum=0,tsum2=0;
+  for(let i=0;i<tn;i++){tsum+=st[i];tsum2+=st[i]*st[i];}
+  const tmean=tsum/tn, tstd=Math.sqrt(tsum2/tn-tmean*tmean);
+  if(tstd<0.02) return [];
+
+  const candidates=[];
+  for(let y=0;y<=sh-stplH;y+=NCC_STEP){
+    for(let x=0;x<=sw-stplW;x+=NCC_STEP){
+      let sa=0,sa2=0,sab=0;
+      for(let dy=0;dy<stplH;dy++){
+        const row=(y+dy)*sw+x;
+        for(let dx=0;dx<stplW;dx++){
+          const a=sg[row+dx], b=st[dy*stplW+dx];
+          sa+=a; sa2+=a*a; sab+=a*b;
+        }
+      }
+      const mean=sa/tn, vr=sa2/tn-mean*mean;
+      if(vr<1e-6) continue;
+      const nv=(sab/tn-mean*tmean)/(Math.sqrt(vr)*tstd);
+      if(nv>=NCC_THRESH) candidates.push({x:(x/scaleF)|0,y:(y/scaleF)|0,score:nv});
+    }
+  }
+
+  // Non-maximum suppression
+  candidates.sort((a,b)=>b.score-a.score);
+  const kept=[];
+  const minDist=tpl.origSz*0.6;
+  for(const c of candidates){
+    if(kept.every(k=>Math.abs(c.x-k.x)>minDist||Math.abs(c.y-k.y)>minDist))
+      kept.push(c);
+  }
+  return kept;
+}
+
+// Read count number from a known icon position
+function readCount(iconX, iconY, iconSz, roi){
+  const x0=Math.max(0, (iconX + roi.dx*iconSz)|0);
+  const y0=Math.max(0, (iconY + roi.dy*iconSz)|0);
+  const x1=Math.min(imgW-1, (x0 + roi.w*iconSz)|0);
+  const y1=Math.min(imgH-1, (y0 + roi.h*iconSz)|0);
+  if(x1<=x0||y1<=y0) return {num:'?',score:1};
+
+  const comps=findComponentsInROI(x0,y0,x1,y1);
+  const digs=[];
+  for(const c of comps) digs.push(...segmentDigits(c));
+
+  const matched=[];
+  for(const d of digs){
+    const m=matchDigitPatch(extractDigitPatch(d.x0,d.y0,d.x1,d.y1));
+    if(m) matched.push({...d,label:m.label,score:m.score});
+  }
+  if(!matched.length) return {num:'?',score:1};
+
+  matched.sort((a,b)=>a.x0-b.x0);
+  const num=matched.map(d=>d.label).join('');
+  const score=matched.reduce((s,d)=>s+d.score,0)/matched.length;
+  return {num, score, roi:{x0,y0,x1,y1}};
+}
+
+// ==============================
+//  Canvas render
+// ==============================
+function render(){
+  if(!imgCvs) return;
+  const dispW=mainCvs.parentElement.clientWidth||window.innerWidth-24;
+  const sc=Math.min(1,dispW/imgW);
+  mainCvs.width=(imgW*sc)|0; mainCvs.height=(imgH*sc)|0;
+
+  if(showBin&&binArr){
+    const tmp=document.createElement('canvas');tmp.width=imgW;tmp.height=imgH;
+    const tc=tmp.getContext('2d');
+    const id=tc.createImageData(imgW,imgH);
+    for(let i=0;i<imgW*imgH;i++){const v=binArr[i]?255:0;id.data[i*4]=id.data[i*4+1]=id.data[i*4+2]=v;id.data[i*4+3]=255;}
+    tc.putImageData(id,0,0);
+    mCtx.drawImage(tmp,0,0,mainCvs.width,mainCvs.height);
+  } else {
+    mCtx.drawImage(imgCvs,0,0,mainCvs.width,mainCvs.height);
+  }
+
+  // Draw icon selection overlay
+  if(mode==='icon'){
+    if(tapStep>=1){
+      const {iconX,iconY}=tapData;
+      mCtx.strokeStyle='#f78166'; mCtx.lineWidth=2;
+      mCtx.strokeRect(iconX*sc,iconY*sc,iconSzPx*sc,iconSzPx*sc);
+    }
+    if(tapStep>=2){
+      const {countX,countY}=tapData;
+      mCtx.strokeStyle='#3fb950'; mCtx.lineWidth=2;
+      const r=8*sc;
+      mCtx.beginPath();mCtx.arc(countX*sc,countY*sc,r,0,Math.PI*2);mCtx.stroke();
+      // Draw count ROI rectangle
+      const roi=computeROI(tapData);
+      mCtx.strokeStyle='#d2992288'; mCtx.lineWidth=1.5;
+      mCtx.strokeRect(roi.x0*sc,roi.y0*sc,(roi.x1-roi.x0)*sc,(roi.y1-roi.y0)*sc);
+    }
+  }
+
+  // Draw digit boxes in digit mode
+  if(mode==='digit'){
+    for(let i=0;i<digits.length;i++){
+      const {x0,y0,x1,y1}=digits[i];
+      mCtx.strokeStyle=i===selDigitIdx?'#f78166':'#58a6ff';
+      mCtx.lineWidth=i===selDigitIdx?2.5:1;
+      mCtx.strokeRect(x0*sc-.5,y0*sc-.5,(x1-x0+1)*sc+1,(y1-y0+1)*sc+1);
+    }
+  }
+}
+
+function toggleBin(){
+  showBin=!showBin;
+  document.getElementById('bin-btn').textContent=showBin?'元画像':'2値';
+  render();
+}
+function clearCanvas(c){c.getContext('2d').clearRect(0,0,c.width,c.height);}
+
+// ==============================
+//  Mode switching
+// ==============================
+function setMode(m){
+  mode=m;
+  ['icon','digit','recog'].forEach(id=>{
+    document.getElementById('tab-'+id).classList.toggle('active',m===id);
+    document.getElementById('panel-'+id).style.display=m===id?'':'none';
+  });
+  document.getElementById('ctrl-thresh').style.display=m==='recog'?'none':'';
+  if(m==='digit'){
+    document.getElementById('digit-warn').hidden=Object.keys(iconTpls).length>0;
+    runDetect();
+  }
+  if(m==='recog') render();
+}
+
+// ==============================
+//  Icon calibration
+// ==============================
+function onTap(ix,iy){
+  if(mode==='icon'){
+    if(tapStep===0){
+      // First tap: set icon position
+      tapData={iconX:ix-iconSzPx/2, iconY:iy-iconSzPx/2};
+      tapStep=1;
+      updateSteps();
+      refreshIconZoom();
+      statusEl.textContent='次に、カウント数字の位置をタップしてください';
+    } else if(tapStep===1){
+      // Second tap: set count position
+      tapData.countX=ix; tapData.countY=iy;
+      tapStep=2;
+      updateSteps();
+      refreshRoiZoom();
+      statusEl.textContent='アイテム名を入力して「保存」を押してください';
+      document.getElementById('item-name').focus();
+    }
+    render();
+  } else if(mode==='digit'){
+    // Hit test on digit boxes
+    let best=-1, bestA=Infinity;
+    for(let i=0;i<digits.length;i++){
+      const {x0,y0,x1,y1}=digits[i];
+      if(ix>=x0&&ix<=x1&&iy>=y0&&iy<=y1){
+        const a=(x1-x0)*(y1-y0);
+        if(a<bestA){bestA=a;best=i;}
+      }
+    }
+    if(best<0){selDigitIdx=-1;clearCanvas(zoomDig);render();return;}
+    selDigitIdx=best;
+    showDigitZoom(digits[best]);
+    render();
+    document.getElementById('sel-info').textContent=(best+1)+' / '+digits.length;
+  }
+}
+
+function computeROI(td){
+  const hs=iconSzPx/2;
+  const cx=td.countX-td.iconX, cy=td.countY-td.iconY;
+  const x0=Math.max(0,(td.iconX+cx-hs*0.8)|0);
+  const y0=Math.max(0,(td.iconY+cy-hs*0.4)|0);
+  const x1=Math.min(imgW,(td.iconX+cx+hs*0.8)|0);
+  const y1=Math.min(imgH,(td.iconY+cy+hs*0.4)|0);
+  return {x0,y0,x1,y1,
+    dx:(x0-td.iconX)/iconSzPx, dy:(y0-td.iconY)/iconSzPx,
+    w:(x1-x0)/iconSzPx, h:(y1-y0)/iconSzPx};
+}
+
+function refreshIconZoom(){
+  const {iconX,iconY}=tapData;
+  zoomIcon.width=80; zoomIcon.height=80;
+  const zc=zoomIcon.getContext('2d');
+  zc.imageSmoothingEnabled=false;
+  zc.drawImage(imgCvs,iconX,iconY,iconSzPx,iconSzPx,0,0,80,80);
+}
+
+function refreshRoiZoom(){
+  const roi=computeROI(tapData);
+  const rw=roi.x1-roi.x0, rh=roi.y1-roi.y0;
+  if(rw<=0||rh<=0){clearCanvas(zoomRoi);return;}
+  const zs=Math.min(8,Math.floor(80/rw),Math.floor(40/rh));
+  zoomRoi.width=Math.max(1,rw*zs); zoomRoi.height=Math.max(1,rh*zs);
+  const zc=zoomRoi.getContext('2d');
+  zc.imageSmoothingEnabled=false;
+  zc.drawImage(imgCvs,roi.x0,roi.y0,rw,rh,0,0,zoomRoi.width,zoomRoi.height);
+}
+
+function updateSteps(){
+  [1,2,3].forEach(i=>{
+    const el=document.getElementById('s'+i);
+    if(i<tapStep+1) el.className='step done';
+    else if(i===tapStep+1) el.className='step active';
+    else el.className='step';
+  });
+}
+
+function saveIcon(){
+  if(tapStep<2){alert('アイコンとカウント位置をタップしてください');return;}
+  const name=document.getElementById('item-name').value.trim();
+  if(!name){alert('アイテム名を入力してください');return;}
+
+  const {iconX,iconY}=tapData;
+  const patch=extractIconPatchAt(iconX,iconY,iconSzPx);
+  const roi=computeROI(tapData);
+
+  iconTpls[name]={
+    patch:Array.from(patch),
+    origSz:iconSzPx,
+    roi:{dx:roi.dx, dy:roi.dy, w:roi.w, h:roi.h},
+    preview:iconPreviewB64(iconX,iconY,iconSzPx)
+  };
+  saveIconStorage();
+  renderIconTpl();
+  document.getElementById('item-name').value='';
+  statusEl.textContent='"'+name+'" を登録しました';
+  resetIconCal();
+}
+
+function iconPreviewB64(ix,iy,sz){
+  const c=document.createElement('canvas'); c.width=48; c.height=48;
+  c.getContext('2d').drawImage(imgCvs,ix,iy,sz,sz,0,0,48,48);
+  return c.toDataURL('image/png');
+}
+
+function resetIconCal(){
+  tapStep=0; tapData={};
+  updateSteps();
+  clearCanvas(zoomIcon); clearCanvas(zoomRoi);
+  document.getElementById('item-name').value='';
+  statusEl.textContent='アイコンをタップしてください';
+  render();
+}
+
+// ==============================
+//  Digit calibration
+// ==============================
+function showDigitZoom(d){
+  const {x0,y0,x1,y1}=d;
+  const sw=x1-x0+1, sh=y1-y0+1;
+  const zoom=Math.min(10,Math.max(2,(80/sh)|0));
+  zoomDig.width=sw*zoom; zoomDig.height=sh*zoom;
+  const zc=zoomDig.getContext('2d');
+  zc.imageSmoothingEnabled=false;
+  zc.drawImage(imgCvs,x0,y0,sw,sh,0,0,sw*zoom,sh*zoom);
+}
+
+function navDigit(dir){
+  if(!digits.length) return;
+  selDigitIdx=((selDigitIdx+dir)+digits.length)%digits.length;
+  showDigitZoom(digits[selDigitIdx]);
+  render();
+  document.getElementById('sel-info').textContent=(selDigitIdx+1)+' / '+digits.length;
+}
+
+function saveDigit(){
+  if(selDigitIdx<0){alert('枠を選択してください');return;}
+  const lbl=document.getElementById('label-in').value.trim();
+  if(!lbl){alert('ラベルを入力してください');return;}
+  const d=digits[selDigitIdx];
+  addDigitTpl(lbl, extractDigitPatch(d.x0,d.y0,d.x1,d.y1));
+  document.getElementById('label-in').value='';
+  statusEl.textContent='"'+lbl+'" を保存 (×'+digitTpls[lbl].count+')';
+  navDigit(1);
+}
+
+// ==============================
+//  Recognition
+// ==============================
+function recognizeAll(){
+  const iconKeys=Object.keys(iconTpls);
+  if(!iconKeys.length){alert('アイコンが登録されていません');return;}
+  if(!Object.keys(digitTpls).length){alert('数字テンプレートがありません。「数字登録」タブで登録してください');return;}
+  if(!imgCvs){alert('スクショを読み込んでください');return;}
+
+  statusEl.textContent='スキャン中...';
+  const results=[];
+
+  for(const name of iconKeys){
+    const tpl=iconTpls[name];
+    const matches=nccSearch(name);
+    for(const m of matches){
+      const {num,score,roi}=readCount(m.x,m.y,tpl.origSz,tpl.roi);
+      results.push({name, num, score, iconX:m.x, iconY:m.y, roi, nccScore:m.score});
+    }
+  }
+
+  results.sort((a,b)=>a.iconY-b.iconY||a.iconX-b.iconX);
+  renderRecogResults(results);
+
+  // Overlay on canvas
+  render();
+  const sc=mainCvs.width/imgW;
+  for(const r of results){
+    if(r.roi){
+      mCtx.strokeStyle='#3fb95088'; mCtx.lineWidth=1;
+      mCtx.strokeRect(r.roi.x0*sc,r.roi.y0*sc,(r.roi.x1-r.roi.x0)*sc,(r.roi.y1-r.roi.y0)*sc);
+    }
+    mCtx.font=`bold ${Math.max(9,(13*sc)|0)}px monospace`;
+    mCtx.textBaseline='bottom';
+    const conf=scoreToConf(r.score);
+    mCtx.fillStyle=conf==='hi'?'#3fb950':conf==='mid'?'#58a6ff':'#f78166';
+    mCtx.fillText(r.num, r.iconX*sc, r.iconY*sc-2);
+  }
+
+  statusEl.textContent=results.length+' 件検出';
+}
+
+function scoreToConf(s){return s<0.04?'hi':s<0.10?'mid':'lo';}
+
+function renderRecogResults(results){
+  const el=document.getElementById('recog-results');
+  if(!results.length){
+    el.innerHTML='<div class="empty">アイコンが見つかりませんでした<br>NCC しきい値を下げるか、テンプレートを再登録してください</div>';
+    return;
+  }
+  const confLbl={hi:'高',mid:'中',lo:'低'};
+  el.innerHTML=results.map(r=>{
+    const tpl=iconTpls[r.name];
+    const img=tpl?`<img class="res-icon" src="${tpl.preview}">`:'<div class="res-icon" style="background:#222"></div>';
+    const c=scoreToConf(r.score);
+    return `<div class="res-row">
+      ${img}
+      <div class="res-name">${r.name}</div>
+      <div class="res-count">${r.num}</div>
+      <div class="res-conf conf-${c}">${confLbl[c]}精度</div>
+    </div>`;
+  }).join('');
+}
+
+function copyResults(){
+  const rows=document.getElementById('recog-results').querySelectorAll('.res-row');
+  if(!rows.length){alert('認識結果がありません');return;}
+  const lines=Array.from(rows).map(r=>{
+    const name=r.querySelector('.res-name')?.textContent||'';
+    const count=r.querySelector('.res-count')?.textContent||'';
+    return name+'\t'+count;
+  });
+  navigator.clipboard.writeText(lines.join('\n'))
+    .then(()=>alert('コピーしました'))
+    .catch(()=>prompt('コピーしてください:',lines.join('\n')));
+}
+
+// ==============================
+//  Storage - digits
+// ==============================
+function loadDigits(){
+  try{
+    const raw=localStorage.getItem(DIGIT_STORE);if(!raw)return;
+    const s=JSON.parse(raw);digitTpls={};
+    for(const[k,v]of Object.entries(s)) digitTpls[k]={avg:new Float32Array(v.avg),count:v.count};
+  }catch(e){digitTpls={};}
+}
+function saveDigitStorage(){
+  const out={};
+  for(const[k,v]of Object.entries(digitTpls)) out[k]={avg:Array.from(v.avg),count:v.count};
+  localStorage.setItem(DIGIT_STORE,JSON.stringify(out));
+}
+function addDigitTpl(label,patch){
+  if(!digitTpls[label]){digitTpls[label]={avg:new Float32Array(patch),count:1};}
+  else{const{avg,count:n}=digitTpls[label];for(let i=0;i<avg.length;i++)avg[i]=(avg[i]*n+patch[i])/(n+1);digitTpls[label].count=n+1;}
+  saveDigitStorage();renderDigitTpl();
+}
+function clearDigits(){if(!confirm('数字テンプレートを全削除?'))return;digitTpls={};localStorage.removeItem(DIGIT_STORE);renderDigitTpl();}
+function exportDigits(){
+  const out={};for(const[k,v]of Object.entries(digitTpls))out[k]={avg:Array.from(v.avg),count:v.count};
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(out)],{type:'application/json'}));
+  a.download='wos-digit-templates.json';a.click();
+}
+function importDigits(file){
+  const r=new FileReader();r.onload=ev=>{
+    try{const d=JSON.parse(ev.target.result);for(const[k,v]of Object.entries(d))digitTpls[k]={avg:new Float32Array(v.avg),count:v.count};saveDigitStorage();renderDigitTpl();alert('インポート完了: '+Object.keys(d).length+' 種');}
+    catch(e){alert('エラー');}
+  };r.readAsText(file);
+}
+function renderDigitTpl(){
+  const keys=Object.keys(digitTpls).sort((a,b)=>(+a||Infinity)-(+b||Infinity)||a.localeCompare(b));
+  document.getElementById('digit-badge').textContent=keys.length;
+  const grid=document.getElementById('digit-grid');
+  if(!keys.length){grid.innerHTML='<div class="empty">なし</div>';return;}
+  grid.innerHTML='';
+  for(const k of keys){
+    const{avg,count}=digitTpls[k];
+    const c=document.createElement('canvas');c.width=DTPLW;c.height=DTPLH;
+    const ctx=c.getContext('2d');const id=ctx.createImageData(DTPLW,DTPLH);
+    for(let i=0;i<DTPLW*DTPLH;i++){const v=(avg[i]*255)|0;id.data[i*4]=id.data[i*4+1]=id.data[i*4+2]=v;id.data[i*4+3]=255;}
+    ctx.putImageData(id,0,0);c.style.width=DTPLW*2+'px';c.style.height=DTPLH*2+'px';
+    const div=document.createElement('div');div.className='tpl-item';div.title='長押しで削除';
+    const lbl=document.createElement('div');lbl.className='tpl-label';lbl.textContent=k;
+    const cnt=document.createElement('div');cnt.className='tpl-sub';cnt.textContent='×'+count;
+    div.appendChild(lbl);div.appendChild(c);div.appendChild(cnt);
+    let pt;div.addEventListener('touchstart',()=>{pt=setTimeout(()=>{if(confirm('"'+k+'"を削除?')){delete digitTpls[k];saveDigitStorage();renderDigitTpl();}},700);},{passive:true});
+    div.addEventListener('touchend',()=>clearTimeout(pt),{passive:true});
+    div.addEventListener('contextmenu',e=>{e.preventDefault();if(confirm('"'+k+'"を削除?')){delete digitTpls[k];saveDigitStorage();renderDigitTpl();}});
+    grid.appendChild(div);
+  }
+}
+
+// ==============================
+//  Storage - icons
+// ==============================
+function loadIcons(){
+  try{const raw=localStorage.getItem(ICON_STORE);if(!raw)return;iconTpls=JSON.parse(raw);
+    for(const k of Object.keys(iconTpls))iconTpls[k].patch=new Float32Array(iconTpls[k].patch);
+  }catch(e){iconTpls={};}
+}
+function saveIconStorage(){
+  const out={};
+  for(const[k,v]of Object.entries(iconTpls))out[k]={...v,patch:Array.from(v.patch)};
+  localStorage.setItem(ICON_STORE,JSON.stringify(out));
+}
+function clearIcons(){if(!confirm('アイコンテンプレートを全削除?'))return;iconTpls={};localStorage.removeItem(ICON_STORE);renderIconTpl();}
+function exportIcons(){
+  const out={};for(const[k,v]of Object.entries(iconTpls))out[k]={...v,patch:Array.from(v.patch)};
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(out)],{type:'application/json'}));
+  a.download='wos-icon-templates.json';a.click();
+}
+function importIcons(file){
+  const r=new FileReader();r.onload=ev=>{
+    try{const d=JSON.parse(ev.target.result);for(const[k,v]of Object.entries(d)){iconTpls[k]={...v,patch:new Float32Array(v.patch)};}saveIconStorage();renderIconTpl();alert('インポート完了: '+Object.keys(d).length+' 件');}
+    catch(e){alert('エラー');}
+  };r.readAsText(file);
+}
+function renderIconTpl(){
+  const keys=Object.keys(iconTpls).sort();
+  document.getElementById('icon-badge').textContent=keys.length;
+  const grid=document.getElementById('icon-grid');
+  if(!keys.length){grid.innerHTML='<div class="empty">アイコンがありません</div>';return;}
+  grid.innerHTML='';
+  for(const k of keys){
+    const tpl=iconTpls[k];
+    const div=document.createElement('div');div.className='tpl-item';div.title='長押しで削除';
+    if(tpl.preview){const img=document.createElement('img');img.src=tpl.preview;img.style.cssText='width:48px;height:48px;image-rendering:pixelated;border-radius:4px';div.appendChild(img);}
+    const lbl=document.createElement('div');lbl.className='tpl-label';lbl.textContent=k;
+    const sub=document.createElement('div');sub.className='tpl-sub';sub.textContent=tpl.origSz+'px';
+    div.appendChild(lbl);div.appendChild(sub);
+    let pt;div.addEventListener('touchstart',()=>{pt=setTimeout(()=>{if(confirm('"'+k+'"を削除?')){delete iconTpls[k];saveIconStorage();renderIconTpl();}},700);},{passive:true});
+    div.addEventListener('touchend',()=>clearTimeout(pt),{passive:true});
+    div.addEventListener('contextmenu',e=>{e.preventDefault();if(confirm('"'+k+'"を削除?')){delete iconTpls[k];saveIconStorage();renderIconTpl();}});
+    grid.appendChild(div);
+  }
+}
+</script>
+</body>
+</html>
