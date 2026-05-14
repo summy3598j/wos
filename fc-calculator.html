@@ -341,11 +341,11 @@ function initBuildings() {
     + '</div></div></div>'
   ).join('');
 
-  // Set defaults: all from FC0, target FC5, all expanded
+  // Set defaults: all from FC0, target FC5
   BUILDINGS.forEach(b => {
     document.getElementById('to-' + b.id).value = '5-0';
     updateSub(b.id);
-    toggleBuilding(b.id);
+    if (b.id === 'furnace') toggleBuilding('furnace');
   });
 }
 
