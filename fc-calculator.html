@@ -600,6 +600,12 @@ function calculate() {
   const bottleneckDays = Math.max(fcDays, rfcDays);
   const bottleneck = rfcDays > fcDays ? 'rfc' : 'fc';
 
+  const completionDays = Math.ceil(bottleneckDays);
+  const completionDate = new Date();
+  completionDate.setDate(completionDate.getDate() + completionDays);
+  const completionStr = `${completionDate.getMonth()+1}/${completionDate.getDate()}`;
+  const completionFull = `${completionDate.getFullYear()}年${completionDate.getMonth()+1}月${completionDate.getDate()}日`;
+
   // ---- Summary cards ----
   let html = `
     <div class="summary-grid">
@@ -618,8 +624,8 @@ function calculate() {
         <div class="lbl">大溶鉱炉 建設時間計</div>
       </div>
       <div class="summary-card">
-        <div class="val days-val">${Math.ceil(bottleneckDays)}日</div>
-        <div class="lbl">火晶収集に必要な日数</div>
+        <div class="val days-val">${completionStr}</div>
+        <div class="lbl">完了予定日（${completionDays}日後）</div>
       </div>
     </div>
   `;
