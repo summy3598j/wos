@@ -621,10 +621,9 @@ function calculate() {
   const buffPet      = parseFloat(document.getElementById('buff-pet')?.value)     || 0;
   const buffVice     = document.getElementById('buff-viceregent')?.checked ? 10 : 0;
   const buffLords    = document.getElementById('buff-lords-order')?.checked ? 20 : 0;
-  const buffAdd      = buffVice + buffPet + buffLords;
-  const hasBuffs     = buffBase > 0 || buffAdd > 0;
-  const applyBuff    = d => d * (1 - buffBase / 100) * (1 - buffAdd / 100);
-  const buffFactor   = (1 - buffBase / 100) * (1 - buffAdd / 100);
+  const buffTotal    = buffBase + buffVice + buffPet + buffLords;
+  const hasBuffs     = buffTotal > 0;
+  const applyBuff    = d => d / (1 + buffTotal / 100);
 
   let rows = [];
   let totalFc=0, totalRfc=0, furnaceDays=0;
@@ -779,11 +778,11 @@ function calculate() {
 
   if (hasBuffs) {
     const parts = [];
-    if (buffBase > 0) parts.push(`基礎 ${buffBase}%`);
-    if (buffVice > 0) parts.push(`副執政官 10%`);
-    if (buffPet  > 0) parts.push(`ペット ${buffPet}%`);
-    if (buffLords> 0) parts.push(`領主指令 20%`);
-    html += `<div class="buff-result">⏱️ バフ計算式：(1 − 基礎${buffBase}%) × (1 − 追加${buffAdd}%) = ×${buffFactor.toFixed(3)} &emsp;適用バフ：${parts.join(' + ')}</div>`;
+    if (buffBase  > 0) parts.push(`基礎 ${buffBase}%`);
+    if (buffVice  > 0) parts.push(`副執政官 10%`);
+    if (buffPet   > 0) parts.push(`ペット ${buffPet}%`);
+    if (buffLords > 0) parts.push(`領主指令 20%`);
+    html += `<div class="buff-result">⏱️ バフ合計 ${buffTotal}% = ${parts.join(' + ')} &emsp; 計算式：必要日数 ÷ (1 + ${buffTotal}%) = ÷${(1 + buffTotal / 100).toFixed(3)}</div>`;
   }
   if (hasEst) html += '<p class="note" style="padding:0 4px">※ 推定値：司令部・軍医所のFC6以降、および溶鉱炉FC10完成段は推定値です</p>';
 
