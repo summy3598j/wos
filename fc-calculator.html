@@ -305,7 +305,6 @@ const SUBSTAGES = 5;
 // ============================================================
 
 function levelToIndex(fc, sub) {
-  if (fc === 0) return 0;
   return fc + sub / SUBSTAGES;
 }
 
@@ -373,7 +372,7 @@ function calcCost(buildingId, fromFc, fromSub, toFc, toSub) {
       const d = sd[fc - 1];
       if (!d) continue;
 
-      let startSub = (fc === fromFc) ? fromSub + 1 : 1;
+      let startSub = (fc === fromFc || (fromFc === 0 && fc === 1)) ? fromSub + 1 : 1;
       let endSub   = (fc === toFc)   ? (toSub === 0 ? SUBSTAGES : toSub) : SUBSTAGES;
 
       if (startSub > endSub) continue;
@@ -432,7 +431,7 @@ function calcBuildDays(buildingId, fromFc, fromSub, toFc, toSub) {
   for (let fc = 1; fc <= 10; fc++) {
     if (fc < fromFc || fc > toFc) continue;
     const dps = sd && sd[fc-1] ? sd[fc-1].days : BUILD_DAYS_PER_STAGE[fc-1];
-    let startSub = (fc === fromFc) ? fromSub + 1 : 1;
+    let startSub = (fc === fromFc || (fromFc === 0 && fc === 1)) ? fromSub + 1 : 1;
     let endSub   = (fc === toFc)   ? (toSub === 0 ? SUBSTAGES : toSub) : SUBSTAGES;
     if (fc === fromFc && fc === toFc) {
       days += dps * Math.max(0, (toSub === 0 ? SUBSTAGES : toSub) - fromSub);
@@ -450,7 +449,12 @@ function calcBuildDays(buildingId, fromFc, fromSub, toFc, toSub) {
 
 function buildLevelOptions(includeZero = true) {
   let opts = '';
-  if (includeZero) opts += '<option value="0-0">Lv.30（FC前）</option>';
+  if (includeZero) {
+    opts += '<option value="0-0">Lv.30（FC前）</option>';
+    for (let s = 1; s < SUBSTAGES; s++) {
+      opts += `<option value="0-${s}">FC0 — ${s}段目</option>`;
+    }
+  }
   for (let fc = 1; fc <= 10; fc++) {
     opts += `<option value="${fc}-0">FC${fc}</option>`;
     for (let s = 1; s <= SUBSTAGES; s++) {
@@ -515,7 +519,7 @@ function updateSub(id) {
   const to   = document.getElementById(`to-${id}`).value;
   const [fc1, s1] = from.split('-').map(Number);
   const [fc2, s2] = to.split('-').map(Number);
-  const fromLabel = fc1 === 0 ? 'FC前' : (s1 === 0 ? `FC${fc1}` : `FC${fc1}-${s1}段`);
+  const fromLabel = fc1 === 0 ? (s1 === 0 ? 'FC前' : `FC0-${s1}段`) : (s1 === 0 ? `FC${fc1}` : `FC${fc1}-${s1}段`);
   const toLabel   = s2 === 0 ? `FC${fc2}` : `FC${fc2}-${s2}段`;
   document.getElementById(`sub-${id}`).textContent = `${fromLabel} → ${toLabel}`;
 }
