@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>火晶計算ツール - ホワイトアウトサバイバル</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --bg2: #1a1d27;
+    --bg3: #242736;
+    --border: #2e3248;
+    --accent: #e8832a;
+    --accent2: #c45e10;
+    --blue: #4a9eff;
+    --green: #3dd68c;
+    --red: #ff5555;
+    --yellow: #f0c040;
+    --text: #e2e4ef;
+    --text2: #9098b8;
+    --text3: #5a6080;
+    --rfc-color: #a78bfa;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Hiragino Sans', 'Noto Sans JP', sans-serif; font-size: 14px; min-height: 100vh; }
+
+  header { background: linear-gradient(135deg, #1a0a00, #2a1200); border-bottom: 1px solid var(--accent2); padding: 14px 16px; }
+  header h1 { font-size: 18px; color: var(--accent); font-weight: 700; }
+  header p { color: var(--text2); font-size: 12px; margin-top: 2px; }
+
+  .tabs { display: flex; background: var(--bg2); border-bottom: 1px solid var(--border); }
+  .tab { flex: 1; padding: 10px; text-align: center; font-size: 13px; color: var(--text2); cursor: pointer; border-bottom: 2px solid transparent; transition: all .2s; }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .page { display: none; padding: 12px; }
+  .page.active { display: block; }
+
+  .section { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+  .section-header { padding: 10px 14px; font-weight: 600; font-size: 13px; color: var(--accent); background: rgba(232,131,42,.07); display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; }
+  .section-header .toggle { margin-left: auto; color: var(--text3); transition: transform .2s; }
+  .section-header.collapsed .toggle { transform: rotate(-90deg); }
+  .section-body { padding: 10px 14px; }
+
+  .production-row { display: flex; gap: 10px; }
+  .production-field { flex: 1; }
+  .production-field label { display: block; font-size: 11px; color: var(--text2); margin-bottom: 4px; }
+  .production-field input { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; color: var(--text); font-size: 14px; }
+  .production-field input:focus { outline: none; border-color: var(--accent); }
+
+  .building-card { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; overflow: hidden; }
+  .building-header { display: flex; align-items: center; padding: 10px 12px; gap: 10px; background: var(--bg3); }
+  .building-icon { width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .building-name { font-weight: 600; font-size: 13px; }
+  .building-sub { font-size: 11px; color: var(--text2); }
+  .building-toggle { margin-left: auto; }
+  .building-toggle input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
+
+  .building-body { padding: 10px 12px; display: none; }
+  .building-body.open { display: block; }
+
+  .level-row { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 8px; }
+  .level-field { flex: 1; }
+  .level-field label { display: block; font-size: 11px; color: var(--text2); margin-bottom: 4px; }
+  .level-field select { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 8px 6px; color: var(--text); font-size: 13px; }
+  .level-field select:focus { outline: none; border-color: var(--accent); }
+  .arrow { color: var(--text3); font-size: 16px; padding-bottom: 6px; }
+
+  .btn { display: block; width: 100%; padding: 14px; background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; font-size: 16px; font-weight: 700; border: none; border-radius: 10px; cursor: pointer; margin-top: 12px; }
+  .btn:active { opacity: .85; }
+
+  /* Results */
+  .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .summary-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 12px; text-align: center; }
+  .summary-card .val { font-size: 22px; font-weight: 700; }
+  .summary-card .lbl { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .fc-val { color: var(--accent); }
+  .rfc-val { color: var(--rfc-color); }
+  .time-val { color: var(--blue); }
+  .days-val { color: var(--green); }
+
+  .bottleneck { border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 12px; }
+  .bottleneck.fc { background: rgba(232,131,42,.15); border: 1px solid rgba(232,131,42,.3); }
+  .bottleneck.rfc { background: rgba(167,139,250,.15); border: 1px solid rgba(167,139,250,.3); }
+  .bottleneck.ok { background: rgba(61,214,140,.1); border: 1px solid rgba(61,214,140,.3); color: var(--green); }
+
+  .detail-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .detail-table th { background: var(--bg3); padding: 6px 8px; text-align: left; color: var(--text2); font-weight: 600; }
+  .detail-table td { padding: 6px 8px; border-top: 1px solid var(--border); }
+  .detail-table tr:hover td { background: rgba(255,255,255,.02); }
+  .tag { display: inline-block; font-size: 10px; padding: 1px 5px; border-radius: 4px; margin-left: 4px; }
+  .tag.est { background: rgba(240,192,64,.15); color: var(--yellow); }
+
+  .effect-card { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; overflow: hidden; }
+  .effect-level { padding: 8px 12px; font-weight: 600; font-size: 13px; background: var(--bg3); display: flex; align-items: center; gap: 8px; }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 700; }
+  .badge.fc1-3 { background: rgba(61,214,140,.2); color: var(--green); }
+  .badge.fc4-5 { background: rgba(74,158,255,.2); color: var(--blue); }
+  .badge.fc6-8 { background: rgba(232,131,42,.2); color: var(--accent); }
+  .badge.fc9-10 { background: rgba(255,85,85,.2); color: var(--red); }
+  .effect-list { padding: 8px 12px; font-size: 12px; color: var(--text2); line-height: 1.8; }
+  .effect-list li { list-style: none; padding-left: 12px; position: relative; }
+  .effect-list li::before { content: '\25b8'; position: absolute; left: 0; color: var(--accent); }
+
+  .empty-state { text-align: center; color: var(--text3); padding: 40px 20px; font-size: 13px; }
+  .progress-bar { height: 6px; background: var(--bg3); border-radius: 3px; margin-top: 6px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 3px; transition: width .4s; }
+
+  .note { font-size: 11px; color: var(--text3); padding: 6px 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>&#128293; 火晶計算ツール</h1>
+  <p>ホワイトアウトサバイバル &#8212; 大溶鉱炉FC計算</p>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('input')">設定</div>
+  <div class="tab" onclick="switchTab('result')">結果</div>
+  <div class="tab" onclick="switchTab('effects')">効果</div>
+</div>
+
+<div id="tab-input" class="page active">
+
+  <div class="section" style="margin-top:12px">
+    <div class="section-header" onclick="toggleSection(this)">
+      &#9879;&#65039; 日次生産量
+      <span class="toggle">&#9662;</span>
+    </div>
+    <div class="section-body">
+      <div class="production-row">
+        <div class="production-field">
+          <label>火晶 / 日</label>
+          <input type="number" id="fc-per-day" value="17" min="1">
+        </div>
+        <div class="production-field">
+          <label>精製火晶 / 日</label>
+          <input type="number" id="rfc-per-day" value="7" min="1">
+        </div>
+      </div>
+      <p class="note">目安：デイリータスク10 + 水晶研究所7 = 17 FC/日</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggleSection(this)">
+      &#127963;&#65039; 建物レベル設定
+      <span class="toggle">&#9662;</span>
+    </div>
+    <div class="section-body" id="buildings-container"></div>
+  </div>
+
+  <button class="btn" onclick="calculate()">計算する &#8594;</button>
+
+</div>
+
+<div id="tab-result" class="page">
+  <div id="result-content"><div class="empty-state">「設定」タブで入力後、計算してください</div></div>
+</div>
+
+<div id="tab-effects" class="page">
+  <div id="effects-content"><div class="empty-state">「設定」タブで入力後、計算してください</div></div>
+</div>
+
+<script>
+const BUILDINGS = [
+  { id: 'furnace',   name: '大溶鉱炉',   icon: '&#128293;', color: '#e8832a' },
+  { id: 'embassy',   name: '大使館',     icon: '&#127963;&#65039;', color: '#4a9eff' },
+  { id: 'infantry',  name: '歩兵の陣',   icon: '&#9876;&#65039;', color: '#3dd68c' },
+  { id: 'lancer',    name: '騎兵の陣',   icon: '&#128481;&#65039;', color: '#a78bfa' },
+  { id: 'marksman',  name: '射手の陣',   icon: '&#127993;', color: '#f0c040' },
+  { id: 'command',   name: '司令部',     icon: '&#127919;', color: '#ff7070' },
+  { id: 'infirmary', name: '軍医所',     icon: '&#127973;', color: '#60d0d0' },
+];
+
+const COSTS = {
+  furnace:  [
+    {fc:660,  rfc:0},
+    {fc:790,  rfc:0},
+    {fc:1190, rfc:0},
+    {fc:1400, rfc:0},
+    {fc:1675, rfc:60},
+    {fc:900,  rfc:60},
+    {fc:1080, rfc:90},
+    {fc:1080, rfc:120},
+    {fc:1260, rfc:180},
+    {fc:1575, rfc:420},
+  ],
+  embassy:  [
+    {fc:165, rfc:0},
+    {fc:195, rfc:0},
+    {fc:295, rfc:0},
+    {fc:350, rfc:0},
+    {fc:415, rfc:0},
+    {fc:225, rfc:13},
+    {fc:270, rfc:19},
+    {fc:270, rfc:31},
+    {fc:315, rfc:42},
+    {fc:392, rfc:103},
+  ],
+  infantry: [
+    {fc:295, rfc:0},
+    {fc:355, rfc:0},
+    {fc:535, rfc:0},
+    {fc:630, rfc:0},
+    {fc:750, rfc:0},
+    {fc:405, rfc:25},
+    {fc:486, rfc:37},
+    {fc:486, rfc:55},
+    {fc:567, rfc:78},
+    {fc:706, rfc:186},
+  ],
+  lancer:   [
+    {fc:295, rfc:0},
+    {fc:355, rfc:0},
+    {fc:535, rfc:0},
+    {fc:630, rfc:0},
+    {fc:750, rfc:0},
+    {fc:405, rfc:25},
+    {fc:486, rfc:37},
+    {fc:486, rfc:55},
+    {fc:567, rfc:78},
+    {fc:706, rfc:186},
+  ],
+  marksman: [
+    {fc:295, rfc:0},
+    {fc:355, rfc:0},
+    {fc:535, rfc:0},
+    {fc:630, rfc:0},
+    {fc:750, rfc:0},
+    {fc:405, rfc:25},
+    {fc:486, rfc:37},
+    {fc:486, rfc:55},
+    {fc:567, rfc:78},
+    {fc:706, rfc:186},
+  ],
+  command:  [
+    {fc:130, rfc:0},
+    {fc:155, rfc:0},
+    {fc:235, rfc:0},
+    {fc:280, rfc:0},
+    {fc:335, rfc:0},
+    {fc:180, rfc:10, est:true},
+    {fc:216, rfc:15, est:true},
+    {fc:216, rfc:25, est:true},
+    {fc:252, rfc:34, est:true},
+    {fc:314, rfc:82, est:true},
+  ],
+  infirmary:[
+    {fc:130, rfc:0},
+    {fc:155, rfc:0},
+    {fc:235, rfc:0},
+    {fc:280, rfc:0},
+    {fc:335, rfc:0},
+    {fc:180, rfc:10, est:true},
+    {fc:216, rfc:15, est:true},
+    {fc:216, rfc:25, est:true},
+    {fc:252, rfc:34, est:true},
+    {fc:314, rfc:82, est:true},
+  ],
+};
+
+const BUILD_DAYS_PER_STAGE = [7, 9, 11, 12, 14, 16, 17, 18, 19, 20];
+const SERVER_DAY_UNLOCK = [60,60,60,150,150,315,315,315,500,500];
+
+const EFFECTS = {
+  furnace: {
+    1: ['熱量・都市戦力が上昇', '大使館・軍医所・兵種キャンプのFCアップグレード解放'],
+    3: ['水晶スキル Tier1 解放（各兵種陣がFC3以上で有効化）'],
+    4: ['水晶研究所 アンロック（サーバーDay150）'],
+    5: ['水晶スキル Tier2 解放 / 精製火晶の使用開始'],
+    6: ['全アップグレードで精製火晶が必須に（サーバーDay315）'],
+    8: ['水晶スキル Tier3 解放'],
+    10: ['水晶スキル Tier4 解放（最高位） / フロストスター経済開始'],
+  },
+  infantry: {
+    3: ['水晶の盾 I：25%の確率で36ダメージを無効化'],
+    5: ['水晶の盾 II：37.5%の確率で36ダメージを無効化'],
+    8: ['光の体 I：歩兵防御+4%、水晶の盾発動時ダメ軽減+10%'],
+    10: ['光の体 II：歩兵防御+6%、水晶の盾発動時ダメ軽減+15%'],
+  },
+  lancer: {
+    3: ['水晶の槍 I：10%の確率でダメージ2倍'],
+    5: ['水晶の槍 II：15%の確率でダメージ2倍'],
+    8: ['白熱フィールド I：攻撃を受けた時10%の確率で被ダメ半減'],
+    10: ['白熱フィールド II：攻撃を受けた時15%の確率で被ダメ半減'],
+  },
+  marksman: {
+    3: ['水晶の火薬 I：20%の確率でダメージ+50%'],
+    5: ['水晶の火薬 II：30%の確率でダメージ+50%'],
+    8: ['炎の装填 I：射手基礎攻撃+4%、水晶の火薬発動時ダメージ+25%'],
+    10: ['炎の装填 II：射手基礎攻撃+6%、水晶の火薬発動時ダメージ+37.5%'],
+  },
+  embassy: {
+    1: ['援軍容量が上昇'],
+    5: ['援軍容量がさらに上昇'],
+    10: ['援軍容量 最大値'],
+  },
+  command: {
+    1: ['行軍容量・集会容量が上昇'],
+    5: ['行軍容量・集会容量がさらに上昇'],
+    10: ['行軍容量・集会容量 最大値'],
+  },
+  infirmary: {
+    1: ['病床容量が上昇'],
+    5: ['病床容量がさらに上昇'],
+    10: ['病床容量 最大値'],
+  },
+};
+
+const SUBSTAGES = 5;
+
+function buildLevelOptions(includeZero) {
+  let opts = '';
+  if (includeZero) opts += '<option value="0-0">Lv.30（FC前）</option>';
+  for (let fc = 1; fc <= 10; fc++) {
+    opts += '<option value="' + fc + '-0">FC' + fc + '</option>';
+    for (let s = 1; s <= SUBSTAGES; s++) {
+      opts += '<option value="' + fc + '-' + s + '">FC' + fc + ' &#8212; ' + s + '段目</option>';
+    }
+  }
+  return opts;
+}
+
+function initBuildings() {
+  const container = document.getElementById('buildings-container');
+  container.innerHTML = BUILDINGS.map(b =>
+    '<div class="building-card" id="card-' + b.id + '">'
+    + '<div class="building-header" onclick="toggleBuilding(\'' + b.id + '\')">' 
+    + '<div class="building-icon" style="background:' + b.color + '22">' + b.icon + '</div>'
+    + '<div><div class="building-name">' + b.name + '</div><div class="building-sub" id="sub-' + b.id + '">FC前 &#8594; FC5</div></div>'
+    + '<div class="building-toggle" onclick="event.stopPropagation()">'
+    + '<input type="checkbox" id="chk-' + b.id + '" checked onchange="toggleCheck(\'' + b.id + '\')"></div>'
+    + '</div>'
+    + '<div class="building-body" id="body-' + b.id + '">'
+    + '<div class="level-row">'
+    + '<div class="level-field"><label>現在</label><select id="from-' + b.id + '" onchange="updateSub(\'' + b.id + '\')">' + buildLevelOptions(true) + '</select></div>'
+    + '<div class="arrow">&#8594;</div>'
+    + '<div class="level-field"><label>目標</label><select id="to-' + b.id + '" onchange="updateSub(\'' + b.id + '\')">' + buildLevelOptions(false) + '</select></div>'
+    + '</div></div></div>'
+  ).join('');
+
+  BUILDINGS.forEach(b => {
+    document.getElementById('to-' + b.id).value = '5-0';
+    updateSub(b.id);
+    if (b.id === 'furnace') toggleBuilding('furnace');
+  });
+}
+
+function toggleBuilding(id) {
+  document.getElementById('body-' + id).classList.toggle('open');
+}
+
+function toggleCheck(id) {
+  document.getElementById('card-' + id).style.opacity = document.getElementById('chk-' + id).checked ? '1' : '0.4';
+}
+
+function updateSub(id) {
+  const from = document.getElementById('from-' + id).value;
+  const to = document.getElementById('to-' + id).value;
+  const [fc1, s1] = from.split('-').map(Number);
+  const [fc2, s2] = to.split('-').map(Number);
+  const fromLabel = fc1 === 0 ? 'FC前' : (s1 === 0 ? 'FC' + fc1 : 'FC' + fc1 + '-' + s1 + '段');
+  const toLabel = s2 === 0 ? 'FC' + fc2 : 'FC' + fc2 + '-' + s2 + '段';
+  document.getElementById('sub-' + id).textContent = fromLabel + ' → ' + toLabel;
+}
+
+function toggleSection(el) {
+  el.classList.toggle('collapsed');
+  el.nextElementSibling.style.display = el.classList.contains('collapsed') ? 'none' : '';
+}
+
+function parseLevel(val) {
+  const [fc, sub] = val.split('-').map(Number);
+  return { fc, sub };
+}
+
+function levelToIndex(fc, sub) {
+  if (fc === 0) return 0;
+  return fc + sub / SUBSTAGES;
+}
+
+function calcCost(buildingId, fromFc, fromSub, toFc, toSub) {
+  const costs = COSTS[buildingId];
+  let totalFc = 0, totalRfc = 0, hasEst = false;
+  if (levelToIndex(fromFc, fromSub) >= levelToIndex(toFc, toSub)) return { fc: 0, rfc: 0, est: false };
+
+  for (let fc = 1; fc <= 10; fc++) {
+    if (fc < fromFc || fc > toFc) continue;
+    const c = costs[fc - 1];
+    if (!c) continue;
+    if (c.est) hasEst = true;
+    const fcps = c.fc / SUBSTAGES;
+    const rfcps = c.rfc / SUBSTAGES;
+    if (fc === fromFc && fc === toFc) {
+      const stages = toSub - fromSub;
+      if (stages > 0) { totalFc += fcps * stages; totalRfc += rfcps * stages; }
+      continue;
+    }
+    let startSub = (fc === fromFc) ? fromSub + 1 : 1;
+    let endSub = (fc === toFc) ? (toSub === 0 ? SUBSTAGES : toSub) : SUBSTAGES;
+    const stages = endSub - startSub + 1;
+    if (stages > 0) { totalFc += fcps * stages; totalRfc += rfcps * stages; }
+  }
+  return { fc: Math.round(totalFc), rfc: Math.round(totalRfc), est: hasEst };
+}
+
+function calcBuildDays(fromFc, fromSub, toFc, toSub) {
+  let days = 0;
+  for (let fc = 1; fc <= 10; fc++) {
+    if (fc < fromFc || fc > toFc) continue;
+    const dps = BUILD_DAYS_PER_STAGE[fc - 1];
+    if (fc === fromFc && fc === toFc) { days += dps * Math.max(0, toSub - fromSub); continue; }
+    let startSub = (fc === fromFc) ? fromSub + 1 : 1;
+    let endSub = (fc === toFc) ? (toSub === 0 ? SUBSTAGES : toSub) : SUBSTAGES;
+    const stages = endSub - startSub + 1;
+    if (stages > 0) days += dps * stages;
+  }
+  return days;
+}
+
+function calculate() {
+  const fcPerDay = parseFloat(document.getElementById('fc-per-day').value) || 17;
+  const rfcPerDay = parseFloat(document.getElementById('rfc-per-day').value) || 7;
+  let rows = [], totalFc = 0, totalRfc = 0, totalDays = 0, hasEst = false;
+  let effectsToShow = {};
+
+  BUILDINGS.forEach(b => {
+    if (!document.getElementById('chk-' + b.id).checked) return;
+    const from = parseLevel(document.getElementById('from-' + b.id).value);
+    const to = parseLevel(document.getElementById('to-' + b.id).value);
+    if (levelToIndex(from.fc, from.sub) >= levelToIndex(to.fc, to.sub)) return;
+    const cost = calcCost(b.id, from.fc, from.sub, to.fc, to.sub);
+    if (cost.est) hasEst = true;
+    const buildDays = b.id === 'furnace' ? calcBuildDays(from.fc, from.sub, to.fc, to.sub) : 0;
+    totalFc += cost.fc; totalRfc += cost.rfc; totalDays += buildDays;
+    rows.push({ b, from, to, cost, buildDays });
+    const bEffects = EFFECTS[b.id] || {};
+    for (let fc = from.fc + 1; fc <= to.fc; fc++) {
+      if (bEffects[fc]) {
+        if (!effectsToShow[fc]) effectsToShow[fc] = [];
+        effectsToShow[fc].push({ b, effects: bEffects[fc] });
+      }
+    }
+  });
+
+  if (rows.length === 0) {
+    document.getElementById('result-content').innerHTML = '<div class="empty-state">対象の建物がないか、既に目標レベルに達しています</div>';
+    switchTab('result'); return;
+  }
+
+  const fcDays = totalFc / fcPerDay;
+  const rfcDays = totalRfc > 0 ? totalRfc / rfcPerDay : 0;
+  const bottleneck = rfcDays > fcDays ? 'rfc' : 'fc';
+
+  let html = '<div class="summary-grid">'
+    + '<div class="summary-card"><div class="val fc-val">' + totalFc.toLocaleString() + '</div><div class="lbl">必要 火晶</div></div>'
+    + '<div class="summary-card"><div class="val rfc-val">' + totalRfc.toLocaleString() + '</div><div class="lbl">必要 精製火晶</div></div>'
+    + '<div class="summary-card"><div class="val time-val">' + totalDays + '日</div><div class="lbl">大溶鉱炉 建設時間計</div></div>'
+    + '<div class="summary-card"><div class="val days-val">' + Math.ceil(Math.max(fcDays, rfcDays)) + '日</div><div class="lbl">火晶収集に必要な日数</div></div>'
+    + '</div>';
+
+  if (totalRfc === 0) {
+    html += '<div class="bottleneck ok">&#9989; 精製火晶は不要です（FC4以下のアップグレード）</div>';
+  } else if (bottleneck === 'rfc') {
+    html += '<div class="bottleneck rfc">&#9879;&#65039; ボトルネック：精製火晶（' + Math.ceil(rfcDays) + '日）が火晶（' + Math.ceil(fcDays) + '日）より時間がかかります</div>';
+  } else {
+    html += '<div class="bottleneck fc">&#128293; ボトルネック：火晶（' + Math.ceil(fcDays) + '日）が精製火晶（' + Math.ceil(rfcDays) + '日）より時間がかかります</div>';
+  }
+
+  html += '<div class="section"><div class="section-header" onclick="toggleSection(this)">&#128202; 建物別内訳 <span class="toggle">&#9662;</span></div><div class="section-body" style="padding:0;overflow-x:auto"><table class="detail-table"><thead><tr><th>建物</th><th>範囲</th><th>火晶</th><th>精製火晶</th></tr></thead><tbody>';
+  rows.forEach(r => {
+    const fl = r.from.fc === 0 ? 'FC前' : (r.from.sub === 0 ? 'FC' + r.from.fc : 'FC' + r.from.fc + '-' + r.from.sub);
+    const tl = r.to.sub === 0 ? 'FC' + r.to.fc : 'FC' + r.to.fc + '-' + r.to.sub;
+    html += '<tr><td>' + r.b.icon + ' ' + r.b.name + (r.cost.est ? '<span class="tag est">推定</span>' : '') + '</td>'
+      + '<td style="color:var(--text2)">' + fl + '→' + tl + '</td>'
+      + '<td style="color:var(--accent)">' + r.cost.fc.toLocaleString() + '</td>'
+      + '<td style="color:var(--rfc-color)">' + r.cost.rfc.toLocaleString() + '</td></tr>';
+  });
+  html += '</tbody></table></div></div>';
+  if (hasEst) html += '<p class="note" style="padding:0 4px">※ 推定値：司令部・軍医所のFC6以降は大使館比80%の推定値です</p>';
+
+  document.getElementById('result-content').innerHTML = html;
+
+  let efHtml = '';
+  const fcLevels = Object.keys(effectsToShow).map(Number).sort((a,b) => a-b);
+  if (fcLevels.length === 0) {
+    efHtml = '<div class="empty-state">このアップグレード範囲では効果の解放はありません</div>';
+  } else {
+    fcLevels.forEach(fc => {
+      const bc = fc <= 3 ? 'fc1-3' : fc <= 5 ? 'fc4-5' : fc <= 8 ? 'fc6-8' : 'fc9-10';
+      efHtml += '<div class="effect-card"><div class="effect-level"><span class="badge ' + bc + '">FC' + fc + '</span><span style="font-weight:400;color:var(--text2);font-size:11px">サーバーDay' + SERVER_DAY_UNLOCK[fc-1] + '〜</span></div>';
+      effectsToShow[fc].forEach(item => {
+        efHtml += '<div class="effect-list">' + item.b.icon + ' <strong>' + item.b.name + '</strong><ul>' + item.effects.map(e => '<li>' + e + '</li>').join('') + '</ul></div>';
+      });
+      efHtml += '</div>';
+    });
+  }
+  document.getElementById('effects-content').innerHTML = efHtml;
+  switchTab('result');
+}
+
+function switchTab(id) {
+  const ids = ['input','result','effects'];
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ids[i] === id));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+}
+
+initBuildings();
+</script>
+</body>
+</html>
