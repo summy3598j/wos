@@ -323,8 +323,7 @@ function fmtDays(days) {
 
 function fmtRes(valM) {
   // valM is in millions
-  if (valM >= 10000) return (valM / 10000).toFixed(2) + '兆';
-  if (valM >= 100)   return (valM / 100).toFixed(1) + '億';
+  if (valM >= 1000) return (valM / 1000).toFixed(2) + 'B';
   return valM.toFixed(1) + 'M';
 }
 
@@ -335,25 +334,20 @@ function fmtRes(valM) {
 // stageRange: iterate stages startSub..endSub within one FC level
 // Returns {fc, rfc, meat, wood, coal, iron, days, est}
 function _sumStages(d, startSub, endSub) {
-  let fc=0, rfc=0, est=false;
+  let fc=0, rfc=0, meat=0, wood=0, coal=0, iron=0, days=0, est=false;
   for (let s = startSub; s <= endSub; s++) {
     const isComp = s === 5;
     const slot = isComp ? d.comp : d.sub;
     fc   += slot.fc;
     rfc  += slot.rfc;
     if (slot.est) est = true;
+    meat  += d.meat  || 0;
+    wood  += d.wood  || 0;
+    coal  += d.coal  || 0;
+    iron  += d.iron  || 0;
+    days  += d.days  || 0;
   }
-  // meat/wood/coal/iron/days are totals for the full FC level; prorate by stages done
-  const numStages = endSub - startSub + 1;
-  const frac = numStages / SUBSTAGES;
-  return {
-    fc, rfc, est,
-    meat: (d.meat || 0) * frac,
-    wood: (d.wood || 0) * frac,
-    coal: (d.coal || 0) * frac,
-    iron: (d.iron || 0) * frac,
-    days: (d.days || 0) * frac,
-  };
+  return {fc, rfc, meat, wood, coal, iron, days, est};
 }
 
 function _stageRange(fromFc, fromSub, toFc, fc) {
