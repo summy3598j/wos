@@ -10,10 +10,17 @@ body{background:#0d1b2a;color:#e2e8f0;font-family:'Hiragino Sans','Noto Sans JP'
 button{cursor:pointer;border:none;outline:none;background:none;touch-action:manipulation;}
 input{outline:none;}
 
-.hdr{background:linear-gradient(180deg,#1a3a5c,#0d2238);padding:8px 14px 6px;border-bottom:2px solid #1e4d7a;}
-.hdr h1{font-size:15px;font-weight:700;color:#93c5fd;}
+/* Header */
+.hdr{background:linear-gradient(180deg,#1a3a5c,#0d2238);padding:8px 12px 6px;border-bottom:2px solid #1e4d7a;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.hdr h1{font-size:15px;font-weight:700;color:#93c5fd;flex:1;}
+.hdr-btns{display:flex;gap:5px;flex-shrink:0;}
+.hdr-btn{font-size:11px;font-weight:700;border-radius:14px;padding:4px 10px;height:26px;display:flex;align-items:center;}
+.hdr-help{background:#1e3a5c;color:#60a5fa;}
+.hdr-help:active{background:#2a4a7c;}
+.hdr-reset{background:#3d1a1a;color:#f87171;}
+.hdr-reset:active{background:#5a2020;}
 
-/* Input section */
+/* Sections */
 .sec{padding:10px 12px;border-bottom:1px solid #1e3a5c;}
 .sec1{background:#112233;}
 .sec0{background:#0d1b2a;}
@@ -47,6 +54,20 @@ input{outline:none;}
 .r-inp{background:#0d1b2a;border:1px solid #334155;border-radius:4px;color:#e2e8f0;font-size:13px;font-weight:700;padding:2px 4px;width:42px;height:26px;text-align:right;-webkit-user-select:text;user-select:text;flex-shrink:0;}
 .r-pct{font-size:11px;color:#64748b;flex-shrink:0;}
 
+/* Preset section */
+.preset-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.preset-hint{font-size:10px;color:#475569;}
+.preset-row{display:flex;gap:5px;}
+.p-card{flex:1;min-width:0;background:#0d1b2a;border:1.5px solid #1e3a5c;border-radius:8px;padding:5px 4px 4px;position:relative;cursor:pointer;transition:border-color .2s;}
+.p-card:active{background:#1a2a3a;}
+.p-card.p-has{border-color:#2563eb;}
+.p-card.p-flash{border-color:#4ade80 !important;}
+.p-num{font-size:10px;color:#475569;margin-bottom:3px;font-weight:700;}
+.p-vals{font-size:9px;line-height:1.5;white-space:nowrap;}
+.p-empty{font-size:9px;color:#334155;padding:4px 0;}
+.p-save{position:absolute;top:3px;right:3px;font-size:8px;font-weight:700;background:#1e3a5c;color:#60a5fa;border-radius:3px;padding:1px 4px;line-height:14px;}
+.p-save:active{background:#2a4a7c;}
+
 /* Result total */
 .res-total{background:#0a1520;padding:8px 10px;border-bottom:2px solid #1e3a5c;}
 .res-total-title{font-size:11px;font-weight:700;color:#3b82f6;margin-bottom:6px;}
@@ -67,11 +88,32 @@ input{outline:none;}
 .t-res-r{display:flex;align-items:center;justify-content:space-between;font-size:10px;}
 .t-res-ic{color:#94a3b8;}
 .t-res-v{font-weight:700;}
+
+/* Help modal */
+#help-overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:500;display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px 12px;}
+.help-box{background:#1a3a5c;border-radius:16px;border:2px solid #3b82f6;width:100%;max-width:440px;margin:auto;padding:18px 16px;}
+.help-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.help-title{font-size:15px;font-weight:700;color:#93c5fd;}
+.help-close{background:#0d2238;color:#60a5fa;border-radius:20px;font-size:13px;font-weight:700;padding:4px 12px;}
+.help-close:active{background:#1e3a5c;}
+.h-item{margin-bottom:12px;}
+.h-item:last-child{margin-bottom:0;}
+.h-label{font-size:12px;font-weight:700;color:#60a5fa;margin-bottom:3px;}
+.h-desc{font-size:12px;color:#94a3b8;line-height:1.6;}
+.h-example{font-size:11px;color:#4ade80;background:#0d2238;border-radius:6px;padding:5px 8px;margin-top:4px;line-height:1.6;}
+.h-sep{border:none;border-top:1px solid #1e3a5c;margin:12px 0;}
 </style>
 </head>
 <body>
 
-<div class="hdr"><h1>🏥 治療計算ツール</h1></div>
+<!-- Header -->
+<div class="hdr">
+  <h1>🏥 治療計算ツール</h1>
+  <div class="hdr-btns">
+    <button class="hdr-btn hdr-help" onclick="showHelp()">？ ヘルプ</button>
+    <button class="hdr-btn hdr-reset" onclick="resetAll()">リセット</button>
+  </div>
+</div>
 
 <!-- Basic inputs -->
 <div class="sec sec1">
@@ -86,7 +128,7 @@ input{outline:none;}
     <div class="spn">
       <button class="spn-btn" onclick="adjInj(-5)">◀◀</button>
       <button class="spn-btn" onclick="adjInj(-1)">◀</button>
-      <div class="spn-val" id="inj-val">30</div>
+      <div class="spn-val" id="inj-val">35</div>
       <button class="spn-btn" onclick="adjInj(1)">▶</button>
       <button class="spn-btn" onclick="adjInj(5)">▶▶</button>
     </div>
@@ -104,12 +146,21 @@ input{outline:none;}
 </div>
 
 <!-- Ratios -->
-<div class="sec sec0" style="border-bottom:2px solid #1e3a5c;">
+<div class="sec sec0" style="border-bottom:1px solid #1e3a5c;">
   <div class="ratio-hdr">
     <span class="sec-title" style="margin-bottom:0">負傷兵種割合</span>
     <span class="ratio-sum" id="ratio-sum">合計 100%</span>
   </div>
   <div id="ratio-rows"></div>
+</div>
+
+<!-- Presets -->
+<div class="sec sec1" style="border-bottom:2px solid #1e3a5c;">
+  <div class="preset-hdr">
+    <span class="sec-title" style="margin-bottom:0">プリセット</span>
+    <span class="preset-hint">タップ:読込 ／ 保:現在値を保存</span>
+  </div>
+  <div class="preset-row" id="preset-row"></div>
 </div>
 
 <!-- Total result -->
@@ -118,6 +169,48 @@ input{outline:none;}
 <!-- Troop cards -->
 <div class="t-grid" id="t-grid"></div>
 
+<!-- Help modal -->
+<div id="help-overlay">
+  <div class="help-box">
+    <div class="help-top">
+      <span class="help-title">📖 使い方</span>
+      <button class="help-close" onclick="hideHelp()">✕ 閉じる</button>
+    </div>
+    <div class="h-item">
+      <div class="h-label">部隊兵数</div>
+      <div class="h-desc">出撃する部隊の総兵数を入力します。</div>
+    </div>
+    <hr class="h-sep">
+    <div class="h-item">
+      <div class="h-label">負傷割合</div>
+      <div class="h-desc">出撃後に負傷する兵士の割合（%）です。◀◀/▶▶で5%刻み、◀/▶で1%刻みで変更できます。</div>
+      <div class="h-example">例：部隊兵数10万・負傷割合30%<br>→ 負傷兵数 = 10万 × 30% = 3万人</div>
+    </div>
+    <hr class="h-sep">
+    <div class="h-item">
+      <div class="h-label">出征回数</div>
+      <div class="h-desc">同じ条件で出征する回数です。負傷兵数・必要資源が回数分で計算されます。</div>
+      <div class="h-example">例：3万人負傷 × 3回出征 = 計9万人分の資源が必要</div>
+    </div>
+    <hr class="h-sep">
+    <div class="h-item">
+      <div class="h-label">負傷兵種割合</div>
+      <div class="h-desc">負傷した兵士の兵種別内訳（盾兵・槍兵・弓兵）です。合計が100%になるよう設定します。スライダーを左右にドラッグ、◀/▶ボタン、または数値を直接入力して変更します。合計が100%を超える場合は自動的に上限で止まります。</div>
+      <div class="h-example">例：盾60% / 槍15% / 弓25%<br>負傷3万人 → 盾18,000・槍4,500・弓7,500人</div>
+    </div>
+    <hr class="h-sep">
+    <div class="h-item">
+      <div class="h-label">プリセット（1〜5）</div>
+      <div class="h-desc">よく使う兵種割合を5種類まで保存できます。<br>・「保」ボタン：現在の割合をそのスロットに保存します。<br>・スロットをタップ：保存された割合を読み込みます（空スロットは無効）。</div>
+    </div>
+    <hr class="h-sep">
+    <div class="h-item">
+      <div class="h-label">リセット</div>
+      <div class="h-desc">部隊兵数・負傷割合・出征回数・兵種割合を初期値に戻します。プリセットはそのまま保持されます。</div>
+    </div>
+  </div>
+</div>
+
 <script>
 const TROOPS = [
   {id:'shield', name:'盾兵', icon:'🛡️', color:'#4a9eff', per1k:{meat:279,wood:209,coal:49,iron:10}},
@@ -125,15 +218,21 @@ const TROOPS = [
   {id:'archer', name:'弓兵', icon:'🏹', color:'#f0c040', per1k:{meat:174,wood:258,coal:43,iron:14}},
 ];
 
-const defState = () => ({
+const defInputs = () => ({
   unitCount: 100000,
-  injuryPct: 30,
+  injuryPct: 35,
   sorties: 1,
   ratios: {shield:60, lance:15, archer:25},
 });
 
+const defState = () => ({
+  ...defInputs(),
+  presets: [null, null, null, null, null],
+});
+
 let S = defState();
 
+// ── Persist ──────────────────────────────────────────────────
 function save() {
   try {
     S.unitCount = parseInt(document.getElementById('unit-count')?.value) || 0;
@@ -147,11 +246,13 @@ function load() {
     if (!d) return;
     if (d.unitCount != null) S.unitCount = d.unitCount;
     if (d.injuryPct != null) S.injuryPct = d.injuryPct;
-    if (d.sorties  != null) S.sorties   = d.sorties;
-    if (d.ratios) TROOPS.forEach(t => { if (d.ratios[t.id] != null) S.ratios[t.id] = +d.ratios[t.id]; });
+    if (d.sorties   != null) S.sorties   = d.sorties;
+    if (d.ratios)   TROOPS.forEach(t => { if (d.ratios[t.id]  != null) S.ratios[t.id]  = +d.ratios[t.id]; });
+    if (d.presets)  S.presets = d.presets.map(p => p ? {...p} : null);
   } catch(e) {}
 }
 
+// ── Format ───────────────────────────────────────────────────
 function fmtK(k) {
   if (k === 0) return '0';
   if (k >= 1000000) return (k / 1000000).toFixed(2) + 'B';
@@ -160,7 +261,7 @@ function fmtK(k) {
   return k.toFixed(1) + 'K';
 }
 
-// Set ratio for tid, capped so total never exceeds 100
+// ── Ratio helpers ─────────────────────────────────────────────
 function setRatio(tid, val) {
   val = Math.round(val);
   const otherSum = TROOPS.filter(t => t.id !== tid).reduce((s, t) => s + S.ratios[t.id], 0);
@@ -177,6 +278,7 @@ function onRatioInput(tid, raw) {
   save(); render();
 }
 
+// ── Spinners ──────────────────────────────────────────────────
 function adjInj(delta) {
   S.injuryPct = Math.max(0, Math.min(100, S.injuryPct + delta));
   save(); render();
@@ -187,7 +289,7 @@ function adjSort(delta) {
   save(); render();
 }
 
-// Slider drag
+// ── Slider drag ───────────────────────────────────────────────
 let _drag = null;
 
 function sliderStart(e, tid) {
@@ -215,7 +317,72 @@ function _applyDrag(clientX) {
   render();
 }
 
-// Build ratio rows HTML once on init
+// ── Presets ───────────────────────────────────────────────────
+function savePreset(idx, e) {
+  if (e) e.stopPropagation();
+  S.presets[idx] = { ...S.ratios };
+  save();
+  renderPresets();
+}
+
+function loadPreset(idx) {
+  const p = S.presets[idx];
+  if (!p) return;
+  S.ratios = { ...p };
+  save();
+  render();
+  // Flash border green briefly
+  const card = document.getElementById('pc-' + idx);
+  if (card) {
+    card.classList.add('p-flash');
+    setTimeout(() => card.classList.remove('p-flash'), 600);
+  }
+}
+
+function renderPresets() {
+  const row = document.getElementById('preset-row');
+  if (!row) return;
+  row.innerHTML = S.presets.map((p, i) => {
+    const has = p !== null;
+    return `<div class="p-card${has ? ' p-has' : ''}" id="pc-${i}" onclick="loadPreset(${i})">
+      <div class="p-num">${i + 1}</div>
+      ${has
+        ? `<div class="p-vals">
+            <span style="color:#4a9eff">${p.shield}</span><br>
+            <span style="color:#a78bfa">${p.lance}</span><br>
+            <span style="color:#f0c040">${p.archer}</span>
+          </div>`
+        : '<div class="p-empty">空</div>'}
+      <button class="p-save" onclick="savePreset(${i},event)">保</button>
+    </div>`;
+  }).join('');
+}
+
+// ── Reset ─────────────────────────────────────────────────────
+function resetAll() {
+  if (!confirm('入力値をリセットしますか？\n（プリセットは保持されます）')) return;
+  const presets = S.presets.map(p => p ? {...p} : null);
+  S = defState();
+  S.presets = presets;
+  save();
+  document.getElementById('unit-count').value = S.unitCount;
+  render();
+}
+
+// ── Help modal ────────────────────────────────────────────────
+function showHelp() {
+  document.getElementById('help-overlay').style.display = 'flex';
+}
+
+function hideHelp() {
+  document.getElementById('help-overlay').style.display = 'none';
+}
+
+document.getElementById('help-overlay').addEventListener('click', function(e) {
+  if (e.target === this) hideHelp();
+});
+
+// ── Build ratio rows (once) ───────────────────────────────────
 function buildRatioRows() {
   document.getElementById('ratio-rows').innerHTML = TROOPS.map(t => `
     <div class="rrow">
@@ -240,6 +407,7 @@ function buildRatioRows() {
     </div>`).join('');
 }
 
+// ── Render ────────────────────────────────────────────────────
 function render() {
   const unitCount = parseInt(document.getElementById('unit-count')?.value) || 0;
   const injPct    = S.injuryPct;
@@ -316,9 +484,11 @@ function render() {
         <div class="t-res-r"><span class="t-res-ic">🔩</span><span class="t-res-v" style="color:#60a5fa">${fmtK(r.c.iron)}</span></div>
       </div>
     </div>`).join('');
+
+  renderPresets();
 }
 
-// Init
+// ── Init ──────────────────────────────────────────────────────
 load();
 buildRatioRows();
 document.getElementById('unit-count').value = S.unitCount;
