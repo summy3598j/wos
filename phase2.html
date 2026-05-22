@@ -174,15 +174,24 @@ button.danger{background:#922b21;color:#fff;border:none}
 </div>
 
 <script>
+// ──────────────────────────────────────────
+//  Constants
+// ──────────────────────────────────────────
 const TPLW = 24, TPLH = 32;
 const STORE = 'wos_tpl_v2';
 const MAX_DIM = 1200;
 
+// ──────────────────────────────────────────
+//  State
+// ──────────────────────────────────────────
 let imgCvs = null, imgData = null, imgW = 0, imgH = 0;
 let binArr = null, thresh = 160, showBin = false;
 let digits = [], selIdx = -1;
 let templates = {}, mode = 'cal';
 
+// ──────────────────────────────────────────
+//  DOM refs
+// ──────────────────────────────────────────
 const mainCvs  = document.getElementById('main-cvs');
 const mCtx     = mainCvs.getContext('2d');
 const zoomCvs  = document.getElementById('zoom-cvs');
@@ -191,6 +200,9 @@ const threshSl = document.getElementById('thresh-sl');
 const threshValEl = document.getElementById('thresh-val');
 const statusEl = document.getElementById('status-msg');
 
+// ──────────────────────────────────────────
+//  Boot
+// ──────────────────────────────────────────
 loadTpl();
 renderTpl();
 
@@ -213,6 +225,9 @@ mainCvs.addEventListener('touchend', e => {
   hitDigit((t.clientX - r.left) * scaleX, (t.clientY - r.top) * scaleY);
 }, {passive: false});
 
+// ──────────────────────────────────────────
+//  Image load
+// ──────────────────────────────────────────
 function loadImg(file) {
   const url = URL.createObjectURL(file);
   const img = new Image();
@@ -232,6 +247,9 @@ function loadImg(file) {
   img.src = url;
 }
 
+// ──────────────────────────────────────────
+//  Binary threshold
+// ──────────────────────────────────────────
 function buildBinary() {
   const {data} = imgData;
   binArr = new Uint8Array(imgW * imgH);
@@ -241,6 +259,9 @@ function buildBinary() {
   }
 }
 
+// ──────────────────────────────────────────
+//  Detection pipeline
+// ──────────────────────────────────────────
 function runDetect() {
   buildBinary();
   const comps = findComponents();
@@ -252,10 +273,11 @@ function runDetect() {
   statusEl.textContent = digits.length + ' 個の文字領域を検出';
 }
 
+// Connected-component labeling (4-connectivity, DFS with typed stack)
 function findComponents() {
   const W = imgW, H = imgH, bin = binArr;
   const vis = new Uint8Array(W * H);
-  const stk = new Int32Array(W * H);
+  const stk = new Int32Array(W * H); // reusable DFS stack
   const res = [];
   const minH = Math.max(6, (H * 0.007)|0);
   const maxH = (H * 0.09)|0;
@@ -274,6 +296,7 @@ function findComponents() {
         const cx = c%W, cy = (c/W)|0;
         if (cx < x0) x0=cx; else if (cx > x1) x1=cx;
         if (cy < y0) y0=cy; else if (cy > y1) y1=cy;
+        // 4-neighbors (bounds + wrap checked)
         if (cx>0   && !vis[c-1] && bin[c-1]) { vis[c-1]=1; stk[top++]=c-1; }
         if (cx<W-1 && !vis[c+1] && bin[c+1]) { vis[c+1]=1; stk[top++]=c+1; }
         if (cy>0   && !vis[c-W] && bin[c-W]) { vis[c-W]=1; stk[top++]=c-W; }
@@ -282,18 +305,19 @@ function findComponents() {
 
       const bw = x1-x0+1, bh = y1-y0+1;
       if (bh < minH || bh > maxH) continue;
-      if (cnt < bw*bh*0.12) continue;
+      if (cnt < bw*bh*0.12) continue;           // too sparse → noise
       const asp = bw/bh;
-      if (asp < 0.1 || asp > 8) continue;
+      if (asp < 0.1 || asp > 8) continue;       // extreme aspect → not a digit
       res.push({x0, y0, x1, y1, w:bw, h:bh});
     }
   }
   return res;
 }
 
+// Split wide components into individual digits using vertical projection
 function segmentDigits(c) {
   const {x0, y0, x1, y1, w, h} = c;
-  if (w <= h * 1.3) return [c];
+  if (w <= h * 1.3) return [c]; // single digit: aspect ≤ 1.3
 
   const proj = new Int32Array(w);
   for (let dx=0; dx<w; dx++)
@@ -316,6 +340,9 @@ function segmentDigits(c) {
   return valid.length > 1 ? valid : [c];
 }
 
+// ──────────────────────────────────────────
+//  Patch extraction & matching
+// ──────────────────────────────────────────
 function extractPatch(x0, y0, x1, y1) {
   const {data} = imgData;
   const srcW = x1-x0+1, srcH = y1-y0+1;
@@ -339,12 +366,15 @@ function matchPatch(patch) {
     const t = templates[k].avg;
     let ssd = 0;
     for (let i=0; i<patch.length; i++) { const d=patch[i]-t[i]; ssd+=d*d; }
-    ssd /= patch.length;
+    ssd /= patch.length; // normalize to [0,1]
     if (ssd < bestSSD) { bestSSD = ssd; best = {label:k, score:ssd}; }
   }
   return best;
 }
 
+// ──────────────────────────────────────────
+//  Template CRUD
+// ──────────────────────────────────────────
 function loadTpl() {
   try {
     const raw = localStorage.getItem(STORE);
@@ -411,6 +441,9 @@ function importTpl(file) {
   r.readAsText(file);
 }
 
+// ──────────────────────────────────────────
+//  Template gallery rendering
+// ──────────────────────────────────────────
 function renderTpl() {
   const keys = Object.keys(templates).sort((a,b) => (+a||Infinity)-(+b||Infinity) || a.localeCompare(b));
   document.getElementById('tpl-badge').textContent = keys.length;
@@ -424,6 +457,7 @@ function renderTpl() {
 
   for (const k of keys) {
     const {avg, count} = templates[k];
+    // Render template as mini canvas
     const c = document.createElement('canvas');
     c.width = TPLW; c.height = TPLH;
     const ctx2 = c.getContext('2d');
@@ -447,6 +481,7 @@ function renderTpl() {
     div.appendChild(c);
     div.appendChild(cnt);
 
+    // Long-press to delete
     let pressTimer;
     div.addEventListener('touchstart', () => { pressTimer = setTimeout(() => { if (confirm('"'+k+'" を削除?')) deleteTpl(k); }, 700); }, {passive:true});
     div.addEventListener('touchend', () => clearTimeout(pressTimer), {passive:true});
@@ -456,6 +491,9 @@ function renderTpl() {
   }
 }
 
+// ──────────────────────────────────────────
+//  Canvas render
+// ──────────────────────────────────────────
 function render() {
   if (!imgCvs) return;
   const dispW = mainCvs.parentElement.clientWidth || window.innerWidth - 24;
@@ -477,6 +515,7 @@ function render() {
     mCtx.drawImage(imgCvs, 0, 0, mainCvs.width, mainCvs.height);
   }
 
+  // Draw bounding boxes
   for (let i=0; i<digits.length; i++) {
     const {x0,y0,x1,y1} = digits[i];
     const sel = i === selIdx;
@@ -492,6 +531,9 @@ function toggleBin() {
   render();
 }
 
+// ──────────────────────────────────────────
+//  Mode switching
+// ──────────────────────────────────────────
 function setMode(m) {
   mode = m;
   document.getElementById('tab-cal').classList.toggle('active', m==='cal');
@@ -500,6 +542,9 @@ function setMode(m) {
   document.getElementById('rec-panel').style.display = m==='rec' ? '' : 'none';
 }
 
+// ──────────────────────────────────────────
+//  Calibration
+// ──────────────────────────────────────────
 function hitDigit(ix, iy) {
   if (!digits.length) return;
   let best = -1, bestArea = Infinity;
@@ -556,6 +601,9 @@ function saveLabel() {
   navDigit(1);
 }
 
+// ──────────────────────────────────────────
+//  Recognition
+// ──────────────────────────────────────────
 function recognizeAll() {
   if (!digits.length) { alert('先にスクショを読み込んでください'); return; }
   if (!Object.keys(templates).length) { alert('テンプレートがありません。先にキャリブレーションしてください'); return; }
@@ -569,6 +617,7 @@ function recognizeAll() {
   const groups = groupIntoNumbers(matched);
   renderRecResults(groups);
 
+  // Overlay labels on canvas
   render();
   const sc = mainCvs.width / imgW;
   mCtx.font = `bold ${Math.max(9, (13*sc)|0)}px monospace`;
