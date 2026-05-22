@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>治療計算ツール</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{background:#0d1b2a;color:#e2e8f0;font-family:'Hiragino Sans','Noto Sans JP',sans-serif;max-width:480px;margin:0 auto;min-height:100dvh;overscroll-behavior:none;-webkit-user-select:none;user-select:none;}
+button{cursor:pointer;border:none;outline:none;background:none;}
+input{outline:none;}
+
+.hdr{background:linear-gradient(180deg,#1a3a5c,#0d2238);padding:8px 14px 6px;border-bottom:2px solid #1e4d7a;}
+.hdr h1{font-size:15px;font-weight:700;color:#93c5fd;}
+
+/* Buff strip */
+.buff-strip{background:#112233;padding:6px 10px 8px;border-bottom:1px solid #1e3a5c;}
+.buff-title{font-size:11px;font-weight:700;color:#3b82f6;margin-bottom:5px;}
+.buff-row{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin-bottom:4px;}
+.buff-row:last-child{margin-bottom:0;}
+.buff-lbl{font-size:11px;color:#64748b;white-space:nowrap;}
+.buff-inp{background:#0d1b2a;border:1px solid #334155;border-radius:5px;color:#e2e8f0;font-size:14px;font-weight:700;padding:3px 6px;width:62px;text-align:right;-webkit-user-select:text;user-select:text;}
+.buff-tag{font-size:10px;background:rgba(61,214,140,.18);color:#4ade80;border-radius:8px;padding:1px 5px;font-weight:700;}
+
+/* Result strip */
+.result-strip{background:#0a1520;padding:7px 8px;border-bottom:2px solid #1e3a5c;}
+.res-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+.res-card{background:#112233;border-radius:8px;padding:6px 9px;border:1px solid #1e3a5c;}
+.res-card .rv{font-size:18px;font-weight:700;line-height:1.1;}
+.res-card .rl{font-size:10px;color:#64748b;margin-top:2px;}
+.res-card .rb{font-size:12px;color:#4ade80;margin-top:2px;}
+.res-mat{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12px;}
+.res-mat span{color:#94a3b8;white-space:nowrap;}
+.res-mat b{color:#e2e8f0;margin-left:2px;}
+.res-total-row{display:flex;align-items:center;gap:6px;padding:4px 0;}
+.res-total-row .rt-lbl{font-size:10px;color:#64748b;min-width:72px;}
+.res-total-row .rt-bar{flex:1;height:6px;background:#1e3a5c;border-radius:3px;overflow:hidden;}
+.res-total-row .rt-fill{height:100%;border-radius:3px;}
+.res-total-row .rt-val{font-size:12px;font-weight:700;min-width:58px;text-align:right;}
+
+/* Troop cards */
+.b-list{padding:6px 8px 16px;display:flex;flex-direction:column;gap:7px;}
+.b-card{background:#112233;border:1px solid #1e3a5c;border-radius:10px;overflow:hidden;}
+.b-hdr{display:flex;align-items:center;gap:6px;padding:6px 10px;background:#0d1b2a;}
+.b-icon{font-size:17px;}
+.b-name{font-size:13px;font-weight:700;flex:1;}
+.b-chk{accent-color:#3b82f6;width:16px;height:16px;cursor:pointer;}
+.b-body{padding:8px 10px;}
+
+/* Spinner */
+.spin-center{display:flex;align-items:center;justify-content:center;gap:8px;}
+.spnr{display:flex;flex-direction:column;align-items:stretch;gap:2px;width:80px;}
+.spnr-lbl{font-size:10px;color:#475569;text-align:center;margin-bottom:1px;}
+.spbtn{background:#1e3a5c;color:#60a5fa;border-radius:5px;font-size:14px;font-weight:700;height:28px;display:flex;align-items:center;justify-content:center;touch-action:none;-webkit-user-select:none;}
+.spbtn:active{background:#2a4a7c;}
+.lvbox{background:#0d1b2a;border:1.5px solid #334155;border-radius:7px;min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;touch-action:none;padding:4px;}
+.lv-val{font-size:22px;font-weight:700;line-height:1.1;text-align:center;}
+.lv-unit{font-size:10px;color:#475569;margin-top:2px;}
+
+/* Per-troop result */
+.b-res{margin-top:7px;padding-top:6px;border-top:1px solid #1e3a5c;display:grid;grid-template-columns:1fr 1fr;gap:3px 8px;font-size:11px;}
+.r-item{display:flex;align-items:center;gap:4px;color:#94a3b8;}
+.r-item b{color:#e2e8f0;}
+.r-item.zero{opacity:.35;}
+
+/* Popup */
+#popup{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:500;display:none;align-items:center;justify-content:center;}
+.popup-box{background:#1a3a5c;border-radius:20px;padding:24px 52px;text-align:center;border:2px solid #3b82f6;min-width:180px;}
+.popup-lbl{font-size:11px;color:#64748b;margin-bottom:6px;}
+.popup-val{font-size:68px;font-weight:700;color:#e2e8f0;line-height:1;}
+.popup-sub{font-size:14px;color:#94a3b8;margin-top:6px;}
+</style>
+</head>
+<body>
+
+<div class="hdr"><h1>🏥 治療計算ツール</h1></div>
+
+<div class="buff-strip">
+  <div class="buff-title">資材消費削減</div>
+  <div class="buff-row">
+    <span class="buff-lbl">削減率</span>
+    <input class="buff-inp" type="number" id="b-reduce" value="0" min="0" max="100" oninput="save();render()">
+    <span class="buff-lbl">%</span>
+    <span class="buff-tag" id="reduce-tag" style="display:none"></span>
+  </div>
+</div>
+
+<div class="result-strip" id="result-strip"></div>
+<div class="b-list" id="b-list"></div>
+
+<div id="popup">
+  <div class="popup-box">
+    <div class="popup-lbl" id="popup-lbl"></div>
+    <div class="popup-val" id="popup-val"></div>
+    <div class="popup-sub" id="popup-sub"></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DATA
+// per1k = resource cost per 1,000 soldiers (in thousands: K)
+// e.g. meat:279 means 279K meat per 1,000 soldiers
+// Source: in-game screenshots (切り札 tier)
+// ============================================================
+const TROOPS = [
+  {id:'shield', name:'切り札盾兵', icon:'🛡️', color:'#4a9eff',
+   per1k:{meat:279, wood:209, coal:49, iron:10}},
+  {id:'lance',  name:'切り札槍兵', icon:'🗡️', color:'#a78bfa',
+   per1k:{meat:244, wood:230, coal:47, iron:11}},
+  {id:'archer', name:'切り札弓兵', icon:'🏹', color:'#f0c040',
+   per1k:{meat:174, wood:258, coal:43, iron:14}},
+];
+
+// ============================================================
+// STATE  (count = soldiers in thousands)
+// ============================================================
+const defState = () => ({
+  counts: Object.fromEntries(TROOPS.map(t => [t.id, 0])),
+  enabled: Object.fromEntries(TROOPS.map(t => [t.id, true])),
+  reduce: 0,
+});
+
+let S = defState();
+
+function save() {
+  try {
+    S.reduce = parseFloat(document.getElementById('b-reduce')?.value) || 0;
+    localStorage.setItem('heal1', JSON.stringify(S));
+  } catch(e) {}
+}
+
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem('heal1') || 'null');
+    if (!d) return;
+    if (d.counts)  TROOPS.forEach(t => { if (d.counts[t.id]  != null) S.counts[t.id]  = +d.counts[t.id]; });
+    if (d.enabled) TROOPS.forEach(t => { if (d.enabled[t.id] != null) S.enabled[t.id] = d.enabled[t.id]; });
+    if (d.reduce != null) S.reduce = d.reduce;
+  } catch(e) {}
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+// valK: value in K (thousands). Displays in M or K.
+function fmtK(k) {
+  if (k === 0) return '0';
+  if (k >= 1000000) return (k / 1000000).toFixed(2) + 'B';
+  if (k >= 1000)    return (k / 1000).toFixed(2) + 'M';
+  if (k >= 10)      return k.toFixed(0) + 'K';
+  return k.toFixed(1) + 'K';
+}
+
+function calcTroop(t, countK, reduce) {
+  const r = 1 - reduce / 100;
+  const m = t.per1k;
+  return {
+    meat: countK * m.meat * r,
+    wood: countK * m.wood * r,
+    coal: countK * m.coal * r,
+    iron: countK * m.iron * r,
+  };
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function render() {
+  const reduce = parseFloat(document.getElementById('b-reduce')?.value) || 0;
+
+  // Update reduce tag
+  const tag = document.getElementById('reduce-tag');
+  if (reduce > 0) {
+    tag.textContent = `-${reduce}% 適用中`;
+    tag.style.display = '';
+  } else {
+    tag.style.display = 'none';
+  }
+
+  // Totals
+  let totMeat = 0, totWood = 0, totCoal = 0, totIron = 0;
+  let totSoldiers = 0;
+  TROOPS.forEach(t => {
+    if (!S.enabled[t.id]) return;
+    const ck = S.counts[t.id];
+    if (ck <= 0) return;
+    const c = calcTroop(t, ck, reduce);
+    totMeat += c.meat; totWood += c.wood; totCoal += c.coal; totIron += c.iron;
+    totSoldiers += ck;
+  });
+
+  const el = document.getElementById('result-strip');
+  el.innerHTML = `
+    <div class="res-grid" style="margin-bottom:6px">
+      <div class="res-card" style="grid-column:1/-1">
+        <div class="rl" style="margin-bottom:4px">治療兵士数 合計</div>
+        <div class="rv" style="color:#60a5fa">${(totSoldiers * 1000).toLocaleString()} 人</div>
+      </div>
+    </div>
+    <div style="padding:0 2px">
+      ${resRow('🥩', '肉', totMeat, '#f97316')}
+      ${resRow('🪵', '木材', totWood, '#4ade80')}
+      ${resRow('🪨', '石炭', totCoal, '#94a3b8')}
+      ${resRow('🔩', '鉄', totIron, '#60a5fa')}
+    </div>`;
+
+  renderTroops(reduce);
+}
+
+function resRow(icon, label, valK, color) {
+  return `<div class="res-total-row">
+    <span class="rt-lbl">${icon} ${label}</span>
+    <span class="rt-val" style="color:${color}">${valK > 0 ? fmtK(valK) : '—'}</span>
+  </div>`;
+}
+
+function renderTroops(reduce) {
+  let html = '';
+  TROOPS.forEach(t => {
+    const en = S.enabled[t.id];
+    const ck = S.counts[t.id];
+    const c = calcTroop(t, ck, reduce);
+    const soldiers = (ck * 1000).toLocaleString();
+
+    const rItem = (icon, val, zero) =>
+      `<div class="r-item${zero?' zero':''}">
+        <span>${icon}</span><b>${fmtK(val)}</b>
+      </div>`;
+
+    html += `<div class="b-card" style="opacity:${en ? 1 : .45}">
+      <div class="b-hdr">
+        <span class="b-icon">${t.icon}</span>
+        <span class="b-name">${t.name}</span>
+        <input type="checkbox" class="b-chk" ${en ? 'checked' : ''} onchange="toggleT('${t.id}',this.checked)">
+      </div>
+      <div class="b-body">
+        <div class="spin-center">
+          <div>
+            <div class="spnr-lbl">兵士数（千人）</div>
+            <div class="spnr">
+              <button class="spbtn" onclick="adj('${t.id}',10)">▲▲</button>
+              <button class="spbtn" onclick="adj('${t.id}',1)">▲</button>
+              <div class="lvbox" data-tid="${t.id}"
+                ontouchstart="swStart(event,this)" ontouchmove="swMove(event)" ontouchend="swEnd()">
+                <span class="lv-val" style="color:${t.color}">${ck > 0 ? ck.toLocaleString() : '0'}</span>
+                <span class="lv-unit">${ck > 0 ? `= ${soldiers}人` : '千人'}</span>
+              </div>
+              <button class="spbtn" onclick="adj('${t.id}',-1)">▼</button>
+              <button class="spbtn" onclick="adj('${t.id}',-10)">▼▼</button>
+            </div>
+          </div>
+        </div>
+        <div class="b-res">
+          ${rItem('🥩 肉', c.meat, ck===0)}
+          ${rItem('🪵 木材', c.wood, ck===0)}
+          ${rItem('🪨 石炭', c.coal, ck===0)}
+          ${rItem('🔩 鉄', c.iron, ck===0)}
+        </div>
+        ${ck > 0 && reduce > 0 ? `<div style="font-size:10px;color:#4ade80;margin-top:4px;text-align:right">削減率 -${reduce}% 適用済み</div>` : ''}
+      </div>
+    </div>`;
+  });
+  document.getElementById('b-list').innerHTML = html;
+}
+
+// ============================================================
+// ADJUST
+// ============================================================
+function adj(tid, delta) {
+  S.counts[tid] = Math.max(0, S.counts[tid] + delta);
+  save(); render();
+}
+
+function toggleT(tid, en) {
+  S.enabled[tid] = en;
+  save(); render();
+}
+
+// ============================================================
+// SWIPE
+// ============================================================
+let _sw = null;
+
+function swStart(e, el) {
+  const tid = el.dataset.tid;
+  const val = S.counts[tid];
+  _sw = { tid, startY: e.touches[0].clientY, startVal: val, lastVal: val };
+  const tname = TROOPS.find(t => t.id === tid)?.name || tid;
+  document.getElementById('popup-lbl').textContent = tname;
+  _updPop(val);
+  document.getElementById('popup').style.display = 'flex';
+  e.preventDefault();
+}
+
+function swMove(e) {
+  if (!_sw) return;
+  const delta = Math.round((_sw.startY - e.touches[0].clientY) / 18);
+  let nv = Math.max(0, _sw.startVal + delta);
+  if (nv !== _sw.lastVal) {
+    _sw.lastVal = nv;
+    S.counts[_sw.tid] = nv;
+    _updPop(nv);
+    render();
+  }
+  e.preventDefault();
+}
+
+function swEnd() {
+  _sw = null;
+  document.getElementById('popup').style.display = 'none';
+  save();
+}
+
+function _updPop(v) {
+  document.getElementById('popup-val').textContent = v.toLocaleString();
+  document.getElementById('popup-sub').textContent = v > 0 ? `${(v * 1000).toLocaleString()} 人` : '0人';
+}
+
+// ============================================================
+// INIT
+// ============================================================
+load();
+document.getElementById('b-reduce').value = S.reduce || 0;
+render();
+</script>
+</body>
+</html>
