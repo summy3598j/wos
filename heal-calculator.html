@@ -7,143 +7,151 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 body{background:#0d1b2a;color:#e2e8f0;font-family:'Hiragino Sans','Noto Sans JP',sans-serif;max-width:480px;margin:0 auto;min-height:100dvh;overscroll-behavior:none;-webkit-user-select:none;user-select:none;}
-button{cursor:pointer;border:none;outline:none;background:none;}
+button{cursor:pointer;border:none;outline:none;background:none;touch-action:manipulation;}
 input{outline:none;}
 
 .hdr{background:linear-gradient(180deg,#1a3a5c,#0d2238);padding:8px 14px 6px;border-bottom:2px solid #1e4d7a;}
 .hdr h1{font-size:15px;font-weight:700;color:#93c5fd;}
 
-/* Buff strip */
-.buff-strip{background:#112233;padding:6px 10px 8px;border-bottom:1px solid #1e3a5c;}
-.buff-title{font-size:11px;font-weight:700;color:#3b82f6;margin-bottom:5px;}
-.buff-row{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin-bottom:4px;}
-.buff-row:last-child{margin-bottom:0;}
-.buff-lbl{font-size:11px;color:#64748b;white-space:nowrap;}
-.buff-inp{background:#0d1b2a;border:1px solid #334155;border-radius:5px;color:#e2e8f0;font-size:14px;font-weight:700;padding:3px 6px;width:62px;text-align:right;-webkit-user-select:text;user-select:text;}
-.buff-tag{font-size:10px;background:rgba(61,214,140,.18);color:#4ade80;border-radius:8px;padding:1px 5px;font-weight:700;}
+/* Input section */
+.sec{padding:10px 12px;border-bottom:1px solid #1e3a5c;}
+.sec1{background:#112233;}
+.sec0{background:#0d1b2a;}
+.sec-title{font-size:11px;font-weight:700;color:#3b82f6;margin-bottom:8px;}
+.irow{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.irow:last-child{margin-bottom:0;}
+.ilbl{font-size:12px;color:#94a3b8;min-width:64px;}
+.iunit{font-size:12px;color:#64748b;}
+.num-inp{background:#0d1b2a;border:1px solid #334155;border-radius:5px;color:#e2e8f0;font-size:14px;font-weight:700;padding:4px 8px;width:140px;text-align:right;-webkit-user-select:text;user-select:text;}
 
-/* Result strip */
-.result-strip{background:#0a1520;padding:7px 8px;border-bottom:2px solid #1e3a5c;}
-.res-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
-.res-card{background:#112233;border-radius:8px;padding:6px 9px;border:1px solid #1e3a5c;}
-.res-card .rv{font-size:18px;font-weight:700;line-height:1.1;}
-.res-card .rl{font-size:10px;color:#64748b;margin-top:2px;}
-.res-card .rb{font-size:12px;color:#4ade80;margin-top:2px;}
-.res-mat{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12px;}
-.res-mat span{color:#94a3b8;white-space:nowrap;}
-.res-mat b{color:#e2e8f0;margin-left:2px;}
-.res-total-row{display:flex;align-items:center;gap:6px;padding:4px 0;}
-.res-total-row .rt-lbl{font-size:10px;color:#64748b;min-width:72px;}
-.res-total-row .rt-bar{flex:1;height:6px;background:#1e3a5c;border-radius:3px;overflow:hidden;}
-.res-total-row .rt-fill{height:100%;border-radius:3px;}
-.res-total-row .rt-val{font-size:12px;font-weight:700;min-width:58px;text-align:right;}
+/* Inline spinner */
+.spn{display:flex;align-items:center;gap:3px;}
+.spn-btn{background:#1e3a5c;color:#60a5fa;border-radius:5px;font-size:12px;font-weight:700;min-width:28px;height:28px;display:flex;align-items:center;justify-content:center;}
+.spn-btn:active{background:#2a4a7c;}
+.spn-val{background:#0d1b2a;border:1px solid #334155;border-radius:5px;min-width:46px;height:28px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;}
+
+/* Ratio section */
+.ratio-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.ratio-sum{font-size:12px;font-weight:700;color:#4ade80;}
+.ratio-sum.bad{color:#f87171;}
+.rrow{margin-bottom:9px;}
+.rrow:last-child{margin-bottom:0;}
+.rrow-top{display:flex;align-items:center;gap:4px;margin-bottom:4px;}
+.rrow-icon{font-size:12px;}
+.rrow-name{font-size:11px;font-weight:700;}
+.rrow-ctrl{display:flex;align-items:center;gap:4px;}
+.r-btn{background:#1e3a5c;color:#60a5fa;border-radius:4px;font-size:11px;font-weight:700;width:26px;height:26px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.r-btn:active{background:#2a4a7c;}
+.r-track{flex:1;height:26px;background:#1a3358;border-radius:13px;overflow:hidden;position:relative;touch-action:none;cursor:pointer;}
+.r-fill{position:absolute;left:0;top:0;height:100%;border-radius:13px;opacity:.85;}
+.r-inp{background:#0d1b2a;border:1px solid #334155;border-radius:4px;color:#e2e8f0;font-size:13px;font-weight:700;padding:2px 4px;width:42px;height:26px;text-align:right;-webkit-user-select:text;user-select:text;flex-shrink:0;}
+.r-pct{font-size:11px;color:#64748b;flex-shrink:0;}
+
+/* Result total */
+.res-total{background:#0a1520;padding:8px 10px;border-bottom:2px solid #1e3a5c;}
+.res-total-title{font-size:11px;font-weight:700;color:#3b82f6;margin-bottom:6px;}
+.res-total-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px 10px;}
+.res-row{display:flex;align-items:center;gap:6px;}
+.res-lbl{font-size:11px;color:#64748b;min-width:58px;}
+.res-val{font-size:13px;font-weight:700;}
 
 /* Troop cards */
-.b-list{padding:6px 8px 16px;display:flex;flex-direction:column;gap:7px;}
-.b-card{background:#112233;border:1px solid #1e3a5c;border-radius:10px;overflow:hidden;}
-.b-hdr{display:flex;align-items:center;gap:6px;padding:6px 10px;background:#0d1b2a;}
-.b-icon{font-size:17px;}
-.b-name{font-size:13px;font-weight:700;flex:1;}
-.b-chk{accent-color:#3b82f6;width:16px;height:16px;cursor:pointer;}
-.b-body{padding:8px 10px;}
-
-/* Spinner */
-.spin-center{display:flex;align-items:center;justify-content:center;gap:8px;}
-.spnr{display:flex;flex-direction:column;align-items:stretch;gap:2px;width:80px;}
-.spnr-lbl{font-size:10px;color:#475569;text-align:center;margin-bottom:1px;}
-.spbtn{background:#1e3a5c;color:#60a5fa;border-radius:5px;font-size:14px;font-weight:700;height:28px;display:flex;align-items:center;justify-content:center;touch-action:none;-webkit-user-select:none;}
-.spbtn:active{background:#2a4a7c;}
-.lvbox{background:#0d1b2a;border:1.5px solid #334155;border-radius:7px;min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;touch-action:none;padding:4px;}
-.lv-val{font-size:22px;font-weight:700;line-height:1.1;text-align:center;}
-.lv-unit{font-size:10px;color:#475569;margin-top:2px;}
-
-/* Per-troop result */
-.b-res{margin-top:7px;padding-top:6px;border-top:1px solid #1e3a5c;display:grid;grid-template-columns:1fr 1fr;gap:3px 8px;font-size:11px;}
-.r-item{display:flex;align-items:center;gap:4px;color:#94a3b8;}
-.r-item b{color:#e2e8f0;}
-.r-item.zero{opacity:.35;}
-
-/* Popup */
-#popup{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:500;display:none;align-items:center;justify-content:center;}
-.popup-box{background:#1a3a5c;border-radius:20px;padding:24px 52px;text-align:center;border:2px solid #3b82f6;min-width:180px;}
-.popup-lbl{font-size:11px;color:#64748b;margin-bottom:6px;}
-.popup-val{font-size:68px;font-weight:700;color:#e2e8f0;line-height:1;}
-.popup-sub{font-size:14px;color:#94a3b8;margin-top:6px;}
+.t-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;padding:8px 8px 24px;}
+.t-card{background:#112233;border:1px solid #1e3a5c;border-radius:8px;padding:7px 6px;}
+.t-hdr{display:flex;align-items:center;gap:3px;margin-bottom:4px;}
+.t-icon{font-size:14px;}
+.t-name{font-size:10px;font-weight:700;}
+.t-inj{font-size:16px;font-weight:700;color:#60a5fa;line-height:1.1;}
+.t-inj-u{font-size:9px;color:#64748b;margin-top:1px;margin-bottom:5px;}
+.t-res-list{border-top:1px solid #1e3a5c;padding-top:5px;display:flex;flex-direction:column;gap:3px;}
+.t-res-r{display:flex;align-items:center;justify-content:space-between;font-size:10px;}
+.t-res-ic{color:#94a3b8;}
+.t-res-v{font-weight:700;}
 </style>
 </head>
 <body>
 
 <div class="hdr"><h1>🏥 治療計算ツール</h1></div>
 
-<div class="buff-strip">
-  <div class="buff-title">資材消費削減</div>
-  <div class="buff-row">
-    <span class="buff-lbl">削減率</span>
-    <input class="buff-inp" type="number" id="b-reduce" value="0" min="0" max="100" oninput="save();render()">
-    <span class="buff-lbl">%</span>
-    <span class="buff-tag" id="reduce-tag" style="display:none"></span>
+<!-- Basic inputs -->
+<div class="sec sec1">
+  <div class="sec-title">基本入力</div>
+  <div class="irow">
+    <span class="ilbl">部隊兵数</span>
+    <input class="num-inp" type="number" id="unit-count" value="100000" min="0" inputmode="numeric" oninput="save();render()">
+    <span class="iunit">人</span>
+  </div>
+  <div class="irow">
+    <span class="ilbl">負傷割合</span>
+    <div class="spn">
+      <button class="spn-btn" onclick="adjInj(-5)">◀◀</button>
+      <button class="spn-btn" onclick="adjInj(-1)">◀</button>
+      <div class="spn-val" id="inj-val">30</div>
+      <button class="spn-btn" onclick="adjInj(1)">▶</button>
+      <button class="spn-btn" onclick="adjInj(5)">▶▶</button>
+    </div>
+    <span class="iunit">%</span>
+  </div>
+  <div class="irow">
+    <span class="ilbl">出征回数</span>
+    <div class="spn">
+      <button class="spn-btn" onclick="adjSort(-1)">◀</button>
+      <div class="spn-val" id="sort-val">1</div>
+      <button class="spn-btn" onclick="adjSort(1)">▶</button>
+    </div>
+    <span class="iunit">回</span>
   </div>
 </div>
 
-<div class="result-strip" id="result-strip"></div>
-<div class="b-list" id="b-list"></div>
-
-<div id="popup">
-  <div class="popup-box">
-    <div class="popup-lbl" id="popup-lbl"></div>
-    <div class="popup-val" id="popup-val"></div>
-    <div class="popup-sub" id="popup-sub"></div>
+<!-- Ratios -->
+<div class="sec sec0" style="border-bottom:2px solid #1e3a5c;">
+  <div class="ratio-hdr">
+    <span class="sec-title" style="margin-bottom:0">負傷兵種割合</span>
+    <span class="ratio-sum" id="ratio-sum">合計 100%</span>
   </div>
+  <div id="ratio-rows"></div>
 </div>
+
+<!-- Total result -->
+<div class="res-total" id="res-total"></div>
+
+<!-- Troop cards -->
+<div class="t-grid" id="t-grid"></div>
 
 <script>
-// ============================================================
-// DATA
-// per1k = resource cost per 1,000 soldiers (in thousands: K)
-// e.g. meat:279 means 279K meat per 1,000 soldiers
-// Source: in-game screenshots (切り札 tier)
-// ============================================================
 const TROOPS = [
-  {id:'shield', name:'切り札盾兵', icon:'🛡️', color:'#4a9eff',
-   per1k:{meat:279, wood:209, coal:49, iron:10}},
-  {id:'lance',  name:'切り札槍兵', icon:'🗡️', color:'#a78bfa',
-   per1k:{meat:244, wood:230, coal:47, iron:11}},
-  {id:'archer', name:'切り札弓兵', icon:'🏹', color:'#f0c040',
-   per1k:{meat:174, wood:258, coal:43, iron:14}},
+  {id:'shield', name:'盾兵', icon:'🛡️', color:'#4a9eff', per1k:{meat:279,wood:209,coal:49,iron:10}},
+  {id:'lance',  name:'槍兵', icon:'🗡️', color:'#a78bfa', per1k:{meat:244,wood:230,coal:47,iron:11}},
+  {id:'archer', name:'弓兵', icon:'🏹', color:'#f0c040', per1k:{meat:174,wood:258,coal:43,iron:14}},
 ];
 
-// ============================================================
-// STATE  (count = soldiers in thousands)
-// ============================================================
 const defState = () => ({
-  counts: Object.fromEntries(TROOPS.map(t => [t.id, 0])),
-  enabled: Object.fromEntries(TROOPS.map(t => [t.id, true])),
-  reduce: 0,
+  unitCount: 100000,
+  injuryPct: 30,
+  sorties: 1,
+  ratios: {shield:60, lance:15, archer:25},
 });
 
 let S = defState();
 
 function save() {
   try {
-    S.reduce = parseFloat(document.getElementById('b-reduce')?.value) || 0;
-    localStorage.setItem('heal1', JSON.stringify(S));
+    S.unitCount = parseInt(document.getElementById('unit-count')?.value) || 0;
+    localStorage.setItem('heal2', JSON.stringify(S));
   } catch(e) {}
 }
 
 function load() {
   try {
-    const d = JSON.parse(localStorage.getItem('heal1') || 'null');
+    const d = JSON.parse(localStorage.getItem('heal2') || 'null');
     if (!d) return;
-    if (d.counts)  TROOPS.forEach(t => { if (d.counts[t.id]  != null) S.counts[t.id]  = +d.counts[t.id]; });
-    if (d.enabled) TROOPS.forEach(t => { if (d.enabled[t.id] != null) S.enabled[t.id] = d.enabled[t.id]; });
-    if (d.reduce != null) S.reduce = d.reduce;
+    if (d.unitCount != null) S.unitCount = d.unitCount;
+    if (d.injuryPct != null) S.injuryPct = d.injuryPct;
+    if (d.sorties  != null) S.sorties   = d.sorties;
+    if (d.ratios) TROOPS.forEach(t => { if (d.ratios[t.id] != null) S.ratios[t.id] = +d.ratios[t.id]; });
   } catch(e) {}
 }
 
-// ============================================================
-// HELPERS
-// ============================================================
-// valK: value in K (thousands). Displays in M or K.
 function fmtK(k) {
   if (k === 0) return '0';
   if (k >= 1000000) return (k / 1000000).toFixed(2) + 'B';
@@ -152,176 +160,168 @@ function fmtK(k) {
   return k.toFixed(1) + 'K';
 }
 
-function calcTroop(t, countK, reduce) {
-  const r = 1 - reduce / 100;
-  const m = t.per1k;
-  return {
-    meat: countK * m.meat * r,
-    wood: countK * m.wood * r,
-    coal: countK * m.coal * r,
-    iron: countK * m.iron * r,
-  };
+// Set ratio for tid, capped so total never exceeds 100
+function setRatio(tid, val) {
+  val = Math.round(val);
+  const otherSum = TROOPS.filter(t => t.id !== tid).reduce((s, t) => s + S.ratios[t.id], 0);
+  S.ratios[tid] = Math.max(0, Math.min(100 - otherSum, val));
 }
 
-// ============================================================
-// RENDER
-// ============================================================
-function render() {
-  const reduce = parseFloat(document.getElementById('b-reduce')?.value) || 0;
-
-  // Update reduce tag
-  const tag = document.getElementById('reduce-tag');
-  if (reduce > 0) {
-    tag.textContent = `-${reduce}% 適用中`;
-    tag.style.display = '';
-  } else {
-    tag.style.display = 'none';
-  }
-
-  // Totals
-  let totMeat = 0, totWood = 0, totCoal = 0, totIron = 0;
-  let totSoldiers = 0;
-  TROOPS.forEach(t => {
-    if (!S.enabled[t.id]) return;
-    const ck = S.counts[t.id];
-    if (ck <= 0) return;
-    const c = calcTroop(t, ck, reduce);
-    totMeat += c.meat; totWood += c.wood; totCoal += c.coal; totIron += c.iron;
-    totSoldiers += ck;
-  });
-
-  const el = document.getElementById('result-strip');
-  el.innerHTML = `
-    <div class="res-grid" style="margin-bottom:6px">
-      <div class="res-card" style="grid-column:1/-1">
-        <div class="rl" style="margin-bottom:4px">治療兵士数 合計</div>
-        <div class="rv" style="color:#60a5fa">${(totSoldiers * 1000).toLocaleString()} 人</div>
-      </div>
-    </div>
-    <div style="padding:0 2px">
-      ${resRow('🥩', '肉', totMeat, '#f97316')}
-      ${resRow('🪵', '木材', totWood, '#4ade80')}
-      ${resRow('🪨', '石炭', totCoal, '#94a3b8')}
-      ${resRow('🔩', '鉄', totIron, '#60a5fa')}
-    </div>`;
-
-  renderTroops(reduce);
-}
-
-function resRow(icon, label, valK, color) {
-  return `<div class="res-total-row">
-    <span class="rt-lbl">${icon} ${label}</span>
-    <span class="rt-val" style="color:${color}">${valK > 0 ? fmtK(valK) : '—'}</span>
-  </div>`;
-}
-
-function renderTroops(reduce) {
-  let html = '';
-  TROOPS.forEach(t => {
-    const en = S.enabled[t.id];
-    const ck = S.counts[t.id];
-    const c = calcTroop(t, ck, reduce);
-    const soldiers = (ck * 1000).toLocaleString();
-
-    const rItem = (icon, val, zero) =>
-      `<div class="r-item${zero?' zero':''}">
-        <span>${icon}</span><b>${fmtK(val)}</b>
-      </div>`;
-
-    html += `<div class="b-card" style="opacity:${en ? 1 : .45}">
-      <div class="b-hdr">
-        <span class="b-icon">${t.icon}</span>
-        <span class="b-name">${t.name}</span>
-        <input type="checkbox" class="b-chk" ${en ? 'checked' : ''} onchange="toggleT('${t.id}',this.checked)">
-      </div>
-      <div class="b-body">
-        <div class="spin-center">
-          <div>
-            <div class="spnr-lbl">兵士数（千人）</div>
-            <div class="spnr">
-              <button class="spbtn" onclick="adj('${t.id}',10)">▲▲</button>
-              <button class="spbtn" onclick="adj('${t.id}',1)">▲</button>
-              <div class="lvbox" data-tid="${t.id}"
-                ontouchstart="swStart(event,this)" ontouchmove="swMove(event)" ontouchend="swEnd()">
-                <span class="lv-val" style="color:${t.color}">${ck > 0 ? ck.toLocaleString() : '0'}</span>
-                <span class="lv-unit">${ck > 0 ? `= ${soldiers}人` : '千人'}</span>
-              </div>
-              <button class="spbtn" onclick="adj('${t.id}',-1)">▼</button>
-              <button class="spbtn" onclick="adj('${t.id}',-10)">▼▼</button>
-            </div>
-          </div>
-        </div>
-        <div class="b-res">
-          ${rItem('🥩 肉', c.meat, ck===0)}
-          ${rItem('🪵 木材', c.wood, ck===0)}
-          ${rItem('🪨 石炭', c.coal, ck===0)}
-          ${rItem('🔩 鉄', c.iron, ck===0)}
-        </div>
-        ${ck > 0 && reduce > 0 ? `<div style="font-size:10px;color:#4ade80;margin-top:4px;text-align:right">削減率 -${reduce}% 適用済み</div>` : ''}
-      </div>
-    </div>`;
-  });
-  document.getElementById('b-list').innerHTML = html;
-}
-
-// ============================================================
-// ADJUST
-// ============================================================
-function adj(tid, delta) {
-  S.counts[tid] = Math.max(0, S.counts[tid] + delta);
+function adjRatio(tid, delta) {
+  setRatio(tid, S.ratios[tid] + delta);
   save(); render();
 }
 
-function toggleT(tid, en) {
-  S.enabled[tid] = en;
+function onRatioInput(tid, raw) {
+  setRatio(tid, parseInt(raw) || 0);
   save(); render();
 }
 
-// ============================================================
-// SWIPE
-// ============================================================
-let _sw = null;
+function adjInj(delta) {
+  S.injuryPct = Math.max(0, Math.min(100, S.injuryPct + delta));
+  save(); render();
+}
 
-function swStart(e, el) {
-  const tid = el.dataset.tid;
-  const val = S.counts[tid];
-  _sw = { tid, startY: e.touches[0].clientY, startVal: val, lastVal: val };
-  const tname = TROOPS.find(t => t.id === tid)?.name || tid;
-  document.getElementById('popup-lbl').textContent = tname;
-  _updPop(val);
-  document.getElementById('popup').style.display = 'flex';
+function adjSort(delta) {
+  S.sorties = Math.max(1, S.sorties + delta);
+  save(); render();
+}
+
+// Slider drag
+let _drag = null;
+
+function sliderStart(e, tid) {
+  const track = document.getElementById('track-' + tid);
+  _drag = { tid, rect: track.getBoundingClientRect() };
+  _applyDrag(e.touches[0].clientX);
   e.preventDefault();
 }
 
-function swMove(e) {
-  if (!_sw) return;
-  const delta = Math.round((_sw.startY - e.touches[0].clientY) / 18);
-  let nv = Math.max(0, _sw.startVal + delta);
-  if (nv !== _sw.lastVal) {
-    _sw.lastVal = nv;
-    S.counts[_sw.tid] = nv;
-    _updPop(nv);
-    render();
-  }
+function sliderMove(e) {
+  if (!_drag) return;
+  _applyDrag(e.touches[0].clientX);
   e.preventDefault();
 }
 
-function swEnd() {
-  _sw = null;
-  document.getElementById('popup').style.display = 'none';
+function sliderEnd() {
+  _drag = null;
   save();
 }
 
-function _updPop(v) {
-  document.getElementById('popup-val').textContent = v.toLocaleString();
-  document.getElementById('popup-sub').textContent = v > 0 ? `${(v * 1000).toLocaleString()} 人` : '0人';
+function _applyDrag(clientX) {
+  const { tid, rect } = _drag;
+  const pct = Math.max(0, Math.min(100, Math.round((clientX - rect.left) / rect.width * 100)));
+  setRatio(tid, pct);
+  render();
 }
 
-// ============================================================
-// INIT
-// ============================================================
+// Build ratio rows HTML once on init
+function buildRatioRows() {
+  document.getElementById('ratio-rows').innerHTML = TROOPS.map(t => `
+    <div class="rrow">
+      <div class="rrow-top">
+        <span class="rrow-icon">${t.icon}</span>
+        <span class="rrow-name" style="color:${t.color}">${t.name}</span>
+      </div>
+      <div class="rrow-ctrl">
+        <button class="r-btn" onclick="adjRatio('${t.id}',-1)">◀</button>
+        <div class="r-track" id="track-${t.id}"
+             ontouchstart="sliderStart(event,'${t.id}')"
+             ontouchmove="sliderMove(event)"
+             ontouchend="sliderEnd()">
+          <div class="r-fill" id="fill-${t.id}" style="background:${t.color}"></div>
+        </div>
+        <input class="r-inp" type="number" id="inp-${t.id}" min="0" max="100" inputmode="numeric"
+               oninput="onRatioInput('${t.id}',this.value)"
+               onblur="save();render()">
+        <span class="r-pct">%</span>
+        <button class="r-btn" onclick="adjRatio('${t.id}',1)">▶</button>
+      </div>
+    </div>`).join('');
+}
+
+function render() {
+  const unitCount = parseInt(document.getElementById('unit-count')?.value) || 0;
+  const injPct    = S.injuryPct;
+  const sorties   = S.sorties;
+
+  // Spinners
+  const injEl  = document.getElementById('inj-val');
+  if (injEl)  injEl.textContent  = injPct;
+  const sortEl = document.getElementById('sort-val');
+  if (sortEl) sortEl.textContent = sorties;
+
+  // Ratio UI
+  const total = TROOPS.reduce((s, t) => s + S.ratios[t.id], 0);
+  const sumEl = document.getElementById('ratio-sum');
+  if (sumEl) {
+    sumEl.textContent = `合計 ${total}%`;
+    sumEl.className = 'ratio-sum' + (total < 100 ? ' bad' : '');
+  }
+  TROOPS.forEach(t => {
+    const fill = document.getElementById('fill-' + t.id);
+    if (fill) fill.style.width = S.ratios[t.id] + '%';
+    const inp = document.getElementById('inp-' + t.id);
+    if (inp && document.activeElement !== inp) inp.value = S.ratios[t.id];
+  });
+
+  // Calculations
+  const baseInjured = Math.round(unitCount * injPct / 100);
+  const results = TROOPS.map(t => {
+    const injured = Math.round(baseInjured * S.ratios[t.id] / 100) * sorties;
+    const injK = injured / 1000;
+    return {
+      ...t, injured,
+      c: {
+        meat: injK * t.per1k.meat,
+        wood: injK * t.per1k.wood,
+        coal: injK * t.per1k.coal,
+        iron: injK * t.per1k.iron,
+      }
+    };
+  });
+
+  const totInjured = results.reduce((s, r) => s + r.injured, 0);
+  const totMeat    = results.reduce((s, r) => s + r.c.meat,  0);
+  const totWood    = results.reduce((s, r) => s + r.c.wood,  0);
+  const totCoal    = results.reduce((s, r) => s + r.c.coal,  0);
+  const totIron    = results.reduce((s, r) => s + r.c.iron,  0);
+
+  // Total strip
+  const rt = document.getElementById('res-total');
+  if (rt) rt.innerHTML = `
+    <div class="res-total-title">合計（${sorties}回分）</div>
+    <div class="res-total-grid">
+      <div class="res-row"><span class="res-lbl">🏥 負傷兵</span><span class="res-val" style="color:#60a5fa">${totInjured.toLocaleString()}人</span></div>
+      <div class="res-row"><span class="res-lbl">🥩 肉</span><span class="res-val" style="color:#f97316">${fmtK(totMeat)}</span></div>
+      <div class="res-row"><span class="res-lbl">🪵 木材</span><span class="res-val" style="color:#4ade80">${fmtK(totWood)}</span></div>
+      <div class="res-row"><span class="res-lbl">🪨 石炭</span><span class="res-val" style="color:#94a3b8">${fmtK(totCoal)}</span></div>
+      <div class="res-row"><span class="res-lbl">🔩 鉄</span><span class="res-val" style="color:#60a5fa">${fmtK(totIron)}</span></div>
+    </div>`;
+
+  // Troop cards (horizontal 3-col)
+  const grid = document.getElementById('t-grid');
+  if (grid) grid.innerHTML = results.map(r => `
+    <div class="t-card">
+      <div class="t-hdr">
+        <span class="t-icon">${r.icon}</span>
+        <span class="t-name" style="color:${r.color}">${r.name}</span>
+      </div>
+      <div class="t-inj">${r.injured.toLocaleString()}</div>
+      <div class="t-inj-u">人</div>
+      <div class="t-res-list">
+        <div class="t-res-r"><span class="t-res-ic">🥩</span><span class="t-res-v" style="color:#f97316">${fmtK(r.c.meat)}</span></div>
+        <div class="t-res-r"><span class="t-res-ic">🪵</span><span class="t-res-v" style="color:#4ade80">${fmtK(r.c.wood)}</span></div>
+        <div class="t-res-r"><span class="t-res-ic">🪨</span><span class="t-res-v" style="color:#94a3b8">${fmtK(r.c.coal)}</span></div>
+        <div class="t-res-r"><span class="t-res-ic">🔩</span><span class="t-res-v" style="color:#60a5fa">${fmtK(r.c.iron)}</span></div>
+      </div>
+    </div>`).join('');
+}
+
+// Init
 load();
-document.getElementById('b-reduce').value = S.reduce || 0;
+buildRatioRows();
+document.getElementById('unit-count').value = S.unitCount;
 render();
 </script>
 </body>
