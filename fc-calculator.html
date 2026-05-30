@@ -204,68 +204,40 @@ function load() {
 // ============================================================
 // CALCULATION
 // ============================================================
-function lvIdx(fc,sub){return fc+sub/SUBSTAGES;}
-
-function _sum(d,s0,s1){
-  let fc=0,rfc=0,meat=0,wood=0,coal=0,iron=0,days=0,est=false;
-  for(let s=s0;s<=s1;s++){
-    const c=s===SUBSTAGES?d.comp:d.sub;
-    fc+=c.fc; rfc+=c.rfc;
-    if(c.est) est=true;
-    meat+=d.meat||0; wood+=d.wood||0; coal+=d.coal||0; iron+=d.iron||0; days+=d.days||0;
-  }
-  return {fc,rfc,meat,wood,coal,iron,days,est};
-}
-
-function startSub(fc,fromFc,fromSub){
-  return fc===fromFc?fromSub+1:1;
-}
+function gssi(fc,sub){return fc*SUBSTAGES+sub;}
 
 function calcCost(bid,ffc,fsub,tfc,tsub){
-  if(lvIdx(ffc,fsub)>=lvIdx(tfc,tsub)) return {fc:0,rfc:0,meat:0,wood:0,coal:0,iron:0,days:0,est:false};
-  const sd=STAGE_DATA[bid];
-  if(sd){
-    const t={fc:0,rfc:0,meat:0,wood:0,coal:0,iron:0,days:0,est:false};
-    for(let fc=1;fc<=10;fc++){
-      if(fc<ffc||(fc===ffc&&fsub===0)||fc>tfc) continue;
-      const d=sd[fc-1]; if(!d) continue;
-      const s0=startSub(fc,ffc,fsub);
-      const s1=fc===tfc?(tsub===0?SUBSTAGES:tsub):SUBSTAGES;
-      if(s0>s1) continue;
-      const ch=_sum(d,s0,s1);
-      t.fc+=ch.fc; t.rfc+=ch.rfc; t.meat+=ch.meat; t.wood+=ch.wood;
-      t.coal+=ch.coal; t.iron+=ch.iron; t.days+=ch.days;
-      if(ch.est) t.est=true;
+  const ss0=gssi(ffc,fsub), ss1=gssi(tfc,tsub);
+  if(ss0>=ss1) return {fc:0,rfc:0,meat:0,wood:0,coal:0,iron:0,days:0,est:false};
+  const sd=STAGE_DATA[bid], costs=COSTS[bid];
+  const t={fc:0,rfc:0,meat:0,wood:0,coal:0,iron:0,days:0,est:false};
+  for(let ss=ss0+1;ss<=ss1;ss++){
+    const lvl=Math.ceil(ss/SUBSTAGES);          // 1-indexed FC level data
+    const s=((ss-1)%SUBSTAGES)+1;               // 1..SUBSTAGES within level
+    if(sd){
+      const d=sd[lvl-1]; if(!d) continue;
+      const c=(s===SUBSTAGES)?d.comp:d.sub;
+      t.fc+=c.fc; t.rfc+=c.rfc;
+      if(c.est) t.est=true;
+      t.meat+=d.meat||0; t.wood+=d.wood||0; t.coal+=d.coal||0; t.iron+=d.iron||0;
+    } else if(costs){
+      const c=costs[lvl-1]; if(!c) continue;
+      if(c.est) t.est=true;
+      t.fc+=c.fc/SUBSTAGES; t.rfc+=c.rfc/SUBSTAGES;
     }
-    return t;
   }
-  const costs=COSTS[bid];
-  if(!costs) return {fc:0,rfc:0,meat:0,wood:0,coal:0,iron:0,days:0,est:false};
-  let tfc2=0,trfc=0,hasEst=false;
-  for(let fc=1;fc<=10;fc++){
-    if(fc<ffc||(fc===ffc&&fsub===0)||fc>tfc) continue;
-    const c=costs[fc-1]; if(!c) continue;
-    if(c.est) hasEst=true;
-    const s0=startSub(fc,ffc,fsub);
-    const s1=fc===tfc?(tsub===0?SUBSTAGES:tsub):SUBSTAGES;
-    if(s0>s1) continue;
-    const n=s1-s0+1;
-    tfc2+=c.fc/SUBSTAGES*n; trfc+=c.rfc/SUBSTAGES*n;
-  }
-  return {fc:Math.round(tfc2),rfc:Math.round(trfc),meat:0,wood:0,coal:0,iron:0,days:0,est:hasEst};
+  if(!sd){ t.fc=Math.round(t.fc); t.rfc=Math.round(t.rfc); }
+  return t;
 }
 
 function calcDays(bid,ffc,fsub,tfc,tsub){
-  if(lvIdx(ffc,fsub)>=lvIdx(tfc,tsub)) return 0;
+  const ss0=gssi(ffc,fsub), ss1=gssi(tfc,tsub);
+  if(ss0>=ss1) return 0;
   const sd=STAGE_DATA[bid];
   let days=0;
-  for(let fc=1;fc<=10;fc++){
-    if(fc<ffc||(fc===ffc&&fsub===0)||fc>tfc) continue;
-    const dps=sd&&sd[fc-1]?sd[fc-1].days:BUILD_DAYS[fc-1];
-    const s0=startSub(fc,ffc,fsub);
-    const s1=fc===tfc?(tsub===0?SUBSTAGES:tsub):SUBSTAGES;
-    if(s0>s1) continue;
-    days+=dps*(s1-s0+1);
+  for(let ss=ss0+1;ss<=ss1;ss++){
+    const lvl=Math.ceil(ss/SUBSTAGES);
+    days+=sd&&sd[lvl-1]?sd[lvl-1].days:BUILD_DAYS[lvl-1];
   }
   return days;
 }
