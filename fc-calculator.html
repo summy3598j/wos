@@ -8,10 +8,13 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 body{background:#0d1b2a;color:#e2e8f0;font-family:'Hiragino Sans','Noto Sans JP',sans-serif;max-width:480px;margin:0 auto;min-height:100dvh;overscroll-behavior:none;-webkit-user-select:none;user-select:none;}
 button{cursor:pointer;border:none;outline:none;background:none;}
-input{outline:none;}
+input,select{outline:none;}
 
-.hdr{background:linear-gradient(180deg,#1a3a5c,#0d2238);padding:8px 14px 6px;border-bottom:2px solid #1e4d7a;}
-.hdr h1{font-size:15px;font-weight:700;color:#93c5fd;}
+/* Header */
+.hdr{background:linear-gradient(180deg,#1a3a5c,#0d2238);padding:8px 14px 6px;border-bottom:2px solid #1e4d7a;display:flex;align-items:center;}
+.hdr h1{font-size:15px;font-weight:700;color:#93c5fd;flex:1;}
+.hdr-btn{font-size:13px;font-weight:700;color:#94a3b8;background:#0d2238;border:1px solid #1e3a5c;border-radius:8px;padding:3px 9px;margin-left:6px;}
+.hdr-btn:active{opacity:.7;}
 
 /* Buff strip */
 .buff-strip{background:#112233;padding:6px 10px 8px;border-bottom:1px solid #1e3a5c;}
@@ -20,12 +23,13 @@ input{outline:none;}
 .buff-row:last-child{margin-bottom:0;}
 .buff-lbl{font-size:11px;color:#64748b;white-space:nowrap;}
 .buff-inp{background:#0d1b2a;border:1px solid #334155;border-radius:5px;color:#e2e8f0;font-size:14px;font-weight:700;padding:3px 6px;width:58px;text-align:right;-webkit-user-select:text;user-select:text;}
+.buff-sel{background:#0d1b2a;border:1px solid #334155;border-radius:5px;color:#e2e8f0;font-size:12px;padding:3px 6px;-webkit-appearance:none;appearance:none;}
 .buff-chk{display:flex;align-items:center;gap:4px;font-size:12px;color:#94a3b8;cursor:pointer;}
 .buff-chk input{accent-color:#3b82f6;width:15px;height:15px;cursor:pointer;}
 .buff-tag{font-size:10px;background:rgba(61,214,140,.18);color:#4ade80;border-radius:8px;padding:1px 5px;font-weight:700;}
 
 /* Result strip */
-.result-strip{background:#0a1520;padding:7px 8px;border-bottom:2px solid #1e3a5c;}
+.result-strip{background:#0a1520;padding:7px 8px;border-bottom:1px solid #1e3a5c;}
 .res-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
 .res-card{background:#112233;border-radius:8px;padding:6px 9px;border:1px solid #1e3a5c;}
 .res-card .rv{font-size:20px;font-weight:700;line-height:1.1;}
@@ -34,6 +38,19 @@ input{outline:none;}
 .res-mat{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:4px;font-size:12px;}
 .res-mat span{color:#94a3b8;white-space:nowrap;}
 .res-mat b{color:#e2e8f0;margin-left:2px;}
+
+/* Inventory strip */
+.inv-strip{background:#0d1b2a;padding:6px 10px 10px;border-bottom:2px solid #1e3a5c;}
+.inv-title{font-size:11px;font-weight:700;color:#3b82f6;margin-bottom:6px;}
+.inv-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+.inv-card{background:#112233;border:1px solid #1e3a5c;border-radius:8px;padding:6px 8px;}
+.inv-name{font-size:10px;color:#64748b;margin-bottom:3px;}
+.inv-req{font-size:13px;font-weight:700;color:#e2e8f0;margin-bottom:4px;}
+.inv-row2{display:flex;align-items:center;gap:5px;}
+.inv-inp{background:#0a1520;border:1px solid #334155;border-radius:5px;color:#e2e8f0;font-size:12px;font-weight:700;padding:3px 5px;min-width:0;flex:1;text-align:right;-webkit-user-select:text;user-select:text;}
+.inv-lack{font-size:10px;font-weight:700;white-space:nowrap;min-width:28px;text-align:right;}
+.inv-lack.ok{color:#4ade80;}
+.inv-lack.ng{color:#f87171;}
 
 /* Building cards */
 .b-list{padding:6px 8px 16px;display:flex;flex-direction:column;gap:7px;}
@@ -50,7 +67,6 @@ input{outline:none;}
 .side-lbl{font-size:10px;color:#475569;text-align:center;}
 .spin-pair{display:flex;gap:4px;}
 .spnr{display:flex;flex-direction:column;align-items:stretch;gap:2px;flex:1;}
-.spnr-lbl{font-size:9px;color:#334155;text-align:center;}
 .spbtn{background:#1e3a5c;color:#60a5fa;border-radius:5px;font-size:13px;font-weight:700;height:24px;display:flex;align-items:center;justify-content:center;touch-action:none;-webkit-user-select:none;}
 .spbtn:active{background:#2a4a7c;}
 .lvbox{background:#0d1b2a;border:1.5px solid #334155;border-radius:7px;min-height:38px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;touch-action:none;padding:2px 4px;gap:1px;}
@@ -67,31 +83,51 @@ input{outline:none;}
 .r-mat{color:#94a3b8;}
 .r-est{color:#f0c040;font-size:10px;}
 
-/* Popup */
+/* Swipe popup */
 #popup{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:500;display:none;align-items:center;justify-content:center;}
 .popup-box{background:#1a3a5c;border-radius:20px;padding:24px 52px;text-align:center;border:2px solid #3b82f6;min-width:200px;}
 .popup-lbl{font-size:11px;color:#64748b;margin-bottom:6px;}
 .popup-val{font-size:68px;font-weight:700;color:#e2e8f0;line-height:1;}
 .popup-sub{font-size:14px;color:#94a3b8;margin-top:6px;}
+
+/* Help modal */
+#help-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:600;display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px 12px;}
+.help-box{background:#112233;border-radius:16px;border:2px solid #1e4d7a;max-width:440px;width:100%;padding:20px 18px;}
+.help-ttl{font-size:16px;font-weight:700;color:#93c5fd;margin-bottom:14px;}
+.help-sec{margin-bottom:12px;}
+.help-sec h3{font-size:12px;font-weight:700;color:#3b82f6;margin-bottom:5px;}
+.help-sec p{font-size:12px;color:#94a3b8;line-height:1.7;}
+.help-close{display:block;width:100%;background:#1e3a5c;color:#60a5fa;border-radius:10px;padding:10px;font-size:14px;font-weight:700;margin-top:16px;text-align:center;cursor:pointer;}
 </style>
 </head>
 <body>
 
-<div class="hdr"><h1>🔥 火晶計算ツール</h1></div>
+<div class="hdr">
+  <h1>🔥 火晶計算ツール</h1>
+  <button class="hdr-btn" onclick="showHelp()">？</button>
+  <button class="hdr-btn" onclick="clearAll()">クリア</button>
+</div>
 
 <div class="buff-strip">
   <div class="buff-title">建築バフ</div>
   <div class="buff-row">
-    <label class="buff-chk"><input type="checkbox" id="b-vice" onchange="save();render()"><span>副執政官</span><span class="buff-tag">+10%</span></label>
+    <label class="buff-chk"><input type="checkbox" id="b-vice" onchange="onVice('vice')"><span>副執政官</span><span class="buff-tag">+10%</span></label>
+    <label class="buff-chk"><input type="checkbox" id="b-vicesup" onchange="onVice('sup')"><span>副執政官(至高)</span><span class="buff-tag">+15%</span></label>
     <label class="buff-chk"><input type="checkbox" id="b-lords" onchange="save();render()"><span>領主指令</span><span class="buff-tag">+20%</span></label>
   </div>
   <div class="buff-row">
     <span class="buff-lbl">基礎ステータス</span>
     <input class="buff-inp" type="number" id="b-base" value="0" min="0" oninput="save();render()">
     <span class="buff-lbl">%</span>
-    <span class="buff-lbl">ペットスキル</span>
-    <input class="buff-inp" type="number" id="b-pet" value="0" min="0" oninput="save();render()">
-    <span class="buff-lbl">%</span>
+    <span class="buff-lbl">ペット</span>
+    <select class="buff-sel" id="b-pet" onchange="save();render()">
+      <option value="0">なし</option>
+      <option value="3">Lv1 +3%</option>
+      <option value="6">Lv2 +6%</option>
+      <option value="9">Lv3 +9%</option>
+      <option value="12">Lv4 +12%</option>
+      <option value="15">Lv5 +15%</option>
+    </select>
   </div>
   <div class="buff-row">
     <span class="buff-lbl">建築資材消費削減</span>
@@ -101,6 +137,12 @@ input{outline:none;}
 </div>
 
 <div class="result-strip" id="result-strip"></div>
+
+<div class="inv-strip">
+  <div class="inv-title">所持アイテム（火晶・精製:個 / 資材:M単位）</div>
+  <div class="inv-grid" id="inv-grid"></div>
+</div>
+
 <div class="b-list" id="b-list"></div>
 
 <div id="popup">
@@ -108,6 +150,33 @@ input{outline:none;}
     <div class="popup-lbl" id="popup-lbl"></div>
     <div class="popup-val" id="popup-val"></div>
     <div class="popup-sub" id="popup-sub"></div>
+  </div>
+</div>
+
+<div id="help-modal">
+  <div class="help-box">
+    <div class="help-ttl">🔥 火晶計算ツール 使い方</div>
+    <div class="help-sec">
+      <h3>基本操作</h3>
+      <p>各建物のFC・段の数値をタップしてスワイプ（上で増加・下で減少）するか、▲▼ボタンで変更します。現在値と目標値を設定すると必要な火晶・資材が計算されます。</p>
+    </div>
+    <div class="help-sec">
+      <h3>目標値について</h3>
+      <p>目標値は現在値以上にのみ設定できます。現在値を上げると目標値も自動で追従します。</p>
+    </div>
+    <div class="help-sec">
+      <h3>建築バフ</h3>
+      <p>副執政官(10%)と副執政官(至高)(15%)はどちらか一方のみ選択できます。基礎ステータス・ペットスキルは建築速度ボーナス(%)です。領主指令は建設時間20%短縮。建築資材消費削減は必要資材を減らします。</p>
+    </div>
+    <div class="help-sec">
+      <h3>所持アイテム</h3>
+      <p>火晶・精製火晶は個数で、食料・木材・石炭・鋼材は「必要」欄と同じM単位で入力してください。入力すると不足量（赤）または余剰（✓）が表示されます。</p>
+    </div>
+    <div class="help-sec">
+      <h3>クリア</h3>
+      <p>ヘッダーの「クリア」ボタンで全設定をリセットします。</p>
+    </div>
+    <button class="help-close" onclick="closeHelp()">閉じる</button>
   </div>
 </div>
 
@@ -164,41 +233,53 @@ const COSTS = {
 
 const BUILD_DAYS = [7,9,11,12,14,15,18,20,13,20];
 
+const INV_FIELDS = [
+  {id:'fc',   name:'🔥 火晶',   fmt:v=>Math.round(v).toLocaleString()},
+  {id:'rfc',  name:'⚗️ 精製火晶', fmt:v=>Math.round(v).toLocaleString()},
+  {id:'meat', name:'🥩 食料',   fmt:fmtR},
+  {id:'wood', name:'🪵 木材',   fmt:fmtR},
+  {id:'coal', name:'🪨 石炭',   fmt:fmtR},
+  {id:'iron', name:'🔩 鋼材',   fmt:fmtR},
+];
+
 // ============================================================
 // STATE
 // ============================================================
 const defState = () => ({
   buildings: Object.fromEntries(BUILDINGS.map(b=>[b.id,{from:{fc:0,sub:0},to:{fc:5,sub:0},enabled:true}])),
-  buffs:{base:0,pet:0,vice:false,lords:false,matReduce:0},
+  buffs:{base:0,pet:0,vice:false,viceSup:false,lords:false,matReduce:0},
+  inv:{fc:0,rfc:0,meat:0,wood:0,coal:0,iron:0},
 });
 
 let S = defState();
 
-function save() {
-  try {
+function save(){
+  try{
     S.buffs.base      = parseFloat(document.getElementById('b-base')?.value)||0;
-    S.buffs.pet       = parseFloat(document.getElementById('b-pet')?.value)||0;
+    S.buffs.pet       = parseInt(document.getElementById('b-pet')?.value)||0;
     S.buffs.vice      = document.getElementById('b-vice')?.checked||false;
+    S.buffs.viceSup   = document.getElementById('b-vicesup')?.checked||false;
     S.buffs.lords     = document.getElementById('b-lords')?.checked||false;
     S.buffs.matReduce = parseFloat(document.getElementById('b-mat')?.value)||0;
     localStorage.setItem('fc3',JSON.stringify(S));
-  } catch(e){}
+  }catch(e){}
 }
 
-function load() {
-  try {
-    const d = JSON.parse(localStorage.getItem('fc3')||'null');
-    if (!d) return;
-    if (d.buildings) BUILDINGS.forEach(b=>{
+function load(){
+  try{
+    const d=JSON.parse(localStorage.getItem('fc3')||'null');
+    if(!d) return;
+    if(d.buildings) BUILDINGS.forEach(b=>{
       const bs=d.buildings[b.id];
-      if (bs) S.buildings[b.id]={
+      if(bs) S.buildings[b.id]={
         from:{fc:bs.from?.fc??0, sub:bs.from?.sub??0},
         to:  {fc:bs.to?.fc??5,   sub:bs.to?.sub??0},
         enabled:bs.enabled!==false,
       };
     });
-    if (d.buffs) S.buffs={...S.buffs,...d.buffs};
-  } catch(e){}
+    if(d.buffs)  S.buffs={...S.buffs,...d.buffs};
+    if(d.inv)    S.inv={...S.inv,...d.inv};
+  }catch(e){}
 }
 
 // ============================================================
@@ -212,21 +293,21 @@ function calcCost(bid,ffc,fsub,tfc,tsub){
   const sd=STAGE_DATA[bid], costs=COSTS[bid];
   const t={fc:0,rfc:0,meat:0,wood:0,coal:0,iron:0,days:0,est:false};
   for(let ss=ss0+1;ss<=ss1;ss++){
-    const lvl=Math.ceil(ss/SUBSTAGES);          // 1-indexed FC level data
-    const s=((ss-1)%SUBSTAGES)+1;               // 1..SUBSTAGES within level
+    const lvl=Math.ceil(ss/SUBSTAGES);
+    const s=((ss-1)%SUBSTAGES)+1;
     if(sd){
       const d=sd[lvl-1]; if(!d) continue;
       const c=(s===SUBSTAGES)?d.comp:d.sub;
       t.fc+=c.fc; t.rfc+=c.rfc;
       if(c.est) t.est=true;
       t.meat+=d.meat||0; t.wood+=d.wood||0; t.coal+=d.coal||0; t.iron+=d.iron||0;
-    } else if(costs){
+    }else if(costs){
       const c=costs[lvl-1]; if(!c) continue;
       if(c.est) t.est=true;
       t.fc+=c.fc/SUBSTAGES; t.rfc+=c.rfc/SUBSTAGES;
     }
   }
-  if(!sd){ t.fc=Math.round(t.fc); t.rfc=Math.round(t.rfc); }
+  if(!sd){t.fc=Math.round(t.fc); t.rfc=Math.round(t.rfc);}
   return t;
 }
 
@@ -242,8 +323,8 @@ function calcDays(bid,ffc,fsub,tfc,tsub){
   return days;
 }
 
-function fmtD(d){const dd=Math.floor(d),h=Math.round((d-dd)*24);return h?`${dd}日${h}h`:`${dd}日`;}
 function fmtR(v){return v>=1000?(v/1000).toFixed(2)+'B':v.toFixed(1)+'M';}
+function fmtD(d){const dd=Math.floor(d),h=Math.round((d-dd)*24);return h?`${dd}日${h}h`:`${dd}日`;}
 function fcLabel(fc){return fc===0?'前':String(fc);}
 function subLabel(sub){return sub===0?'完':`${sub}段`;}
 
@@ -252,8 +333,8 @@ function subLabel(sub){return sub===0?'完':`${sub}段`;}
 // ============================================================
 function getBuffs(){
   const base=parseFloat(document.getElementById('b-base')?.value)||0;
-  const pet =parseFloat(document.getElementById('b-pet')?.value)||0;
-  const vice=document.getElementById('b-vice')?.checked?10:0;
+  const pet =parseInt(document.getElementById('b-pet')?.value)||0;
+  const vice=document.getElementById('b-vice')?.checked?10:document.getElementById('b-vicesup')?.checked?15:0;
   const lords=document.getElementById('b-lords')?.checked?20:0;
   const matR=parseFloat(document.getElementById('b-mat')?.value)||0;
   const accel=lords, speed=base+pet+vice;
@@ -262,25 +343,44 @@ function getBuffs(){
   return {accel,speed,matR,tBuf,mBuf,hasT:accel>0||speed>0,hasM:matR>0};
 }
 
-// ============================================================
-// RENDER
-// ============================================================
-function render(){
-  renderResults();
-  renderBuildings();
+function onVice(type){
+  if(type==='vice'&&document.getElementById('b-vice').checked)
+    document.getElementById('b-vicesup').checked=false;
+  else if(type==='sup'&&document.getElementById('b-vicesup').checked)
+    document.getElementById('b-vice').checked=false;
+  save(); render();
 }
 
-function renderResults(){
+// ============================================================
+// TOTALS
+// ============================================================
+function calcTotals(){
   const B=getBuffs();
-  let tfc=0,trfc=0,tmeat=0,twood=0,tcoal=0,tiron=0,tdays=0;
+  let tfc=0,trfc=0,tmeat=0,twood=0,tcoal=0,tiron=0,tdays=0,hasEst=false;
   BUILDINGS.forEach(b=>{
     const bs=S.buildings[b.id];
     if(!bs.enabled) return;
     const {from:f,to:t}=bs;
     const c=calcCost(b.id,f.fc,f.sub,t.fc,t.sub);
     tfc+=c.fc; trfc+=c.rfc; tmeat+=c.meat; twood+=c.wood; tcoal+=c.coal; tiron+=c.iron;
+    if(c.est) hasEst=true;
     if(b.id==='furnace') tdays=calcDays(b.id,f.fc,f.sub,t.fc,t.sub);
   });
+  return {B,tfc,trfc,tmeat,twood,tcoal,tiron,tdays,hasEst};
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function render(){
+  const tots=calcTotals();
+  renderResults(tots);
+  renderInv(tots);
+  renderBuildings();
+}
+
+function renderResults(tots){
+  const {B,tfc,trfc,tmeat,twood,tcoal,tiron,tdays}=tots;
   const bdays=B.tBuf(tdays);
   const meat2=B.mBuf(tmeat),wood2=B.mBuf(twood),coal2=B.mBuf(tcoal),iron2=B.mBuf(tiron);
   document.getElementById('result-strip').innerHTML=`
@@ -311,6 +411,37 @@ function renderResults(){
     </div>`;
 }
 
+function renderInv(tots){
+  const {B,tfc,trfc,tmeat,twood,tcoal,tiron}=tots;
+  const reqMap={fc:tfc, rfc:trfc, meat:B.mBuf(tmeat), wood:B.mBuf(twood), coal:B.mBuf(tcoal), iron:B.mBuf(tiron)};
+  const grid=document.getElementById('inv-grid');
+
+  // Build structure once
+  if(!grid.querySelector('.inv-card')){
+    grid.innerHTML=INV_FIELDS.map(f=>`
+      <div class="inv-card">
+        <div class="inv-name">${f.name}</div>
+        <div class="inv-req" id="ir-${f.id}">-</div>
+        <div class="inv-row2">
+          <input class="inv-inp" id="ii-${f.id}" type="number" min="0" step="any" placeholder="0"
+            value="${S.inv[f.id]||''}" oninput="setInv('${f.id}',this.value)">
+          <span class="inv-lack" id="il-${f.id}"></span>
+        </div>
+      </div>`).join('');
+  }
+
+  // Update dynamic parts only
+  INV_FIELDS.forEach(f=>{
+    const req=reqMap[f.id];
+    const own=S.inv[f.id]||0;
+    const lack=req-own;
+    document.getElementById(`ir-${f.id}`).textContent=f.fmt(req);
+    const el=document.getElementById(`il-${f.id}`);
+    if(lack<=0){el.className='inv-lack ok';el.textContent='✓';}
+    else{el.className='inv-lack ng';el.textContent='-'+f.fmt(lack);}
+  });
+}
+
 function renderBuildings(){
   const B=getBuffs();
   let html='';
@@ -321,22 +452,18 @@ function renderBuildings(){
     const days=calcDays(b.id,f.fc,f.sub,t.fc,t.sub);
     const daysB=B.tBuf(days);
 
-    const box=(fot,field,val,color)=>{
-      const bid=b.id;
-      return `<div class="lvbox" data-bid="${bid}" data-fot="${fot}" data-field="${field}"
+    const box=(fot,field,val,color)=>`
+      <div class="lvbox" data-bid="${b.id}" data-fot="${fot}" data-field="${field}"
         ontouchstart="swStart(event,this)" ontouchmove="swMove(event)" ontouchend="swEnd()">
         <span class="lv1" style="color:${color||'#e2e8f0'}">${val}</span>
       </div>`;
-    };
 
-    const spnr=(fot,field,val,color)=>{
-      const bid=b.id;
-      return `<div class="spnr">
-        <button class="spbtn" onclick="adj('${bid}','${fot}','${field}',1)">▲</button>
+    const spnr=(fot,field,val,color)=>`
+      <div class="spnr">
+        <button class="spbtn" onclick="adj('${b.id}','${fot}','${field}',1)">▲</button>
         ${box(fot,field,val,color)}
-        <button class="spbtn" onclick="adj('${bid}','${fot}','${field}',-1)">▼</button>
+        <button class="spbtn" onclick="adj('${b.id}','${fot}','${field}',-1)">▼</button>
       </div>`;
-    };
 
     const side=(fot,lvl,lbl)=>`
       <div class="side">
@@ -380,23 +507,40 @@ function renderBuildings(){
 // ============================================================
 // LEVEL ADJUST
 // ============================================================
+function ensureFromTo(bid){
+  const bs=S.buildings[bid];
+  if(gssi(bs.from.fc,bs.from.sub)>gssi(bs.to.fc,bs.to.sub)){
+    bs.to={fc:bs.from.fc,sub:bs.from.sub};
+  }
+}
+
 function adj(bid,fot,field,dir){
-  const lvl=S.buildings[bid][fot];
+  const bs=S.buildings[bid];
+  const lvl=bs[fot];
   if(field==='fc'){
     lvl.fc=Math.max(0,Math.min(10,lvl.fc+dir));
     if(lvl.fc===10) lvl.sub=0;
-  } else {
+  }else{
     let ns=lvl.sub+dir;
     if(ns>4){if(lvl.fc<10){lvl.fc++;ns=0;}else ns=4;}
     else if(ns<0){if(lvl.fc>0){lvl.fc--;ns=4;}else ns=0;}
     lvl.sub=ns;
   }
+  ensureFromTo(bid);
   save(); render();
 }
 
 function toggleB(bid,en){
   S.buildings[bid].enabled=en;
   save(); render();
+}
+
+function setInv(field,val){
+  S.inv[field]=parseFloat(val)||0;
+  save();
+  // update shortage display without full re-render
+  const tots=calcTotals();
+  renderInv(tots);
 }
 
 // ============================================================
@@ -428,6 +572,7 @@ function swMove(e){
     _sw.lastVal=nv;
     if(_sw.field==='fc'){lvl.fc=nv;if(nv===10)lvl.sub=0;}
     else lvl.sub=nv;
+    ensureFromTo(_sw.bid);
     _updatePopup(nv,_sw.field);
     render();
   }
@@ -444,21 +589,46 @@ function _updatePopup(v,field){
   if(field==='fc'){
     document.getElementById('popup-val').textContent=v===0?'前':v;
     document.getElementById('popup-sub').textContent=v===0?'FC前 (Lv30)':`FC${v}`;
-  } else {
+  }else{
     document.getElementById('popup-val').textContent=v===0?'完':v;
     document.getElementById('popup-sub').textContent=v===0?'完了':`${v}段目`;
   }
 }
 
 // ============================================================
+// HELP / CLEAR
+// ============================================================
+function showHelp(){document.getElementById('help-modal').style.display='flex';}
+function closeHelp(){document.getElementById('help-modal').style.display='none';}
+document.getElementById('help-modal').addEventListener('click',function(e){if(e.target===this)closeHelp();});
+
+function clearAll(){
+  if(!confirm('全設定をリセットしますか？')) return;
+  localStorage.removeItem('fc3');
+  S=defState();
+  document.getElementById('b-base').value=0;
+  document.getElementById('b-pet').value=0;
+  document.getElementById('b-vice').checked=false;
+  document.getElementById('b-vicesup').checked=false;
+  document.getElementById('b-lords').checked=false;
+  document.getElementById('b-mat').value=0;
+  INV_FIELDS.forEach(f=>{
+    const el=document.getElementById(`ii-${f.id}`);
+    if(el) el.value='';
+  });
+  render();
+}
+
+// ============================================================
 // INIT
 // ============================================================
 load();
-document.getElementById('b-base').value  = S.buffs.base||0;
-document.getElementById('b-pet').value   = S.buffs.pet||0;
-document.getElementById('b-vice').checked = S.buffs.vice||false;
-document.getElementById('b-lords').checked= S.buffs.lords||false;
-document.getElementById('b-mat').value   = S.buffs.matReduce||0;
+document.getElementById('b-base').value   = S.buffs.base||0;
+document.getElementById('b-pet').value    = S.buffs.pet||0;
+document.getElementById('b-vice').checked  = S.buffs.vice||false;
+document.getElementById('b-vicesup').checked = S.buffs.viceSup||false;
+document.getElementById('b-lords').checked = S.buffs.lords||false;
+document.getElementById('b-mat').value    = S.buffs.matReduce||0;
 render();
 </script>
 </body>
