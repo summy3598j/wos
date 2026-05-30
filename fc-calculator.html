@@ -91,6 +91,21 @@ input,select{outline:none;}
 .help-sec h3{font-size:11px;font-weight:700;color:#3b82f6;margin-bottom:4px;}
 .help-sec p{font-size:11px;color:#94a3b8;line-height:1.6;}
 .help-close{display:block;width:100%;background:#1e3a5c;color:#60a5fa;border-radius:9px;padding:9px;font-size:13px;font-weight:700;margin-top:12px;text-align:center;cursor:pointer;}
+
+/* Backup modal */
+#bkup-modal{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:600;display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:16px 10px;}
+.bkup-box{background:#112233;border-radius:14px;border:2px solid #1e4d7a;max-width:440px;width:100%;padding:16px 15px;}
+.bkup-ttl{font-size:14px;font-weight:700;color:#93c5fd;margin-bottom:12px;}
+.bkup-sec{margin-bottom:14px;}
+.bkup-sec h3{font-size:11px;font-weight:700;color:#3b82f6;margin-bottom:5px;}
+.bkup-sec p{font-size:10px;color:#64748b;margin-bottom:5px;line-height:1.5;}
+.bkup-ta{width:100%;background:#0a1520;border:1px solid #334155;border-radius:6px;color:#94a3b8;font-size:11px;padding:6px 8px;min-height:70px;resize:none;-webkit-user-select:text;user-select:text;font-family:monospace;}
+.bkup-ta.paste{color:#e2e8f0;margin-top:5px;}
+.bkup-btn{display:block;width:100%;border-radius:8px;padding:8px;font-size:13px;font-weight:700;text-align:center;cursor:pointer;margin-top:6px;}
+.bkup-btn.copy{background:#1e3a5c;color:#60a5fa;}
+.bkup-btn.restore{background:#1a3a1a;color:#4ade80;border:1px solid #2d5a2d;}
+.bkup-btn.close{background:#1e3a5c;color:#94a3b8;margin-top:4px;}
+.bkup-sep{border:none;border-top:1px solid #1e3a5c;margin:14px 0;}
 </style>
 </head>
 <body>
@@ -98,6 +113,7 @@ input,select{outline:none;}
 <div class="hdr">
   <h1>🔥 火晶計算ツール</h1>
   <button class="hdr-btn" onclick="showHelp()">？</button>
+  <button class="hdr-btn" onclick="showBackup()">💾</button>
   <button class="hdr-btn" onclick="clearAll()">クリア</button>
 </div>
 
@@ -166,7 +182,31 @@ input,select{outline:none;}
       <h3>所持アイテム</h3>
       <p>火晶・精製火晶は個数で入力。生肉・木材・石炭・鉄鉱は必要欄と同じM単位で入力。不足量が赤で、余剰は✓で表示されます。</p>
     </div>
+    <div class="help-sec">
+      <h3>💾 アップデート時のデータ保持について</h3>
+      <p>ホーム画面のショートカットを削除して追加し直すと、保存データが消えます。アップデート後もデータを保持するには：<br>① 更新前に「💾」ボタンでデータをコピー<br>② ショートカットを更新（削除→追加）<br>③ 再度「💾」ボタンを開いてデータを貼り付け・復元<br><br>ショートカットのまま開いてリロードする場合はデータは消えません。</p>
+    </div>
     <button class="help-close" onclick="closeHelp()">閉じる</button>
+  </div>
+</div>
+
+<div id="bkup-modal">
+  <div class="bkup-box">
+    <div class="bkup-ttl">💾 データのバックアップ・復元</div>
+    <div class="bkup-sec">
+      <h3>バックアップ（更新前にコピー）</h3>
+      <p>下のテキストを全選択してコピーしてください。</p>
+      <textarea class="bkup-ta" id="bkup-out" readonly></textarea>
+      <button class="bkup-btn copy" id="bkup-copy-btn" onclick="copyBackup()">コピー</button>
+    </div>
+    <hr class="bkup-sep">
+    <div class="bkup-sec">
+      <h3>復元（更新後に貼り付け）</h3>
+      <p>コピーしたテキストを下に貼り付けて「復元」を押してください。</p>
+      <textarea class="bkup-ta paste" id="bkup-in" placeholder="ここにバックアップデータを貼り付け"></textarea>
+      <button class="bkup-btn restore" onclick="restoreBackup()">復元する</button>
+    </div>
+    <button class="bkup-btn close" onclick="closeBackup()">閉じる</button>
   </div>
 </div>
 
@@ -547,11 +587,59 @@ function _updatePopup(v,field){
 }
 
 // ============================================================
-// HELP / CLEAR
+// HELP / CLEAR / BACKUP
 // ============================================================
 function showHelp(){document.getElementById('help-modal').style.display='flex';}
 function closeHelp(){document.getElementById('help-modal').style.display='none';}
 document.getElementById('help-modal').addEventListener('click',function(e){if(e.target===this)closeHelp();});
+
+function showBackup(){
+  document.getElementById('bkup-out').value=JSON.stringify(S);
+  document.getElementById('bkup-in').value='';
+  document.getElementById('bkup-copy-btn').textContent='コピー';
+  document.getElementById('bkup-modal').style.display='flex';
+}
+function closeBackup(){document.getElementById('bkup-modal').style.display='none';}
+document.getElementById('bkup-modal').addEventListener('click',function(e){if(e.target===this)closeBackup();});
+
+function copyBackup(){
+  const ta=document.getElementById('bkup-out');
+  const btn=document.getElementById('bkup-copy-btn');
+  const txt=ta.value;
+  const done=()=>{btn.textContent='✓ コピー完了';setTimeout(()=>{btn.textContent='コピー';},2500);};
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(done).catch(()=>{ta.select();document.execCommand('copy');done();});
+  }else{ta.select();document.execCommand('copy');done();}
+}
+
+function restoreBackup(){
+  const json=document.getElementById('bkup-in').value.trim();
+  if(!json){alert('データを貼り付けてください');return;}
+  try{
+    const d=JSON.parse(json);
+    if(d.buildings) BUILDINGS.forEach(b=>{
+      const bs=d.buildings[b.id];
+      if(bs) S.buildings[b.id]={
+        from:{fc:bs.from?.fc??0,sub:bs.from?.sub??0},
+        to:  {fc:bs.to?.fc??5,  sub:bs.to?.sub??0},
+        enabled:bs.enabled!==false,
+      };
+    });
+    if(d.buffs) S.buffs={...S.buffs,...d.buffs};
+    if(d.inv)   S.inv={...S.inv,...d.inv};
+    localStorage.setItem('fc3',JSON.stringify(S));
+    document.getElementById('b-base').value      =S.buffs.base||0;
+    document.getElementById('b-pet').value       =S.buffs.pet||0;
+    document.getElementById('b-vice').checked    =S.buffs.vice||false;
+    document.getElementById('b-vicesup').checked =S.buffs.viceSup||false;
+    document.getElementById('b-lords').checked   =S.buffs.lords||false;
+    document.getElementById('b-mat').value       =S.buffs.matReduce||0;
+    INV_FIELDS.forEach(f=>{const el=document.getElementById(`ii-${f.id}`);if(el)el.value=S.inv[f.id]||'';});
+    render();
+    closeBackup();
+    alert('データを復元しました');
+  }catch(e){alert('データの形式が正しくありません');}
+}
 
 function clearAll(){
   if(!confirm('全設定をリセットしますか？')) return;
