@@ -218,7 +218,7 @@ function _sum(d,s0,s1){
 }
 
 function startSub(fc,fromFc,fromSub){
-  return (fc===fromFc||(fromFc===0&&fc===1))?fromSub+1:1;
+  return fc===fromFc+1?fromSub+1:1;
 }
 
 function calcCost(bid,ffc,fsub,tfc,tsub){
@@ -227,7 +227,7 @@ function calcCost(bid,ffc,fsub,tfc,tsub){
   if(sd){
     const t={fc:0,rfc:0,meat:0,wood:0,coal:0,iron:0,days:0,est:false};
     for(let fc=1;fc<=10;fc++){
-      if(fc<ffc||fc>tfc) continue;
+      if(fc<=ffc||fc>tfc) continue;
       const d=sd[fc-1]; if(!d) continue;
       const s0=startSub(fc,ffc,fsub);
       const s1=fc===tfc?(tsub===0?SUBSTAGES:tsub):SUBSTAGES;
@@ -243,7 +243,7 @@ function calcCost(bid,ffc,fsub,tfc,tsub){
   if(!costs) return {fc:0,rfc:0,meat:0,wood:0,coal:0,iron:0,days:0,est:false};
   let tfc2=0,trfc=0,hasEst=false;
   for(let fc=1;fc<=10;fc++){
-    if(fc<ffc||fc>tfc) continue;
+    if(fc<=ffc||fc>tfc) continue;
     const c=costs[fc-1]; if(!c) continue;
     if(c.est) hasEst=true;
     const s0=startSub(fc,ffc,fsub);
@@ -260,7 +260,7 @@ function calcDays(bid,ffc,fsub,tfc,tsub){
   const sd=STAGE_DATA[bid];
   let days=0;
   for(let fc=1;fc<=10;fc++){
-    if(fc<ffc||fc>tfc) continue;
+    if(fc<=ffc||fc>tfc) continue;
     const dps=sd&&sd[fc-1]?sd[fc-1].days:BUILD_DAYS[fc-1];
     const s0=startSub(fc,ffc,fsub);
     const s1=fc===tfc?(tsub===0?SUBSTAGES:tsub):SUBSTAGES;
