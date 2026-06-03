@@ -255,9 +255,20 @@ const STAGE_DATA = {
 };
 STAGE_DATA.lancer   = STAGE_DATA.infantry;
 STAGE_DATA.marksman = STAGE_DATA.infantry;
+STAGE_DATA.embassy  = [
+  {sub:{fc:33,rfc:0},  comp:{fc:33,rfc:0},           meat:13, wood:13, coal:2.7, iron:0.67, days:4.62},
+  {sub:{fc:39,rfc:0},  comp:{fc:39,rfc:0},           meat:14, wood:14, coal:2.9, iron:0.72, days:5.94},
+  {sub:{fc:59,rfc:0},  comp:{fc:59,rfc:0},           meat:15, wood:15, coal:3.1, iron:0.79, days:7.26},
+  {sub:{fc:70,rfc:0},  comp:{fc:70,rfc:0},           meat:16, wood:16, coal:3.2, iron:0.82, days:7.92},
+  {sub:{fc:83,rfc:0},  comp:{fc:83,rfc:0},           meat:16, wood:16, coal:3.3, iron:0.84, days:9.24},
+  {sub:{fc:50,rfc:2},  comp:{fc:25,rfc:5},           meat:19, wood:19, coal:3.8, iron:0.96, days:9.90},
+  {sub:{fc:60,rfc:3},  comp:{fc:30,rfc:7},           meat:21, wood:21, coal:4.3, iron:1.0,  days:11.88},
+  {sub:{fc:60,rfc:5},  comp:{fc:30,rfc:11},          meat:26, wood:26, coal:5.3, iron:1.3,  days:13.20},
+  {sub:{fc:70,rfc:7},  comp:{fc:35,rfc:14},          meat:29, wood:29, coal:5.8, iron:1.4,  days:8.58},
+  {sub:{fc:87,rfc:17}, comp:{fc:44,rfc:35,est:true}, meat:33, wood:33, coal:6.7, iron:1.6,  days:13.20},
+];
 
 const COSTS = {
-  embassy:  [{fc:165,rfc:0},{fc:195,rfc:0},{fc:295,rfc:0},{fc:350,rfc:0},{fc:415,rfc:0},{fc:225,rfc:13},{fc:270,rfc:19},{fc:270,rfc:31},{fc:315,rfc:42},{fc:392,rfc:103}],
   command:  [{fc:130,rfc:0},{fc:155,rfc:0},{fc:235,rfc:0},{fc:280,rfc:0},{fc:335,rfc:0},{fc:180,rfc:10,est:true},{fc:216,rfc:15,est:true},{fc:216,rfc:25,est:true},{fc:252,rfc:34,est:true},{fc:314,rfc:82,est:true}],
   infirmary:[{fc:130,rfc:0},{fc:155,rfc:0},{fc:235,rfc:0},{fc:280,rfc:0},{fc:335,rfc:0},{fc:180,rfc:10,est:true},{fc:216,rfc:15,est:true},{fc:216,rfc:25,est:true},{fc:252,rfc:34,est:true},{fc:314,rfc:82,est:true}],
 };
