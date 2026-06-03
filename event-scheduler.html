@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<title>予定告知メーカー</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{background:#0d1b2a;color:#e2e8f0;font-family:'Hiragino Sans','Noto Sans JP',sans-serif;max-width:480px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;overscroll-behavior:none;}
+button{cursor:pointer;border:none;outline:none;}
+select,input{outline:none;}
+
+/* ── password gate ── */
+#pw-gate{position:fixed;inset:0;background:#0d1b2a;z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;}
+.pw-card{background:#112233;border-radius:14px;padding:24px 20px;width:260px;display:flex;flex-direction:column;gap:10px;border:1px solid #1e3a5c;}
+#pw-input{background:#0d1b2a;color:#e2e8f0;border:1px solid #334155;border-radius:8px;padding:10px 12px;font-size:16px;width:100%;}
+#pw-err{display:none;font-size:12px;color:#f87171;text-align:center;}
+
+/* ── header ── */
+.hdr{background:linear-gradient(180deg,#1a3a5c,#0d2238);padding:8px 14px 6px;display:flex;align-items:center;gap:8px;border-bottom:2px solid #1e4d7a;position:sticky;top:0;z-index:50;}
+.hdr-title{font-size:15px;font-weight:700;color:#93c5fd;flex:1;}
+
+/* ── sticky top bar (date + line counter) ── */
+.top-bar{background:#0d1b2a;border-bottom:2px solid #1e3a5c;position:sticky;top:42px;z-index:49;}
+.date-row{display:flex;align-items:center;gap:6px;padding:8px 12px 6px;}
+.date-label{font-size:12px;color:#94a3b8;white-space:nowrap;}
+.date-input{background:#112233;color:#e2e8f0;border:1px solid #334155;border-radius:8px;padding:5px 8px;font-size:14px;flex:1;min-width:0;}
+.gen-btn{background:#1e4d7a;color:#93c5fd;border-radius:8px;padding:5px 12px;font-size:13px;font-weight:700;white-space:nowrap;}
+.gen-btn:active{background:#2a5a8a;}
+.days-row{display:flex;align-items:center;gap:6px;padding:0 12px 6px;}
+.days-label{font-size:12px;color:#94a3b8;white-space:nowrap;}
+.dc-btn{background:#1e3a5c;color:#93c5fd;border-radius:6px;width:28px;height:28px;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.dc-btn:active{background:#2a5a8a;}
+.dc-btn:disabled{opacity:.3;}
+.dc-num{font-size:14px;font-weight:700;color:#e2e8f0;min-width:28px;text-align:center;}
+.line-bar{display:flex;align-items:center;gap:8px;padding:4px 12px 7px;}
+.line-count{font-size:13px;font-weight:700;min-width:64px;}
+.line-track{flex:1;height:7px;background:#1e3a5c;border-radius:4px;overflow:hidden;}
+.line-fill{height:100%;border-radius:4px;transition:width .2s,background .2s;}
+.line-warn{font-size:11px;font-weight:700;color:#f87171;white-space:nowrap;}
+
+/* ── days ── */
+.days{padding:8px;display:flex;flex-direction:column;gap:8px;flex:1;}
+.day-card{background:#112233;border-radius:10px;border:1px solid #1e3a5c;overflow:hidden;}
+.day-hdr{display:flex;align-items:center;padding:7px 10px;background:#0d2238;border-bottom:1px solid #1e3a5c;}
+.day-title{font-size:14px;font-weight:700;color:#60a5fa;flex:1;}
+.day-add-btn{background:#1e4d7a;color:#93c5fd;border-radius:6px;padding:3px 10px;font-size:12px;font-weight:700;}
+.day-add-btn:active{background:#2a5a8a;}
+
+/* event list */
+.ev-list{}
+.ev-empty{padding:7px 10px;font-size:12px;color:#475569;font-style:italic;}
+.ev-item{display:flex;align-items:center;padding:6px 8px 6px 10px;border-top:1px solid #1e3050;gap:4px;}
+.ev-bullet{color:#64748b;font-size:13px;flex-shrink:0;margin-right:2px;}
+.ev-name{flex:1;font-size:13px;color:#e2e8f0;word-break:break-all;}
+.ev-mv{background:transparent;color:#475569;font-size:12px;padding:2px 4px;line-height:1;}
+.ev-mv:active{color:#93c5fd;}
+.ev-del{background:transparent;color:#475569;font-size:14px;padding:2px 6px;line-height:1;}
+.ev-del:active{color:#f87171;}
+
+/* add form */
+.add-form{display:none;flex-direction:column;gap:8px;padding:10px;border-top:1px solid #1e3a5c;background:#0a1c2e;}
+.add-form.open{display:flex;}
+.mode-tabs{display:flex;border:1px solid #1e3a5c;border-radius:8px;overflow:hidden;}
+.mtab{flex:1;padding:6px 0;font-size:12px;font-weight:700;background:#0d1b2a;color:#64748b;border:none;cursor:pointer;}
+.mtab.on{background:#1e4d7a;color:#93c5fd;}
+.f-select{background:#0d1b2a;color:#e2e8f0;border:1px solid #334155;border-radius:8px;padding:7px 8px;font-size:13px;width:100%;}
+.f-input{background:#0d1b2a;color:#e2e8f0;border:1px solid #334155;border-radius:8px;padding:7px 8px;font-size:13px;width:100%;}
+.f-label{font-size:11px;color:#64748b;margin-bottom:3px;}
+.qbtns{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;}
+.qbtn{background:#1e3a5c;color:#93c5fd;border-radius:6px;padding:4px 9px;font-size:11px;font-weight:700;border:1px solid #2a4a7c;}
+.qbtn:active{background:#2a5a8a;}
+.f-actions{display:flex;gap:6px;}
+.f-add{flex:1;background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff;border-radius:8px;padding:8px;font-size:13px;font-weight:700;}
+.f-add:active{opacity:.85;}
+.f-cancel{background:#1e3a5c;color:#94a3b8;border-radius:8px;padding:8px 14px;font-size:13px;}
+.f-cancel:active{background:#2a4a7c;}
+
+/* ── preview ── */
+.preview{margin:8px;margin-top:0;border-radius:10px;border:1px solid #1e3a5c;overflow:hidden;}
+.preview-hdr{background:#0d2238;padding:7px 12px;display:flex;align-items:center;border-bottom:1px solid #1e3a5c;}
+.preview-title{font-size:13px;font-weight:700;color:#60a5fa;flex:1;}
+.copy-btn{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;}
+.copy-btn:active{opacity:.8;}
+.preview-body{padding:10px 12px;font-size:13px;line-height:1.75;color:#e2e8f0;white-space:pre-wrap;background:#081420;font-family:'Hiragino Sans','Noto Sans JP',monospace;}
+.preview-empty{padding:12px;font-size:12px;color:#475569;font-style:italic;background:#081420;}
+
+.safe-bottom{height:env(safe-area-inset-bottom,8px);min-height:8px;}
+</style>
+</head>
+<body>
+
+<!-- password gate -->
+<div id="pw-gate">
+  <span style="font-size:20px;font-weight:700;color:#93c5fd;">予定告知メーカー</span>
+  <div class="pw-card">
+    <input id="pw-input" type="password" placeholder="パスワード"
+      onkeydown="if(event.key==='Enter')checkPw()">
+    <div id="pw-err">パスワードが違います</div>
+    <button onclick="checkPw()" style="background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff;border:none;border-radius:8px;padding:10px;font-size:14px;font-weight:700;cursor:pointer;">開く</button>
+  </div>
+</div>
+<script>if(localStorage.getItem('wos_auth')==='1')document.getElementById('pw-gate').style.display='none';</script>
+
+<!-- header -->
+<div class="hdr">
+  <span class="hdr-title">予定告知メーカー</span>
+  <button onclick="clearAll()" style="background:#1e3a5c;color:#94a3b8;border-radius:6px;padding:3px 10px;font-size:11px;">リセット</button>
+</div>
+
+<!-- sticky: date setter + line counter -->
+<div class="top-bar">
+  <div class="date-row">
+    <span class="date-label">開始日</span>
+    <input type="date" id="start-date" class="date-input">
+    <button class="gen-btn" onclick="generateDays()">生成</button>
+  </div>
+  <div class="days-row">
+    <span class="days-label">日数</span>
+    <button class="dc-btn" id="dc-minus" onclick="changeDayCount(-1)">－</button>
+    <span class="dc-num" id="dc-num">7</span>
+    <button class="dc-btn" id="dc-plus"  onclick="changeDayCount(1)">＋</button>
+    <span style="font-size:11px;color:#475569;margin-left:4px;">（最大7日）</span>
+  </div>
+  <div class="line-bar">
+    <span class="line-count" id="line-count" style="color:#22c55e;">0 / 15行</span>
+    <div class="line-track"><div class="line-fill" id="line-fill" style="width:0%;background:#22c55e;"></div></div>
+    <span class="line-warn" id="line-warn" style="display:none;"></span>
+  </div>
+</div>
+
+<!-- days -->
+<div class="days" id="days">
+  <div style="text-align:center;color:#475569;font-size:13px;padding:24px 0;">開始日を設定して「生成」を押してください</div>
+</div>
+
+<!-- preview -->
+<div class="preview">
+  <div class="preview-hdr">
+    <span class="preview-title">プレビュー</span>
+    <button class="copy-btn" id="copy-btn" onclick="copyText()">コピー</button>
+  </div>
+  <div id="preview-body" class="preview-empty">（イベントを入力してください）</div>
+</div>
+<div class="safe-bottom"></div>
+
+<script>
+// ── constants ──
+const FIXED = [
+  'クレイジージョイ','燃霜鉱区','傭兵の名誉','全軍参戦',
+  '王城決戦','同盟争覇戦','同盟争覇戦エントリー','砦争奪戦',
+  '同盟総動員','同盟大作戦','夢幻追憶（猫イベ）','熊狩り'
+];
+const WD = ['日','月','火','水','木','金','土'];
+const MAX = 15;
+const SK = 'wos_sched_v1';
+
+// ── state ──
+let S = { startStr:'', dayCount:7, days:[] };
+// day: { dateStr, events:[{id,name,detail}] }
+let uid = 1;
+let openIdx = -1; // day index with open form
+
+// ── auth ──
+function checkPw(){
+  if(document.getElementById('pw-input').value==='inu'){
+    localStorage.setItem('wos_auth','1');
+    document.getElementById('pw-gate').style.display='none';
+  } else {
+    document.getElementById('pw-err').style.display='block';
+    document.getElementById('pw-input').value='';
+    document.getElementById('pw-input').focus();
+  }
+}
+
+// ── date helpers ──
+function dateLabel(str){
+  const d=new Date(str+'T00:00:00');
+  return `${d.getMonth()+1}/${d.getDate()}（${WD[d.getDay()]}）`;
+}
+function addDays(str,n){
+  const d=new Date(str+'T00:00:00');
+  d.setDate(d.getDate()+n);
+  return d.toISOString().slice(0,10);
+}
+
+// ── generate ──
+function generateDays(){
+  const v=document.getElementById('start-date').value;
+  if(!v) return;
+  S.startStr=v;
+  S.dayCount=S.dayCount||7;
+  S.days=Array.from({length:S.dayCount},(_,i)=>({dateStr:addDays(v,i),events:[]}));
+  openIdx=-1;
+  save(); render();
+}
+
+function changeDayCount(delta){
+  if(!S.startStr) return;
+  const cur=S.days.length;
+  const next=cur+delta;
+  if(next<1||next>7) return;
+  if(delta<0){
+    // removing last day — warn if it has events
+    const last=S.days[cur-1];
+    if(last.events.length>0){
+      if(!confirm(`${dateLabel(last.dateStr)} にイベントがあります。削除しますか？`)) return;
+    }
+    if(openIdx===cur-1) openIdx=-1;
+    S.days.pop();
+  } else {
+    const newStr=addDays(S.startStr,cur);
+    S.days.push({dateStr:newStr,events:[]});
+  }
+  S.dayCount=S.days.length;
+  save(); render();
+}
+
+function clearAll(){
+  if(!confirm('リセットしますか？')) return;
+  S={startStr:'',days:[]};
+  openIdx=-1;
+  document.getElementById('start-date').value='';
+  save(); render();
+}
+
+// ── event operations ──
+function addEvent(di){
+  const isFixed=document.getElementById('mtab-fixed-'+di).classList.contains('on');
+  let name='';
+  if(isFixed){
+    name=document.getElementById('f-sel-'+di).value;
+  } else {
+    name=document.getElementById('f-cus-'+di).value.trim();
+    if(!name){ document.getElementById('f-cus-'+di).focus(); return; }
+  }
+  const detail=document.getElementById('f-det-'+di).value.trim();
+  S.days[di].events.push({id:uid++,name,detail});
+  openIdx=-1;
+  save(); render();
+}
+
+function delEvent(di,id){
+  S.days[di].events=S.days[di].events.filter(e=>e.id!==id);
+  save(); renderDays(); updateCounter(); updatePreview();
+}
+
+function moveEvent(di,ei,dir){
+  const arr=S.days[di].events;
+  const ni=ei+dir;
+  if(ni<0||ni>=arr.length) return;
+  [arr[ei],arr[ni]]=[arr[ni],arr[ei]];
+  save(); renderDays(); updatePreview();
+}
+
+function toggleForm(di){
+  openIdx=(openIdx===di)?-1:di;
+  renderDays();
+}
+
+function setMode(di,mode){
+  ['fixed','custom'].forEach(m=>{
+    document.getElementById('mtab-'+m+'-'+di).classList.toggle('on',m===mode);
+  });
+  document.getElementById('fw-fixed-'+di).style.display=mode==='fixed'?'':'none';
+  document.getElementById('fw-custom-'+di).style.display=mode==='custom'?'':'none';
+}
+
+function quickDetail(di,text){
+  const el=document.getElementById('f-det-'+di);
+  el.value=text; el.focus();
+}
+
+// ── line count ──
+function countLines(){
+  if(!S.days.length) return 0;
+  // 1 header + per day: 1 date + max(1, events)
+  return 1 + S.days.reduce((s,d)=>s+1+Math.max(1,d.events.length),0);
+}
+
+// ── output text ──
+function buildText(){
+  if(!S.days.length) return '';
+  let t='◇◇今後の予定◇◇\n';
+  for(const day of S.days){
+    t+=dateLabel(day.dateStr)+'\n';
+    if(!day.events.length){
+      t+='・特になし\n';
+    } else {
+      for(const ev of day.events) t+=`・${ev.name}${ev.detail}\n`;
+    }
+  }
+  return t.trimEnd();
+}
+
+// ── counter UI ──
+function updateCounter(){
+  const n=countLines();
+  const pct=S.days.length?Math.min(100,n/MAX*100):0;
+  const cnt=document.getElementById('line-count');
+  const fill=document.getElementById('line-fill');
+  const warn=document.getElementById('line-warn');
+  cnt.textContent=`${n} / ${MAX}行`;
+  fill.style.width=pct+'%';
+  if(n<=10){
+    cnt.style.color='#22c55e'; fill.style.background='#22c55e'; warn.style.display='none';
+  } else if(n<=MAX){
+    cnt.style.color='#eab308'; fill.style.background='#eab308'; warn.style.display='none';
+  } else {
+    cnt.style.color='#f87171'; fill.style.background='#ef4444';
+    warn.style.display=''; warn.textContent=`⚠️ ${n-MAX}行超過`;
+  }
+  // day count controls
+  const len=S.days.length;
+  const dcNum=document.getElementById('dc-num');
+  const dcMinus=document.getElementById('dc-minus');
+  const dcPlus=document.getElementById('dc-plus');
+  if(dcNum) dcNum.textContent=len||'-';
+  if(dcMinus) dcMinus.disabled=len<=1||!S.startStr;
+  if(dcPlus)  dcPlus.disabled=len>=7||!S.startStr;
+}
+
+// ── preview UI ──
+function updatePreview(){
+  const t=buildText();
+  const el=document.getElementById('preview-body');
+  if(t){ el.className='preview-body'; el.textContent=t; }
+  else { el.className='preview-empty'; el.textContent='（イベントを入力してください）'; }
+}
+
+// ── copy ──
+function copyText(){
+  const t=buildText(); if(!t) return;
+  const btn=document.getElementById('copy-btn');
+  const done=()=>{ btn.textContent='コピー済'; setTimeout(()=>btn.textContent='コピー',1800); };
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(t).then(done).catch(()=>fallbackCopy(t,done));
+  } else { fallbackCopy(t,done); }
+}
+function fallbackCopy(t,cb){
+  const ta=document.createElement('textarea');
+  ta.value=t; ta.style.cssText='position:fixed;opacity:0;';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); cb(); } catch(e){}
+  document.body.removeChild(ta);
+}
+
+// ── escape ──
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── render days ──
+function renderDays(){
+  const wrap=document.getElementById('days');
+  if(!S.days.length){
+    wrap.innerHTML='<div style="text-align:center;color:#475569;font-size:13px;padding:24px 0;">開始日を設定して「生成」を押してください</div>';
+    return;
+  }
+  wrap.innerHTML=S.days.map((day,di)=>{
+    const label=dateLabel(day.dateStr);
+    const isOpen=openIdx===di;
+
+    const evHtml=day.events.length===0
+      ? '<div class="ev-empty">（空き → 出力は「・特になし」）</div>'
+      : day.events.map((ev,ei)=>`
+        <div class="ev-item">
+          <span class="ev-bullet">・</span>
+          <span class="ev-name">${esc(ev.name)}${esc(ev.detail)}</span>
+          <button class="ev-mv" onclick="moveEvent(${di},${ei},-1)"${ei===0?' style="opacity:.25"':''}>▲</button>
+          <button class="ev-mv" onclick="moveEvent(${di},${ei},1)"${ei===day.events.length-1?' style="opacity:.25"':''}>▼</button>
+          <button class="ev-del" onclick="delEvent(${di},${ev.id})">✕</button>
+        </div>`).join('');
+
+    const opts=FIXED.map(f=>`<option value="${esc(f)}">${esc(f)}</option>`).join('');
+
+    const formHtml=`
+      <div class="add-form${isOpen?' open':''}">
+        <div class="mode-tabs">
+          <button id="mtab-fixed-${di}" class="mtab on" onclick="setMode(${di},'fixed')">固定イベント</button>
+          <button id="mtab-custom-${di}" class="mtab" onclick="setMode(${di},'custom')">カスタム入力</button>
+        </div>
+        <div>
+          <div id="fw-fixed-${di}">
+            <select id="f-sel-${di}" class="f-select">${opts}</select>
+          </div>
+          <div id="fw-custom-${di}" style="display:none;">
+            <input id="f-cus-${di}" class="f-input" type="text" placeholder="イベント名を入力">
+          </div>
+        </div>
+        <div>
+          <div class="f-label">詳細（時間・日数・注記）</div>
+          <input id="f-det-${di}" class="f-input" type="text" placeholder="例: 22時～　最終日　2日間">
+          <div class="qbtns">
+            <button class="qbtn" onclick="quickDetail(${di},'21時～')">21時～</button>
+            <button class="qbtn" onclick="quickDetail(${di},'22時～')">22時～</button>
+            <button class="qbtn" onclick="quickDetail(${di},'23時～')">23時～</button>
+            <button class="qbtn" onclick="quickDetail(${di},'最終日')">最終日</button>
+            <button class="qbtn" onclick="quickDetail(${di},'2日間')">2日間</button>
+            <button class="qbtn" onclick="quickDetail(${di},'3日間')">3日間</button>
+          </div>
+        </div>
+        <div class="f-actions">
+          <button class="f-add" onclick="addEvent(${di})">追加</button>
+          <button class="f-cancel" onclick="toggleForm(${di})">キャンセル</button>
+        </div>
+      </div>`;
+
+    return `<div class="day-card">
+      <div class="day-hdr">
+        <span class="day-title">${label}</span>
+        <button class="day-add-btn" onclick="toggleForm(${di})">${isOpen?'✕ 閉じる':'＋ 追加'}</button>
+      </div>
+      <div class="ev-list">${evHtml}</div>
+      ${formHtml}
+    </div>`;
+  }).join('');
+}
+
+// ── persist ──
+function save(){ localStorage.setItem(SK,JSON.stringify(S)); }
+function load(){
+  try{
+    const raw=localStorage.getItem(SK);
+    if(!raw) return;
+    const s=JSON.parse(raw);
+    S=s;
+    if(!S.dayCount) S.dayCount=S.days.length||7;
+    uid=1;
+    S.days.forEach(d=>d.events.forEach(e=>{ if(e.id>=uid) uid=e.id+1; }));
+    if(S.startStr) document.getElementById('start-date').value=S.startStr;
+  }catch(e){}
+}
+
+// ── full render ──
+function render(){ renderDays(); updateCounter(); updatePreview(); }
+
+// ── init ──
+(function(){
+  // default start date = tomorrow
+  const t=new Date(); t.setDate(t.getDate()+1);
+  document.getElementById('start-date').value=t.toISOString().slice(0,10);
+  load();
+  render();
+})();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{ navigator.serviceWorker.register('./sw.js'); });
+}
+</script>
+</body>
+</html>
