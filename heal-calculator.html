@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>治療計算ツール</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{background:#0d1b2a;color:#e2e8f0;font-family:'Hiragino Sans','Noto Sans JP',sans-serif;max-width:480px;margin:0 auto;min-height:100dvh;overscroll-behavior:none;-webkit-user-select:none;user-select:none;}
+button{cursor:pointer;border:none;outline:none;background:none;touch-action:manipulation;}
+input{outline:none;}
+
+/* Header */
+.hdr{background:linear-gradient(180deg,#1a3a5c,#0d2238);padding:8px 12px 6px;border-bottom:2px solid #1e4d7a;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.hdr h1{font-size:15px;font-weight:700;color:#93c5fd;flex:1;}
+.hdr-btns{display:flex;gap:5px;flex-shrink:0;}
+.hdr-btn{font-size:11px;font-weight:700;border-radius:14px;padding:4px 10px;height:26px;display:flex;align-items:center;}
+.hdr-help{background:#1e3a5c;color:#60a5fa;}
+.hdr-help:active{background:#2a4a7c;}
+.hdr-reset{background:#3d1a1a;color:#f87171;}
+.hdr-reset:active{background:#5a2020;}
+
+/* Sections */
+.sec{padding:10px 12px;border-bottom:1px solid #1e3a5c;}
+.sec1{background:#112233;}
+.sec0{background:#0d1b2a;}
+.sec-title{font-size:11px;font-weight:700;color:#3b82f6;margin-bottom:8px;}
+.irow{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.irow:last-child{margin-bottom:0;}
+.ilbl{font-size:12px;color:#94a3b8;min-width:64px;}
+.iunit{font-size:12px;color:#64748b;}
+.num-inp{background:#0d1b2a;border:1px solid #334155;border-radius:5px;color:#e2e8f0;font-size:14px;font-weight:700;padding:4px 8px;width:140px;text-align:right;-webkit-user-select:text;user-select:text;}
+
+/* Inline spinner */
+.spn{display:flex;align-items:center;gap:3px;}
+.spn-btn{background:#1e3a5c;color:#60a5fa;border-radius:5px;font-size:12px;font-weight:700;min-width:28px;height:28px;display:flex;align-items:center;justify-content:center;}
+.spn-btn:active{background:#2a4a7c;}
+.spn-val{background:#0d1b2a;border:1px solid #334155;border-radius:5px;min-width:46px;height:28px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;}
+
+/* FC level selector */
+.fc-sel{display:flex;gap:3px;flex-shrink:0;}
+.fc-btn{font-size:10px;font-weight:700;border-radius:10px;padding:2px 7px;height:22px;background:#1a2a3a;color:#475569;border:1px solid #334155;}
+.fc-btn.fc-on{background:#1d4ed8;color:#e2e8f0;border-color:#3b82f6;}
+.fc-btn.fc-warn{border-color:#78350f;color:#f97316;}
+.fc-btn.fc-on.fc-warn{background:#7c2d12;color:#fed7aa;border-color:#ea580c;}
+
+/* Ratio section */
+.ratio-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.ratio-sum{font-size:12px;font-weight:700;color:#4ade80;}
+.ratio-sum.bad{color:#f87171;}
+.rrow{margin-bottom:9px;}
+.rrow:last-child{margin-bottom:0;}
+.rrow-top{display:flex;align-items:center;gap:4px;margin-bottom:4px;}
+.rrow-icon{font-size:12px;}
+.rrow-name{font-size:11px;font-weight:700;}
+.rrow-ctrl{display:flex;align-items:center;gap:4px;}
+.r-btn{background:#1e3a5c;color:#60a5fa;border-radius:4px;font-size:11px;font-weight:700;width:26px;height:26px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.r-btn:active{background:#2a4a7c;}
+.r-track{flex:1;height:26px;background:#1a3358;border-radius:13px;overflow:hidden;position:relative;touch-action:none;cursor:pointer;}
+.r-fill{position:absolute;left:0;top:0;height:100%;border-radius:13px;opacity:.85;}
+.r-inp{background:#0d1b2a;border:1px solid #334155;border-radius:4px;color:#e2e8f0;font-size:13px;font-weight:700;padding:2px 4px;width:42px;height:26px;text-align:right;-webkit-user-select:text;user-select:text;flex-shrink:0;}
+.r-pct{font-size:11px;color:#64748b;flex-shrink:0;}
+
+/* Preset section */
+.preset-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.preset-hint{font-size:10px;color:#475569;}
+.preset-row{display:flex;gap:5px;}
+.p-card{flex:1;min-width:0;background:#0d1b2a;border:1.5px solid #1e3a5c;border-radius:8px;padding:5px 4px 4px;position:relative;cursor:pointer;transition:border-color .2s;}
+.p-card:active{background:#1a2a3a;}
+.p-card.p-has{border-color:#2563eb;}
+.p-card.p-flash{border-color:#4ade80 !important;}
+.p-num{font-size:10px;color:#475569;margin-bottom:3px;font-weight:700;}
+.p-vals{font-size:9px;line-height:1.5;white-space:nowrap;}
+.p-empty{font-size:9px;color:#334155;padding:4px 0;}
+.p-save{position:absolute;top:3px;right:3px;font-size:8px;font-weight:700;background:#1e3a5c;color:#60a5fa;border-radius:3px;padding:1px 4px;line-height:14px;}
+.p-save:active{background:#2a4a7c;}
+
+/* Result total */
+.res-total{background:#0a1520;padding:8px 10px;border-bottom:2px solid #1e3a5c;}
+.res-total-title{font-size:11px;font-weight:700;color:#3b82f6;margin-bottom:6px;}
+.res-total-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px 10px;}
+.res-row{display:flex;align-items:center;gap:6px;}
+.res-lbl{font-size:11px;color:#64748b;min-width:58px;}
+.res-val{font-size:13px;font-weight:700;}
+.res-warn{font-size:10px;color:#f97316;margin-top:4px;display:flex;align-items:center;gap:4px;}
+
+/* Troop cards */
+.t-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;padding:8px 8px 24px;}
+.t-card{background:#112233;border:1px solid #1e3a5c;border-radius:8px;padding:7px 6px;}
+.t-hdr{display:flex;align-items:center;gap:3px;margin-bottom:2px;}
+.t-icon{font-size:14px;}
+.t-name{font-size:10px;font-weight:700;}
+.t-fclv{font-size:9px;font-weight:700;border-radius:8px;padding:1px 5px;margin-left:auto;background:#1d4ed8;color:#bfdbfe;}
+.t-fclv.nodata{background:#7c2d12;color:#fed7aa;}
+.t-inj{font-size:16px;font-weight:700;color:#60a5fa;line-height:1.1;}
+.t-inj-u{font-size:9px;color:#64748b;margin-top:1px;margin-bottom:5px;}
+.t-res-list{border-top:1px solid #1e3a5c;padding-top:5px;display:flex;flex-direction:column;gap:3px;}
+.t-res-r{display:flex;align-items:center;justify-content:space-between;font-size:10px;}
+.t-res-ic{color:#94a3b8;}
+.t-res-v{font-weight:700;}
+.t-nodata{font-size:10px;color:#f97316;text-align:center;padding:6px 0;line-height:1.5;}
+
+/* Help modal */
+#help-overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:500;display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px 12px;}
+.help-box{background:#1a3a5c;border-radius:16px;border:2px solid #3b82f6;width:100%;max-width:440px;margin:auto;padding:18px 16px;}
+.help-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.help-title{font-size:15px;font-weight:700;color:#93c5fd;}
+.help-close{background:#0d2238;color:#60a5fa;border-radius:20px;font-size:13px;font-weight:700;padding:4px 12px;}
+.help-close:active{background:#1e3a5c;}
+.h-item{margin-bottom:12px;}
+.h-item:last-child{margin-bottom:0;}
+.h-label{font-size:12px;font-weight:700;color:#60a5fa;margin-bottom:3px;}
+.h-desc{font-size:12px;color:#94a3b8;line-height:1.6;}
+.h-example{font-size:11px;color:#4ade80;background:#0d2238;border-radius:6px;padding:5px 8px;margin-top:4px;line-height:1.6;}
+.h-sep{border:none;border-top:1px solid #1e3a5c;margin:12px 0;}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="hdr">
+  <h1>🏥 治療計算ツール</h1>
+  <div class="hdr-btns">
+    <button class="hdr-btn hdr-help" onclick="showHelp()">？ ヘルプ</button>
+    <button class="hdr-btn hdr-reset" onclick="resetAll()">リセット</button>
+  </div>
+</div>
+
+<!-- Basic inputs -->
+<div class="sec sec1">
+  <div class="sec-title">基本入力</div>
+  <div class="irow">
+    <span class="ilbl">部隊兵数</span>
+    <input class="num-inp" type="number" id="unit-count" value="100000" min="0" inputmode="numeric" oninput="save();render()">
+    <span class="iunit">人</span>
+  </div>
+  <div class="irow">
+    <span class="ilbl">負傷割合</span>
+    <div class="spn">
+      <button class="spn-btn" onclick="adjInj(-5)">◀◀</button>
+      <button class="spn-btn" onclick="adjInj(-1)">◀</button>
+      <div class="spn-val" id="inj-val">35</div>
+      <button class="spn-btn" onclick="adjInj(1)">▶</button>
+      <button class="spn-btn" onclick="adjInj(5)">▶▶</button>
+    </div>
+    <span class="iunit">%</span>
+  </div>
+  <div class="irow">
+    <span class="ilbl">出征回数</span>
+    <div class="spn">
+      <button class="spn-btn" onclick="adjSort(-1)">◀</button>
+      <div class="spn-val" id="sort-val">1</div>
+      <button class="spn-btn" onclick="adjSort(1)">▶</button>
+    </div>
+    <span class="iunit">回</span>
+  </div>
+</div>
+
+<!-- Ratios -->
+<div class="sec sec0" style="border-bottom:1px solid #1e3a5c;">
+  <div class="ratio-hdr">
+    <span class="sec-title" style="margin-bottom:0">負傷兵種割合・火晶LV</span>
+    <span class="ratio-sum" id="ratio-sum">合計 100%</span>
+  </div>
+  <div id="ratio-rows"></div>
+</div>
+
+<!-- Presets -->
+<div class="sec sec1" style="border-bottom:2px solid #1e3a5c;">
+  <div class="preset-hdr">
+    <span class="sec-title" style="margin-bottom:0">プリセット</span>
+    <span class="preset-hint">タップ:読込 ／ 保:現在値を保存</span>
+  </div>
+  <div class="preset-row" id="preset-row"></div>
+</div>
+
+<!-- Total result -->
+<div class="res-total" id="res-total"></div>
+
+<!-- Troop cards -->
+<div class="t-grid" id="t-grid"></div>
+
+<!-- Help modal -->
+<div id="help-overlay">
+  <div class="help-box">
+    <div class="help-top">
+      <span class="help-title">📖 使い方</span>
+      <button class="help-close" onclick="hideHelp()">✕ 閉じる</button>
+    </div>
+    <div class="h-item">
+      <div class="h-label">部隊兵数</div>
+      <div class="h-desc">出撃する部隊の総兵数を入力します。</div>
+    </div>
+    <hr class="h-sep">
+    <div class="h-item">
+      <div class="h-label">負傷割合</div>
+      <div class="h-desc">出撃後に負傷する兵士の割合（%）です。◀◀/▶▶で5%刻み、◀/▶で1%刻みで変更できます。</div>
+      <div class="h-example">例：部隊兵数10万・負傷割合30%<br>→ 負傷兵数 = 10万 × 30% = 3万人</div>
+    </div>
+    <hr class="h-sep">
+    <div class="h-item">
+      <div class="h-label">出征回数</div>
+      <div class="h-desc">同じ条件で出征する回数です。負傷兵数・必要資源が回数分で計算されます。</div>
+      <div class="h-example">例：3万人負傷 × 3回出征 = 計9万人分の資源が必要</div>
+    </div>
+    <hr class="h-sep">
+    <div class="h-item">
+      <div class="h-label">負傷兵種割合・火晶LV</div>
+      <div class="h-desc">兵種ごとに負傷割合（%）と火晶レベル（FC1/FC2）を設定します。<br>・スライダー・◀/▶ボタン・直接入力で割合を変更できます。<br>・FC1/FC2ボタンで兵の火晶レベルを切り替えます。<br>・⚠️マークはデータ未確認を示します（計算に含まれません）。</div>
+      <div class="h-example">例：盾FC2を選択 → ⚠️データなし表示<br>該当兵種は資源合計に含まれません</div>
+    </div>
+    <hr class="h-sep">
+    <div class="h-item">
+      <div class="h-label">プリセット（1〜5）</div>
+      <div class="h-desc">よく使う兵種割合を5種類まで保存できます。<br>・「保」ボタン：現在の割合をそのスロットに保存します。<br>・スロットをタップ：保存された割合を読み込みます（空スロットは無効）。</div>
+    </div>
+    <hr class="h-sep">
+    <div class="h-item">
+      <div class="h-label">リセット</div>
+      <div class="h-desc">部隊兵数・負傷割合・出征回数・兵種割合・火晶レベルを初期値に戻します。プリセットはそのまま保持されます。</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Data ──────────────────────────────────────────────────────
+// costs: treatment resource per 1000 soldiers per FC level
+// null = data not yet confirmed
+const TROOPS = [
+  {
+    id:'shield', name:'盾兵', icon:'🛡️', color:'#4a9eff',
+    costs: {
+      1: {meat:279, wood:209, coal:49, iron:10},
+      2: null,
+    }
+  },
+  {
+    id:'lance', name:'槍兵', icon:'🗡️', color:'#a78bfa',
+    costs: {
+      1: {meat:244, wood:230, coal:47, iron:11},
+      2: null,
+    }
+  },
+  {
+    id:'archer', name:'弓兵', icon:'🏹', color:'#f0c040',
+    costs: {
+      1: {meat:174, wood:258, coal:43, iron:14},
+      2: null,
+    }
+  },
+];
+
+const FC_LEVELS = [1, 2];
+
+const defInputs = () => ({
+  unitCount: 100000,
+  injuryPct: 35,
+  sorties: 1,
+  ratios: {shield:60, lance:15, archer:25},
+  fcLevels: {shield:1, lance:1, archer:1},
+});
+
+const defState = () => ({
+  ...defInputs(),
+  presets: [null, null, null, null, null],
+});
+
+let S = defState();
+
+// ── Persist ──────────────────────────────────────────────────
+function save() {
+  try {
+    S.unitCount = parseInt(document.getElementById('unit-count')?.value) || 0;
+    localStorage.setItem('heal2', JSON.stringify(S));
+  } catch(e) {}
+}
+
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem('heal2') || 'null');
+    if (!d) return;
+    if (d.unitCount != null) S.unitCount = d.unitCount;
+    if (d.injuryPct != null) S.injuryPct = d.injuryPct;
+    if (d.sorties   != null) S.sorties   = d.sorties;
+    if (d.ratios)    TROOPS.forEach(t => { if (d.ratios[t.id]   != null) S.ratios[t.id]   = +d.ratios[t.id]; });
+    if (d.fcLevels)  TROOPS.forEach(t => { if (d.fcLevels[t.id] != null) S.fcLevels[t.id] = +d.fcLevels[t.id]; });
+    if (d.presets)   S.presets = d.presets.map(p => p ? {...p} : null);
+  } catch(e) {}
+}
+
+// ── Format ───────────────────────────────────────────────────
+function fmtK(k) {
+  if (k === 0) return '0';
+  if (k >= 1000000) return (k / 1000000).toFixed(2) + 'B';
+  if (k >= 1000)    return (k / 1000).toFixed(2) + 'M';
+  if (k >= 10)      return k.toFixed(0) + 'K';
+  return k.toFixed(1) + 'K';
+}
+
+// ── Ratio helpers ─────────────────────────────────────────────
+function setRatio(tid, val) {
+  val = Math.round(val);
+  const otherSum = TROOPS.filter(t => t.id !== tid).reduce((s, t) => s + S.ratios[t.id], 0);
+  S.ratios[tid] = Math.max(0, Math.min(100 - otherSum, val));
+}
+
+function adjRatio(tid, delta) {
+  setRatio(tid, S.ratios[tid] + delta);
+  save(); render();
+}
+
+function onRatioInput(tid, raw) {
+  setRatio(tid, parseInt(raw) || 0);
+  save(); render();
+}
+
+// ── FC level ──────────────────────────────────────────────────
+function setFcLevel(tid, fc) {
+  S.fcLevels[tid] = fc;
+  save(); render();
+}
+
+// ── Spinners ──────────────────────────────────────────────────
+function adjInj(delta) {
+  S.injuryPct = Math.max(0, Math.min(100, S.injuryPct + delta));
+  save(); render();
+}
+
+function adjSort(delta) {
+  S.sorties = Math.max(1, S.sorties + delta);
+  save(); render();
+}
+
+// ── Slider drag ───────────────────────────────────────────────
+let _drag = null;
+
+function sliderStart(e, tid) {
+  const track = document.getElementById('track-' + tid);
+  _drag = { tid, rect: track.getBoundingClientRect() };
+  _applyDrag(e.touches[0].clientX);
+  e.preventDefault();
+}
+
+function sliderMove(e) {
+  if (!_drag) return;
+  _applyDrag(e.touches[0].clientX);
+  e.preventDefault();
+}
+
+function sliderEnd() {
+  _drag = null;
+  save();
+}
+
+function _applyDrag(clientX) {
+  const { tid, rect } = _drag;
+  const pct = Math.max(0, Math.min(100, Math.round((clientX - rect.left) / rect.width * 100)));
+  setRatio(tid, pct);
+  render();
+}
+
+// ── Presets ───────────────────────────────────────────────────
+function savePreset(idx, e) {
+  if (e) e.stopPropagation();
+  S.presets[idx] = { ...S.ratios };
+  save();
+  renderPresets();
+}
+
+function loadPreset(idx) {
+  const p = S.presets[idx];
+  if (!p) return;
+  S.ratios = { ...p };
+  save();
+  render();
+  const card = document.getElementById('pc-' + idx);
+  if (card) {
+    card.classList.add('p-flash');
+    setTimeout(() => card.classList.remove('p-flash'), 600);
+  }
+}
+
+function renderPresets() {
+  const row = document.getElementById('preset-row');
+  if (!row) return;
+  row.innerHTML = S.presets.map((p, i) => {
+    const has = p !== null;
+    return `<div class="p-card${has ? ' p-has' : ''}" id="pc-${i}" onclick="loadPreset(${i})">
+      <div class="p-num">${i + 1}</div>
+      ${has
+        ? `<div class="p-vals">
+            <span style="color:#4a9eff">${p.shield}</span><br>
+            <span style="color:#a78bfa">${p.lance}</span><br>
+            <span style="color:#f0c040">${p.archer}</span>
+          </div>`
+        : '<div class="p-empty">空</div>'}
+      <button class="p-save" onclick="savePreset(${i},event)">保</button>
+    </div>`;
+  }).join('');
+}
+
+// ── Reset ─────────────────────────────────────────────────────
+function resetAll() {
+  if (!confirm('入力値をリセットしますか？\n（プリセットは保持されます）')) return;
+  const presets = S.presets.map(p => p ? {...p} : null);
+  S = defState();
+  S.presets = presets;
+  save();
+  document.getElementById('unit-count').value = S.unitCount;
+  render();
+}
+
+// ── Help modal ────────────────────────────────────────────────
+function showHelp() {
+  document.getElementById('help-overlay').style.display = 'flex';
+}
+
+function hideHelp() {
+  document.getElementById('help-overlay').style.display = 'none';
+}
+
+document.getElementById('help-overlay').addEventListener('click', function(e) {
+  if (e.target === this) hideHelp();
+});
+
+// ── Build ratio rows (once) ───────────────────────────────────
+function buildRatioRows() {
+  document.getElementById('ratio-rows').innerHTML = TROOPS.map(t => `
+    <div class="rrow">
+      <div class="rrow-top">
+        <span class="rrow-icon">${t.icon}</span>
+        <span class="rrow-name" style="color:${t.color}">${t.name}</span>
+        <span style="flex:1"></span>
+        <div class="fc-sel">
+          ${FC_LEVELS.map(fc => {
+            const hasData = t.costs[fc] !== null;
+            const warnCls = !hasData ? ' fc-warn' : '';
+            return `<button class="fc-btn${warnCls}" id="fcbtn-${t.id}-${fc}"
+                            onclick="setFcLevel('${t.id}',${fc})">FC${fc}${!hasData ? '⚠' : ''}</button>`;
+          }).join('')}
+        </div>
+      </div>
+      <div class="rrow-ctrl">
+        <button class="r-btn" onclick="adjRatio('${t.id}',-1)">◀</button>
+        <div class="r-track" id="track-${t.id}"
+             ontouchstart="sliderStart(event,'${t.id}')"
+             ontouchmove="sliderMove(event)"
+             ontouchend="sliderEnd()">
+          <div class="r-fill" id="fill-${t.id}" style="background:${t.color}"></div>
+        </div>
+        <input class="r-inp" type="number" id="inp-${t.id}" min="0" max="100" inputmode="numeric"
+               oninput="onRatioInput('${t.id}',this.value)"
+               onblur="save();render()">
+        <span class="r-pct">%</span>
+        <button class="r-btn" onclick="adjRatio('${t.id}',1)">▶</button>
+      </div>
+    </div>`).join('');
+}
+
+// ── Render ────────────────────────────────────────────────────
+function render() {
+  const unitCount = parseInt(document.getElementById('unit-count')?.value) || 0;
+  const injPct    = S.injuryPct;
+  const sorties   = S.sorties;
+
+  // Spinners
+  const injEl  = document.getElementById('inj-val');
+  if (injEl)  injEl.textContent  = injPct;
+  const sortEl = document.getElementById('sort-val');
+  if (sortEl) sortEl.textContent = sorties;
+
+  // Ratio UI
+  const total = TROOPS.reduce((s, t) => s + S.ratios[t.id], 0);
+  const sumEl = document.getElementById('ratio-sum');
+  if (sumEl) {
+    sumEl.textContent = `合計 ${total}%`;
+    sumEl.className = 'ratio-sum' + (total < 100 ? ' bad' : '');
+  }
+  TROOPS.forEach(t => {
+    const fill = document.getElementById('fill-' + t.id);
+    if (fill) fill.style.width = S.ratios[t.id] + '%';
+    const inp = document.getElementById('inp-' + t.id);
+    if (inp && document.activeElement !== inp) inp.value = S.ratios[t.id];
+
+    // FC button highlight
+    FC_LEVELS.forEach(fc => {
+      const btn = document.getElementById(`fcbtn-${t.id}-${fc}`);
+      if (!btn) return;
+      const hasData = t.costs[fc] !== null;
+      const isOn    = S.fcLevels[t.id] === fc;
+      btn.className = 'fc-btn' + (isOn ? ' fc-on' : '') + (!hasData ? ' fc-warn' : '');
+    });
+  });
+
+  // Calculations
+  const baseInjured = Math.round(unitCount * injPct / 100);
+  const results = TROOPS.map(t => {
+    const fcLv    = S.fcLevels[t.id] || 1;
+    const cost    = t.costs[fcLv];
+    const injured = Math.round(baseInjured * S.ratios[t.id] / 100) * sorties;
+    const injK    = injured / 1000;
+    return {
+      ...t, injured, fcLv,
+      hasData: cost !== null,
+      c: cost ? {
+        meat: injK * cost.meat,
+        wood: injK * cost.wood,
+        coal: injK * cost.coal,
+        iron: injK * cost.iron,
+      } : null
+    };
+  });
+
+  const hasAnyMissing = results.some(r => !r.hasData && r.injured > 0);
+  const totInjured = results.reduce((s, r) => s + r.injured, 0);
+  const totMeat    = results.reduce((s, r) => s + (r.c ? r.c.meat : 0), 0);
+  const totWood    = results.reduce((s, r) => s + (r.c ? r.c.wood : 0), 0);
+  const totCoal    = results.reduce((s, r) => s + (r.c ? r.c.coal : 0), 0);
+  const totIron    = results.reduce((s, r) => s + (r.c ? r.c.iron : 0), 0);
+
+  // Total strip
+  const rt = document.getElementById('res-total');
+  if (rt) rt.innerHTML = `
+    <div class="res-total-title">合計（${sorties}回分）</div>
+    <div class="res-total-grid">
+      <div class="res-row"><span class="res-lbl">🏥 負傷兵</span><span class="res-val" style="color:#60a5fa">${totInjured.toLocaleString()}人</span></div>
+      <div class="res-row"><span class="res-lbl">🥩 肉</span><span class="res-val" style="color:#f97316">${fmtK(totMeat)}</span></div>
+      <div class="res-row"><span class="res-lbl">🪵 木材</span><span class="res-val" style="color:#4ade80">${fmtK(totWood)}</span></div>
+      <div class="res-row"><span class="res-lbl">🪨 石炭</span><span class="res-val" style="color:#94a3b8">${fmtK(totCoal)}</span></div>
+      <div class="res-row"><span class="res-lbl">🔩 鉄</span><span class="res-val" style="color:#60a5fa">${fmtK(totIron)}</span></div>
+    </div>
+    ${hasAnyMissing ? '<div class="res-warn">⚠️ データなしの兵種は合計に含まれていません</div>' : ''}`;
+
+  // Troop cards
+  const grid = document.getElementById('t-grid');
+  if (grid) grid.innerHTML = results.map(r => `
+    <div class="t-card">
+      <div class="t-hdr">
+        <span class="t-icon">${r.icon}</span>
+        <span class="t-name" style="color:${r.color}">${r.name}</span>
+        <span class="t-fclv${!r.hasData ? ' nodata' : ''}">FC${r.fcLv}${!r.hasData ? '⚠' : ''}</span>
+      </div>
+      <div class="t-inj">${r.injured.toLocaleString()}</div>
+      <div class="t-inj-u">人</div>
+      ${r.c
+        ? `<div class="t-res-list">
+            <div class="t-res-r"><span class="t-res-ic">🥩</span><span class="t-res-v" style="color:#f97316">${fmtK(r.c.meat)}</span></div>
+            <div class="t-res-r"><span class="t-res-ic">🪵</span><span class="t-res-v" style="color:#4ade80">${fmtK(r.c.wood)}</span></div>
+            <div class="t-res-r"><span class="t-res-ic">🪨</span><span class="t-res-v" style="color:#94a3b8">${fmtK(r.c.coal)}</span></div>
+            <div class="t-res-r"><span class="t-res-ic">🔩</span><span class="t-res-v" style="color:#60a5fa">${fmtK(r.c.iron)}</span></div>
+          </div>`
+        : `<div class="t-nodata">⚠️ データ<br>未確認</div>`
+      }
+    </div>`).join('');
+
+  renderPresets();
+}
+
+// ── Init ──────────────────────────────────────────────────────
+load();
+buildRatioRows();
+document.getElementById('unit-count').value = S.unitCount;
+render();
+</script>
+</body>
+</html>
