@@ -230,8 +230,9 @@ const TROOPS = [
   {
     id:'shield', name:'盾兵', icon:'🛡️', color:'#4a9eff',
     costs: {
-      1: {meat:279,   wood:209,   coal:49,   iron:10},
-      2: {meat:23700, wood:21063, coal:4512, iron:1044},
+      1: {meat:279,    wood:209,    coal:49,    iron:10},
+      2: {meat:23700,  wood:21063,  coal:4512,  iron:1044},
+      3: {meat:279000, wood:209000, coal:49000, iron:10000},
     }
   },
   {
@@ -239,18 +240,20 @@ const TROOPS = [
     costs: {
       1: {meat:244, wood:230, coal:47, iron:11},
       2: null,
+      3: null,
     }
   },
   {
     id:'archer', name:'弓兵', icon:'🏹', color:'#f0c040',
     costs: {
-      1: {meat:174,   wood:258,   coal:43,   iron:14},
-      2: {meat:14778, wood:26000, coal:3960, iron:1461},
+      1: {meat:174,    wood:258,    coal:43,    iron:14},
+      2: {meat:14778,  wood:26000,  coal:3960,  iron:1461},
+      3: {meat:174000, wood:258000, coal:43000, iron:14000},
     }
   },
 ];
 
-const FC_LEVELS = [1, 2];
+const FC_LEVELS = [1, 2, 3];
 
 const defInputs = () => ({
   unitCount: 100000,
