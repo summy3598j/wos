@@ -1,5 +1,5 @@
-const CACHE='wos-v4';
-const FILES=['./','./index.html','./event-scheduler.html','./manifest.json','./sw.js'];
+const CACHE='wos-v3';
+const FILES=['./','./index.html','./manifest.json','./sw.js'];
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)));
   self.skipWaiting();

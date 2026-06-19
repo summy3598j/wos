@@ -37,6 +37,13 @@ input{outline:none;}
 .spn-btn:active{background:#2a4a7c;}
 .spn-val{background:#0d1b2a;border:1px solid #334155;border-radius:5px;min-width:46px;height:28px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;}
 
+/* FC level selector */
+.fc-sel{display:flex;gap:3px;flex-shrink:0;}
+.fc-btn{font-size:10px;font-weight:700;border-radius:10px;padding:2px 7px;height:22px;background:#1a2a3a;color:#475569;border:1px solid #334155;}
+.fc-btn.fc-on{background:#1d4ed8;color:#e2e8f0;border-color:#3b82f6;}
+.fc-btn.fc-warn{border-color:#78350f;color:#f97316;}
+.fc-btn.fc-on.fc-warn{background:#7c2d12;color:#fed7aa;border-color:#ea580c;}
+
 /* Ratio section */
 .ratio-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
 .ratio-sum{font-size:12px;font-weight:700;color:#4ade80;}
@@ -75,19 +82,23 @@ input{outline:none;}
 .res-row{display:flex;align-items:center;gap:6px;}
 .res-lbl{font-size:11px;color:#64748b;min-width:58px;}
 .res-val{font-size:13px;font-weight:700;}
+.res-warn{font-size:10px;color:#f97316;margin-top:4px;display:flex;align-items:center;gap:4px;}
 
 /* Troop cards */
 .t-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;padding:8px 8px 24px;}
 .t-card{background:#112233;border:1px solid #1e3a5c;border-radius:8px;padding:7px 6px;}
-.t-hdr{display:flex;align-items:center;gap:3px;margin-bottom:4px;}
+.t-hdr{display:flex;align-items:center;gap:3px;margin-bottom:2px;}
 .t-icon{font-size:14px;}
 .t-name{font-size:10px;font-weight:700;}
+.t-fclv{font-size:9px;font-weight:700;border-radius:8px;padding:1px 5px;margin-left:auto;background:#1d4ed8;color:#bfdbfe;}
+.t-fclv.nodata{background:#7c2d12;color:#fed7aa;}
 .t-inj{font-size:16px;font-weight:700;color:#60a5fa;line-height:1.1;}
 .t-inj-u{font-size:9px;color:#64748b;margin-top:1px;margin-bottom:5px;}
 .t-res-list{border-top:1px solid #1e3a5c;padding-top:5px;display:flex;flex-direction:column;gap:3px;}
 .t-res-r{display:flex;align-items:center;justify-content:space-between;font-size:10px;}
 .t-res-ic{color:#94a3b8;}
 .t-res-v{font-weight:700;}
+.t-nodata{font-size:10px;color:#f97316;text-align:center;padding:6px 0;line-height:1.5;}
 
 /* Help modal */
 #help-overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:500;display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px 12px;}
@@ -148,7 +159,7 @@ input{outline:none;}
 <!-- Ratios -->
 <div class="sec sec0" style="border-bottom:1px solid #1e3a5c;">
   <div class="ratio-hdr">
-    <span class="sec-title" style="margin-bottom:0">負傷兵種割合</span>
+    <span class="sec-title" style="margin-bottom:0">負傷兵種割合・火晶LV</span>
     <span class="ratio-sum" id="ratio-sum">合計 100%</span>
   </div>
   <div id="ratio-rows"></div>
@@ -194,9 +205,9 @@ input{outline:none;}
     </div>
     <hr class="h-sep">
     <div class="h-item">
-      <div class="h-label">負傷兵種割合</div>
-      <div class="h-desc">負傷した兵士の兵種別内訳（盾兵・槍兵・弓兵）です。合計が100%になるよう設定します。スライダーを左右にドラッグ、◀/▶ボタン、または数値を直接入力して変更します。合計が100%を超える場合は自動的に上限で止まります。</div>
-      <div class="h-example">例：盾60% / 槍15% / 弓25%<br>負傷3万人 → 盾18,000・槍4,500・弓7,500人</div>
+      <div class="h-label">負傷兵種割合・火晶LV</div>
+      <div class="h-desc">兵種ごとに負傷割合（%）と火晶レベル（FC1/FC2）を設定します。<br>・スライダー・◀/▶ボタン・直接入力で割合を変更できます。<br>・FC1/FC2ボタンで兵の火晶レベルを切り替えます。<br>・⚠️マークはデータ未確認を示します（計算に含まれません）。</div>
+      <div class="h-example">例：盾FC2を選択 → ⚠️データなし表示<br>該当兵種は資源合計に含まれません</div>
     </div>
     <hr class="h-sep">
     <div class="h-item">
@@ -206,23 +217,50 @@ input{outline:none;}
     <hr class="h-sep">
     <div class="h-item">
       <div class="h-label">リセット</div>
-      <div class="h-desc">部隊兵数・負傷割合・出征回数・兵種割合を初期値に戻します。プリセットはそのまま保持されます。</div>
+      <div class="h-desc">部隊兵数・負傷割合・出征回数・兵種割合・火晶レベルを初期値に戻します。プリセットはそのまま保持されます。</div>
     </div>
   </div>
 </div>
 
 <script>
+// ── Data ──────────────────────────────────────────────────────
+// costs: treatment resource per 1000 soldiers per FC level
+// null = data not yet confirmed
 const TROOPS = [
-  {id:'shield', name:'盾兵', icon:'🛡️', color:'#4a9eff', per1k:{meat:279,wood:209,coal:49,iron:10}},
-  {id:'lance',  name:'槍兵', icon:'🗡️', color:'#a78bfa', per1k:{meat:244,wood:230,coal:47,iron:11}},
-  {id:'archer', name:'弓兵', icon:'🏹', color:'#f0c040', per1k:{meat:174,wood:258,coal:43,iron:14}},
+  {
+    id:'shield', name:'盾兵', icon:'🛡️', color:'#4a9eff',
+    costs: {
+      1: {meat:279,    wood:209,    coal:49,    iron:10},
+      2: {meat:23700,  wood:21063,  coal:4512,  iron:1044},
+      3: {meat:279000, wood:209000, coal:49000, iron:10000},
+    }
+  },
+  {
+    id:'lance', name:'槍兵', icon:'🗡️', color:'#a78bfa',
+    costs: {
+      1: {meat:244, wood:230, coal:47, iron:11},
+      2: null,
+      3: null,
+    }
+  },
+  {
+    id:'archer', name:'弓兵', icon:'🏹', color:'#f0c040',
+    costs: {
+      1: {meat:174,    wood:258,    coal:43,    iron:14},
+      2: {meat:14778,  wood:26000,  coal:3960,  iron:1461},
+      3: {meat:174000, wood:258000, coal:43000, iron:14000},
+    }
+  },
 ];
+
+const FC_LEVELS = [1, 2, 3];
 
 const defInputs = () => ({
   unitCount: 100000,
   injuryPct: 35,
   sorties: 1,
   ratios: {shield:60, lance:15, archer:25},
+  fcLevels: {shield:1, lance:1, archer:1},
 });
 
 const defState = () => ({
@@ -247,8 +285,9 @@ function load() {
     if (d.unitCount != null) S.unitCount = d.unitCount;
     if (d.injuryPct != null) S.injuryPct = d.injuryPct;
     if (d.sorties   != null) S.sorties   = d.sorties;
-    if (d.ratios)   TROOPS.forEach(t => { if (d.ratios[t.id]  != null) S.ratios[t.id]  = +d.ratios[t.id]; });
-    if (d.presets)  S.presets = d.presets.map(p => p ? {...p} : null);
+    if (d.ratios)    TROOPS.forEach(t => { if (d.ratios[t.id]   != null) S.ratios[t.id]   = +d.ratios[t.id]; });
+    if (d.fcLevels)  TROOPS.forEach(t => { if (d.fcLevels[t.id] != null) S.fcLevels[t.id] = +d.fcLevels[t.id]; });
+    if (d.presets)   S.presets = d.presets.map(p => p ? {...p} : null);
   } catch(e) {}
 }
 
@@ -275,6 +314,12 @@ function adjRatio(tid, delta) {
 
 function onRatioInput(tid, raw) {
   setRatio(tid, parseInt(raw) || 0);
+  save(); render();
+}
+
+// ── FC level ──────────────────────────────────────────────────
+function setFcLevel(tid, fc) {
+  S.fcLevels[tid] = fc;
   save(); render();
 }
 
@@ -331,7 +376,6 @@ function loadPreset(idx) {
   S.ratios = { ...p };
   save();
   render();
-  // Flash border green briefly
   const card = document.getElementById('pc-' + idx);
   if (card) {
     card.classList.add('p-flash');
@@ -389,6 +433,15 @@ function buildRatioRows() {
       <div class="rrow-top">
         <span class="rrow-icon">${t.icon}</span>
         <span class="rrow-name" style="color:${t.color}">${t.name}</span>
+        <span style="flex:1"></span>
+        <div class="fc-sel">
+          ${FC_LEVELS.map(fc => {
+            const hasData = t.costs[fc] !== null;
+            const warnCls = !hasData ? ' fc-warn' : '';
+            return `<button class="fc-btn${warnCls}" id="fcbtn-${t.id}-${fc}"
+                            onclick="setFcLevel('${t.id}',${fc})">FC${fc}${!hasData ? '⚠' : ''}</button>`;
+          }).join('')}
+        </div>
       </div>
       <div class="rrow-ctrl">
         <button class="r-btn" onclick="adjRatio('${t.id}',-1)">◀</button>
@@ -431,29 +484,42 @@ function render() {
     if (fill) fill.style.width = S.ratios[t.id] + '%';
     const inp = document.getElementById('inp-' + t.id);
     if (inp && document.activeElement !== inp) inp.value = S.ratios[t.id];
+
+    // FC button highlight
+    FC_LEVELS.forEach(fc => {
+      const btn = document.getElementById(`fcbtn-${t.id}-${fc}`);
+      if (!btn) return;
+      const hasData = t.costs[fc] !== null;
+      const isOn    = S.fcLevels[t.id] === fc;
+      btn.className = 'fc-btn' + (isOn ? ' fc-on' : '') + (!hasData ? ' fc-warn' : '');
+    });
   });
 
   // Calculations
   const baseInjured = Math.round(unitCount * injPct / 100);
   const results = TROOPS.map(t => {
+    const fcLv    = S.fcLevels[t.id] || 1;
+    const cost    = t.costs[fcLv];
     const injured = Math.round(baseInjured * S.ratios[t.id] / 100) * sorties;
-    const injK = injured / 1000;
+    const injK    = injured / 1000;
     return {
-      ...t, injured,
-      c: {
-        meat: injK * t.per1k.meat,
-        wood: injK * t.per1k.wood,
-        coal: injK * t.per1k.coal,
-        iron: injK * t.per1k.iron,
-      }
+      ...t, injured, fcLv,
+      hasData: cost !== null,
+      c: cost ? {
+        meat: injK * cost.meat,
+        wood: injK * cost.wood,
+        coal: injK * cost.coal,
+        iron: injK * cost.iron,
+      } : null
     };
   });
 
+  const hasAnyMissing = results.some(r => !r.hasData && r.injured > 0);
   const totInjured = results.reduce((s, r) => s + r.injured, 0);
-  const totMeat    = results.reduce((s, r) => s + r.c.meat,  0);
-  const totWood    = results.reduce((s, r) => s + r.c.wood,  0);
-  const totCoal    = results.reduce((s, r) => s + r.c.coal,  0);
-  const totIron    = results.reduce((s, r) => s + r.c.iron,  0);
+  const totMeat    = results.reduce((s, r) => s + (r.c ? r.c.meat : 0), 0);
+  const totWood    = results.reduce((s, r) => s + (r.c ? r.c.wood : 0), 0);
+  const totCoal    = results.reduce((s, r) => s + (r.c ? r.c.coal : 0), 0);
+  const totIron    = results.reduce((s, r) => s + (r.c ? r.c.iron : 0), 0);
 
   // Total strip
   const rt = document.getElementById('res-total');
@@ -465,24 +531,29 @@ function render() {
       <div class="res-row"><span class="res-lbl">🪵 木材</span><span class="res-val" style="color:#4ade80">${fmtK(totWood)}</span></div>
       <div class="res-row"><span class="res-lbl">🪨 石炭</span><span class="res-val" style="color:#94a3b8">${fmtK(totCoal)}</span></div>
       <div class="res-row"><span class="res-lbl">🔩 鉄</span><span class="res-val" style="color:#60a5fa">${fmtK(totIron)}</span></div>
-    </div>`;
+    </div>
+    ${hasAnyMissing ? '<div class="res-warn">⚠️ データなしの兵種は合計に含まれていません</div>' : ''}`;
 
-  // Troop cards (horizontal 3-col)
+  // Troop cards
   const grid = document.getElementById('t-grid');
   if (grid) grid.innerHTML = results.map(r => `
     <div class="t-card">
       <div class="t-hdr">
         <span class="t-icon">${r.icon}</span>
         <span class="t-name" style="color:${r.color}">${r.name}</span>
+        <span class="t-fclv${!r.hasData ? ' nodata' : ''}">FC${r.fcLv}${!r.hasData ? '⚠' : ''}</span>
       </div>
       <div class="t-inj">${r.injured.toLocaleString()}</div>
       <div class="t-inj-u">人</div>
-      <div class="t-res-list">
-        <div class="t-res-r"><span class="t-res-ic">🥩</span><span class="t-res-v" style="color:#f97316">${fmtK(r.c.meat)}</span></div>
-        <div class="t-res-r"><span class="t-res-ic">🪵</span><span class="t-res-v" style="color:#4ade80">${fmtK(r.c.wood)}</span></div>
-        <div class="t-res-r"><span class="t-res-ic">🪨</span><span class="t-res-v" style="color:#94a3b8">${fmtK(r.c.coal)}</span></div>
-        <div class="t-res-r"><span class="t-res-ic">🔩</span><span class="t-res-v" style="color:#60a5fa">${fmtK(r.c.iron)}</span></div>
-      </div>
+      ${r.c
+        ? `<div class="t-res-list">
+            <div class="t-res-r"><span class="t-res-ic">🥩</span><span class="t-res-v" style="color:#f97316">${fmtK(r.c.meat)}</span></div>
+            <div class="t-res-r"><span class="t-res-ic">🪵</span><span class="t-res-v" style="color:#4ade80">${fmtK(r.c.wood)}</span></div>
+            <div class="t-res-r"><span class="t-res-ic">🪨</span><span class="t-res-v" style="color:#94a3b8">${fmtK(r.c.coal)}</span></div>
+            <div class="t-res-r"><span class="t-res-ic">🔩</span><span class="t-res-v" style="color:#60a5fa">${fmtK(r.c.iron)}</span></div>
+          </div>`
+        : `<div class="t-nodata">⚠️ データ<br>未確認</div>`
+      }
     </div>`).join('');
 
   renderPresets();

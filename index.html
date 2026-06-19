@@ -42,7 +42,7 @@ input{outline:none;}
 .mlbl{font-size:12px;color:#64748b;margin-bottom:1px;}
 .mneed{font-size:13px;font-weight:700;}
 .mstat{font-size:10px;font-weight:700;margin-top:1px;}
-.minput{width:100%;background:#0d1b2a;border:1px solid #3b82f6;border-radius:4px;color:#fff;font-size:16px;padding:2px 3px;margin-top:2px;-webkit-user-select:text;user-select:text;}
+.minput{width:100%;background:#0d1b2a;border:1px solid #3b82f6;border-radius:4px;color:#fff;font-size:16px;padding:2px 3px;margin-top:2px;}
 
 /* 部位グリッド */
 .pgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:6px 8px;align-content:start;}
@@ -303,7 +303,7 @@ function setTgt(id,v){
   saveBk(); render();
 }
 function setMode(m){mode=m; saveBk(); render();}
-function setInvKey(k,v){inv[k]=+v||0; saveBk();}
+function setInvKey(k,v){inv[k]=+v||0; saveBk(); renderMat();}
 function setGemCur(id,sl,v){
   const nv=Math.max(0,Math.min(JL_MAX,+v));
   jCur[id][sl]=nv; if(jTgt[id][sl]<nv)jTgt[id][sl]=nv;
