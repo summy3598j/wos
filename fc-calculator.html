@@ -137,6 +137,15 @@ input,select{outline:none;}
       <option value="12">Lv4 +12%</option>
       <option value="15">Lv5 +15%</option>
     </select>
+    <span class="buff-lbl">アグネス</span>
+    <select class="buff-sel" id="b-agnes" onchange="save();render()">
+      <option value="0">なし</option>
+      <option value="2">Lv1 -2h</option>
+      <option value="3">Lv2 -3h</option>
+      <option value="4">Lv3 -4h</option>
+      <option value="6">Lv4 -6h</option>
+      <option value="8">Lv5 -8h</option>
+    </select>
     <span class="buff-lbl">建造コスト削減</span>
     <input class="buff-inp" type="number" id="b-mat" value="0" min="0" max="100" oninput="save();render()">
     <span class="buff-lbl">%</span>
@@ -177,7 +186,7 @@ input,select{outline:none;}
     </div>
     <div class="help-sec">
       <h3>建築バフ</h3>
-      <p>副官(10%)と副官(至高)(15%)はどちらか一方のみ選択可。領主指令は建設時間-20%。<br>建造速度は領主ファイルの「総力」右の🔎マークで確認できます。<br>建造コスト削減はジンマンの遠征第2スキルによるものです。ペットスキルは建造速度ボーナス(%)です。</p>
+      <p>副官(10%)と副官(至高)(15%)はどちらか一方のみ選択可。領主指令は建設時間-20%。<br>建造速度は領主ファイルの「総力」右の🔎マークで確認できます。<br>建造コスト削減はジンマンの遠征第2スキルによるものです。ペットスキルは建造速度ボーナス(%)です。<br>アグネスのスキルは建造アクションごとに時間を固定短縮（他のバフ適用後に減算）します。</p>
     </div>
     <div class="help-sec">
       <h3>所持アイテム</h3>
@@ -289,7 +298,7 @@ const INV_FIELDS = [
 // ============================================================
 const defState = () => ({
   buildings: Object.fromEntries(BUILDINGS.map(b=>[b.id,{from:{fc:0,sub:0},to:{fc:5,sub:0},enabled:true}])),
-  buffs:{base:0,pet:0,vice:false,viceSup:false,lords:false,matReduce:0},
+  buffs:{base:0,pet:0,agnes:0,vice:false,viceSup:false,lords:false,matReduce:0},
   inv:{fc:0,rfc:0,meat:0,wood:0,coal:0,iron:0},
 });
 
@@ -299,6 +308,7 @@ function save(){
   try{
     S.buffs.base      = parseFloat(document.getElementById('b-base')?.value)||0;
     S.buffs.pet       = parseInt(document.getElementById('b-pet')?.value)||0;
+    S.buffs.agnes     = parseInt(document.getElementById('b-agnes')?.value)||0;
     S.buffs.vice      = document.getElementById('b-vice')?.checked||false;
     S.buffs.viceSup   = document.getElementById('b-vicesup')?.checked||false;
     S.buffs.lords     = document.getElementById('b-lords')?.checked||false;
@@ -366,7 +376,15 @@ function calcDays(bid,ffc,fsub,tfc,tsub){
 }
 
 function fmtR(v){return v>=1000?(v/1000).toFixed(2)+'B':v.toFixed(1)+'M';}
-function fmtD(d){const dd=Math.floor(d),h=Math.round((d-dd)*24);return h?`${dd}日${h}h`:`${dd}日`;}
+function fmtD(d){
+  const tot=Math.round(d*86400);
+  if(tot<=0) return '0s';
+  const dd=Math.floor(tot/86400);
+  const hh=Math.floor((tot%86400)/3600);
+  const mm=Math.floor((tot%3600)/60);
+  const ss=tot%60;
+  return (dd?`${dd}日`:'')+(hh?`${hh}h`:'')+(mm?`${mm}m`:'')+(ss?`${ss}s`:'')||'0s';
+}
 function fcLabel(fc){return fc===0?'前':String(fc);}
 function subLabel(sub){return sub===0?'完':`${sub}段`;}
 
@@ -376,13 +394,16 @@ function subLabel(sub){return sub===0?'完':`${sub}段`;}
 function getBuffs(){
   const base=parseFloat(document.getElementById('b-base')?.value)||0;
   const pet =parseInt(document.getElementById('b-pet')?.value)||0;
+  const agnes=parseInt(document.getElementById('b-agnes')?.value)||0;
   const vice=document.getElementById('b-vice')?.checked?10:document.getElementById('b-vicesup')?.checked?15:0;
   const lords=document.getElementById('b-lords')?.checked?20:0;
   const matR=parseFloat(document.getElementById('b-mat')?.value)||0;
   const accel=lords, speed=base+pet+vice;
+  const agnesD=agnes/24;
   const tBuf=d=>d*(1-accel/100)/(1+speed/100);
+  const tBufA=(d,n)=>Math.max(0, tBuf(d) - n*agnesD);
   const mBuf=v=>v*(1-matR/100);
-  return {accel,speed,matR,tBuf,mBuf,hasT:accel>0||speed>0,hasM:matR>0};
+  return {accel,speed,matR,agnesD,tBuf,tBufA,mBuf,hasT:accel>0||speed>0||agnes>0,hasM:matR>0};
 }
 
 function onVice(type){
@@ -398,7 +419,7 @@ function onVice(type){
 // ============================================================
 function calcTotals(){
   const B=getBuffs();
-  let tfc=0,trfc=0,tmeat=0,twood=0,tcoal=0,tiron=0,tdays=0,hasEst=false;
+  let tfc=0,trfc=0,tmeat=0,twood=0,tcoal=0,tiron=0,tdays=0,tstages=0,hasEst=false;
   BUILDINGS.forEach(b=>{
     const bs=S.buildings[b.id];
     if(!bs.enabled) return;
@@ -407,8 +428,9 @@ function calcTotals(){
     tfc+=c.fc; trfc+=c.rfc; tmeat+=c.meat; twood+=c.wood; tcoal+=c.coal; tiron+=c.iron;
     if(c.est) hasEst=true;
     tdays+=calcDays(b.id,f.fc,f.sub,t.fc,t.sub);
+    tstages+=Math.max(0,gssi(t.fc,t.sub)-gssi(f.fc,f.sub));
   });
-  return {B,tfc,trfc,tmeat,twood,tcoal,tiron,tdays,hasEst};
+  return {B,tfc,trfc,tmeat,twood,tcoal,tiron,tdays,tstages,hasEst};
 }
 
 // ============================================================
@@ -422,11 +444,11 @@ function render(){
 }
 
 function renderTime(tots){
-  const {B,tdays}=tots;
+  const {B,tdays,tstages}=tots;
   const el=document.getElementById('time-strip');
   if(tdays===0){el.style.display='none';return;}
   el.style.display='';
-  const bdays=B.tBuf(tdays);
+  const bdays=B.tBufA(tdays,tstages);
   el.innerHTML=`<span class="time-lbl">⏱ 建設時間合計</span>
     <span class="time-val">${fmtD(tdays)}</span>
     ${B.hasT?`<span class="time-arr">▶</span><span class="time-buf">${fmtD(bdays)}</span>`:''}`;
@@ -464,7 +486,8 @@ function renderBuildings(){
     const {from:f,to:t,enabled:en}=bs;
     const cost=calcCost(b.id,f.fc,f.sub,t.fc,t.sub);
     const days=calcDays(b.id,f.fc,f.sub,t.fc,t.sub);
-    const daysB=B.tBuf(days);
+    const stages=Math.max(0,gssi(t.fc,t.sub)-gssi(f.fc,f.sub));
+    const daysB=B.tBufA(days,stages);
 
     const box=(fot,field,val,color,sub2)=>`
       <div class="lvbox" data-bid="${b.id}" data-fot="${fot}" data-field="${field}"
@@ -646,6 +669,7 @@ function restoreBackup(){
     document.getElementById('b-vicesup').checked =S.buffs.viceSup||false;
     document.getElementById('b-lords').checked   =S.buffs.lords||false;
     document.getElementById('b-mat').value       =S.buffs.matReduce||0;
+    document.getElementById('b-agnes').value     =S.buffs.agnes||0;
     INV_FIELDS.forEach(f=>{const el=document.getElementById(`ii-${f.id}`);if(el)el.value=S.inv[f.id]||'';});
     render();
     closeBackup();
@@ -663,6 +687,7 @@ function clearAll(){
   document.getElementById('b-vicesup').checked=false;
   document.getElementById('b-lords').checked=false;
   document.getElementById('b-mat').value=0;
+  document.getElementById('b-agnes').value=0;
   INV_FIELDS.forEach(f=>{const el=document.getElementById(`ii-${f.id}`);if(el)el.value='';});
   render();
 }
@@ -673,6 +698,7 @@ function clearAll(){
 load();
 document.getElementById('b-base').value      = S.buffs.base||0;
 document.getElementById('b-pet').value       = S.buffs.pet||0;
+document.getElementById('b-agnes').value     = S.buffs.agnes||0;
 document.getElementById('b-vice').checked    = S.buffs.vice||false;
 document.getElementById('b-vicesup').checked = S.buffs.viceSup||false;
 document.getElementById('b-lords').checked   = S.buffs.lords||false;
