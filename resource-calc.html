@@ -214,15 +214,10 @@
 
   function calc(res, base, research, hero) {
     const mul = 1 + (research + hero) / 100;
-    let ratePerSec, workerDay;
 
-    if (res.isMeat) {
-      ratePerSec = (base * mul) / 150;
-      workerDay  = base * mul * 2;
-    } else {
-      ratePerSec = (base * mul) / 60;
-      workerDay  = ratePerSec * 300;
-    }
+    const ratePerSec = res.isMeat
+      ? (base * mul) / 150
+      : (base * mul) / 60;
 
     const rWorking = ratePerSec * (10 / 24);
 
@@ -231,7 +226,7 @@
       perHour:      rWorking * 3600,
       perDay:       rWorking * 86400,
       perWeek:      rWorking * 86400 * 7,
-      perWorkerDay: workerDay,
+      perWorkerDay: rWorking * 720,
     };
   }
 
