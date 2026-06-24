@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WOS 都市資源生産量計算</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', sans-serif;
+      background: #12121f;
+      color: #e0e0e0;
+      min-height: 100vh;
+      padding: 14px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 1.25rem;
+      color: #ffd700;
+      margin-bottom: 16px;
+      padding: 12px 16px;
+      background: rgba(255,215,0,0.08);
+      border: 1px solid rgba(255,215,0,0.25);
+      border-radius: 10px;
+      letter-spacing: 0.03em;
+    }
+
+    /* ── Resource card ── */
+    .card {
+      background: #1a1e30;
+      border: 1px solid #2a3050;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 14px;
+      background: #1e2440;
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .card-header:active { background: #252a4a; }
+
+    .card-icon { font-size: 1.35rem; }
+
+    .card-name {
+      flex: 1;
+      font-weight: 700;
+      font-size: 1rem;
+      color: #ffd700;
+    }
+
+    .card-unit {
+      font-size: 0.7rem;
+      color: #778;
+    }
+
+    .chevron {
+      font-size: 0.75rem;
+      color: #667;
+      transition: transform 0.2s;
+    }
+    .chevron.open { transform: rotate(180deg); }
+
+    /* ── Card body ── */
+    .card-body {
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+    .card-body.hidden { display: none; }
+
+    .field label {
+      display: block;
+      font-size: 0.72rem;
+      color: #99a;
+      margin-bottom: 4px;
+    }
+
+    .field input {
+      width: 100%;
+      padding: 8px 11px;
+      background: #0d0f1c;
+      border: 1px solid #2a3050;
+      border-radius: 6px;
+      color: #e0e0e0;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .field input:focus { border-color: #ffd700; }
+
+    .buff-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    /* ── Results table ── */
+    .result-card {
+      background: #1a1e30;
+      border: 1px solid #2a3050;
+      border-radius: 10px;
+      margin-top: 14px;
+      overflow: hidden;
+    }
+
+    .result-title {
+      padding: 11px 14px;
+      background: #1e2440;
+      font-weight: 700;
+      color: #ffd700;
+      font-size: 0.95rem;
+    }
+
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+      min-width: 380px;
+    }
+
+    thead th {
+      padding: 9px 10px;
+      text-align: center;
+      background: #131726;
+      color: #778;
+      font-weight: 600;
+      white-space: nowrap;
+      border-bottom: 1px solid #2a3050;
+    }
+    thead th:first-child { text-align: left; min-width: 72px; }
+
+    tbody tr { transition: background 0.1s; }
+    tbody tr:nth-child(odd) { background: rgba(255,255,255,0.025); }
+    tbody tr:hover { background: rgba(255,215,0,0.05); }
+
+    tbody td {
+      padding: 9px 10px;
+      text-align: right;
+      border-bottom: 1px solid rgba(42,48,80,0.6);
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+    tbody td:first-child {
+      text-align: left;
+      font-weight: 700;
+      color: #ffd700;
+    }
+
+    .res-cell { display: flex; align-items: center; gap: 5px; }
+
+    /* ── Footer note ── */
+    .note {
+      text-align: center;
+      font-size: 0.68rem;
+      color: #556;
+      margin-top: 12px;
+      padding-bottom: 8px;
+    }
+
+    @media (min-width: 520px) {
+      body { padding: 20px; max-width: 640px; margin: 0 auto; }
+    }
+  </style>
+</head>
+<body>
+
+<h1>⚔️ WOS 都市資源生産量計算</h1>
+
+<div id="cards"></div>
+
+<div class="result-card">
+  <div class="result-title">📊 生産量一覧</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>資源</th>
+          <th>/現実分</th>
+          <th>/現実時間</th>
+          <th>/現実日</th>
+          <th>/現実週</th>
+          <th>/労働者日</th>
+        </tr>
+      </thead>
+      <tbody id="result-rows"></tbody>
+    </table>
+  </div>
+</div>
+
+<p class="note">稼働率 10/24・作業者 6人・バフ = 1 +(研究+英雄)÷100</p>
+
+<script>
+  const RESOURCES = [
+    { key:'meat',  name:'生肉', icon:'🥩', unit:'/ サイクル', def:17600, isMeat:true  },
+    { key:'wood',  name:'木材', icon:'🪵', unit:'/ 現実分',   def:7070,  isMeat:false },
+    { key:'coal',  name:'石炭', icon:'🪨', unit:'/ 現実分',   def:1422,  isMeat:false },
+    { key:'iron',  name:'鉄鉱', icon:'⚙️', unit:'/ 現実分',   def:336.2, isMeat:false },
+  ];
+
+  function fmt(n) {
+    if (!isFinite(n) || n < 0) return '—';
+    if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+    if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+    if (n >= 1e3) return (n / 1e3).toFixed(2) + 'K';
+    return n.toFixed(2);
+  }
+
+  function calc(res, base, research, hero) {
+    const mul = 1 + (research + hero) / 100;
+    let ratePerSec, workerDay;
+
+    if (res.isMeat) {
+      ratePerSec = (base * mul) / 150;
+      workerDay  = base * mul * 12;
+    } else {
+      ratePerSec = (base * mul) / 60;
+      workerDay  = ratePerSec * 6 * 300;
+    }
+
+    const r6 = ratePerSec * 6 * (10 / 24);
+
+    return {
+      perMin:       r6 * 60,
+      perHour:      r6 * 3600,
+      perDay:       r6 * 86400,
+      perWeek:      r6 * 86400 * 7,
+      perWorkerDay: workerDay,
+    };
+  }
+
+  const LS_KEY = 'wos_resource_calc_v1';
+
+  function load() {
+    try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch { return {}; }
+  }
+
+  function save(data) {
+    try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch {}
+  }
+
+  function buildCards() {
+    const stored = load();
+    const container = document.getElementById('cards');
+
+    RESOURCES.forEach(res => {
+      const s = stored[res.key] || {};
+      const base     = s.base     ?? res.def;
+      const research = s.research ?? 0;
+      const hero     = s.hero     ?? 0;
+
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="card-header" id="hdr-${res.key}">
+          <span class="card-icon">${res.icon}</span>
+          <span class="card-name">${res.name}</span>
+          <span class="card-unit">${res.unit}</span>
+          <span class="chevron open" id="chv-${res.key}">▼</span>
+        </div>
+        <div class="card-body" id="bdy-${res.key}">
+          <div class="field">
+            <label>基礎生産量（${res.unit}）</label>
+            <input type="number" id="${res.key}_base" value="${base}" min="0" step="0.1" inputmode="decimal">
+          </div>
+          <div class="buff-row">
+            <div class="field">
+              <label>研究バフ（%）</label>
+              <input type="number" id="${res.key}_research" value="${research}" min="0" step="0.1" inputmode="decimal">
+            </div>
+            <div class="field">
+              <label>英雄バフ（%）</label>
+              <input type="number" id="${res.key}_hero" value="${hero}" min="0" step="0.1" inputmode="decimal">
+            </div>
+          </div>
+        </div>
+      `;
+      container.appendChild(card);
+
+      document.getElementById(`hdr-${res.key}`).addEventListener('click', () => {
+        const body = document.getElementById(`bdy-${res.key}`);
+        const chv  = document.getElementById(`chv-${res.key}`);
+        body.classList.toggle('hidden');
+        chv.classList.toggle('open');
+      });
+    });
+
+    document.querySelectorAll('input[type="number"]').forEach(el => {
+      el.addEventListener('input', onInput);
+    });
+
+    updateTable();
+  }
+
+  function onInput() {
+    const data = {};
+    RESOURCES.forEach(res => {
+      data[res.key] = {
+        base:     parseFloat(document.getElementById(`${res.key}_base`).value)     || 0,
+        research: parseFloat(document.getElementById(`${res.key}_research`).value) || 0,
+        hero:     parseFloat(document.getElementById(`${res.key}_hero`).value)     || 0,
+      };
+    });
+    save(data);
+    updateTable(data);
+  }
+
+  function updateTable(data) {
+    if (!data) {
+      const stored = load();
+      data = {};
+      RESOURCES.forEach(res => {
+        const s = stored[res.key] || {};
+        data[res.key] = {
+          base:     s.base     ?? res.def,
+          research: s.research ?? 0,
+          hero:     s.hero     ?? 0,
+        };
+      });
+    }
+
+    const tbody = document.getElementById('result-rows');
+    tbody.innerHTML = '';
+
+    RESOURCES.forEach(res => {
+      const v = data[res.key];
+      const p = calc(res, v.base, v.research, v.hero);
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><span class="res-cell">${res.icon} ${res.name}</span></td>
+        <td>${fmt(p.perMin)}</td>
+        <td>${fmt(p.perHour)}</td>
+        <td>${fmt(p.perDay)}</td>
+        <td>${fmt(p.perWeek)}</td>
+        <td>${fmt(p.perWorkerDay)}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  buildCards();
+</script>
+</body>
+</html>
