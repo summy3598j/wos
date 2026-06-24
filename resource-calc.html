@@ -27,7 +27,6 @@
       letter-spacing: 0.03em;
     }
 
-    /* ── Resource card ── */
     .card {
       background: #1a1e30;
       border: 1px solid #2a3050;
@@ -69,7 +68,6 @@
     }
     .chevron.open { transform: rotate(180deg); }
 
-    /* ── Card body ── */
     .card-body {
       padding: 14px;
       display: grid;
@@ -103,7 +101,6 @@
       gap: 10px;
     }
 
-    /* ── Results table ── */
     .result-card {
       background: #1a1e30;
       border: 1px solid #2a3050;
@@ -159,7 +156,6 @@
 
     .res-cell { display: flex; align-items: center; gap: 5px; }
 
-    /* ── Footer note ── */
     .note {
       text-align: center;
       font-size: 0.68rem;
@@ -198,14 +194,14 @@
   </div>
 </div>
 
-<p class="note">稼働率 10/24・作業者 6人・バフ = 1 +(研究+英雄)÷100</p>
+<p class="note">入力はゲーム内の稼働中総生産速度・稼働率 10/24 を自動適用・バフ = 1 +(研究+英雄)÷100</p>
 
 <script>
   const RESOURCES = [
-    { key:'meat',  name:'生肉', icon:'🥩', unit:'/ サイクル', def:17600, isMeat:true  },
-    { key:'wood',  name:'木材', icon:'🪵', unit:'/ 現実分',   def:7070,  isMeat:false },
-    { key:'coal',  name:'石炭', icon:'🪨', unit:'/ 現実分',   def:1422,  isMeat:false },
-    { key:'iron',  name:'鉄鉱', icon:'⚙️', unit:'/ 現実分',   def:336.2, isMeat:false },
+    { key:'meat',  name:'生肉', icon:'🥩', unit:'/ サイクル', def:105600, isMeat:true  },
+    { key:'wood',  name:'木材', icon:'🪵', unit:'/ 現実分',   def:42420,  isMeat:false },
+    { key:'coal',  name:'石炭', icon:'🪨', unit:'/ 現実分',   def:8532,   isMeat:false },
+    { key:'iron',  name:'鉄鉱', icon:'⚙️', unit:'/ 現実分',   def:2017.2, isMeat:false },
   ];
 
   function fmt(n) {
@@ -222,24 +218,24 @@
 
     if (res.isMeat) {
       ratePerSec = (base * mul) / 150;
-      workerDay  = base * mul * 12;
+      workerDay  = base * mul * 2;
     } else {
       ratePerSec = (base * mul) / 60;
-      workerDay  = ratePerSec * 6 * 300;
+      workerDay  = ratePerSec * 300;
     }
 
-    const r6 = ratePerSec * 6 * (10 / 24);
+    const rWorking = ratePerSec * (10 / 24);
 
     return {
-      perMin:       r6 * 60,
-      perHour:      r6 * 3600,
-      perDay:       r6 * 86400,
-      perWeek:      r6 * 86400 * 7,
+      perMin:       rWorking * 60,
+      perHour:      rWorking * 3600,
+      perDay:       rWorking * 86400,
+      perWeek:      rWorking * 86400 * 7,
       perWorkerDay: workerDay,
     };
   }
 
-  const LS_KEY = 'wos_resource_calc_v1';
+  const LS_KEY = 'wos_resource_calc_v2';
 
   function load() {
     try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch { return {}; }
@@ -270,7 +266,7 @@
         </div>
         <div class="card-body" id="bdy-${res.key}">
           <div class="field">
-            <label>基礎生産量（${res.unit}）</label>
+            <label>稼働中の総生産速度（${res.unit}）</label>
             <input type="number" id="${res.key}_base" value="${base}" min="0" step="0.1" inputmode="decimal">
           </div>
           <div class="buff-row">
