@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>峡谷合戦 完全ガイド | WOS</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{background:#0a1628;color:#e2e8f0;font-family:'Hiragino Sans','Noto Sans JP',sans-serif;max-width:520px;margin:0 auto;min-height:100dvh;font-size:14px;line-height:1.6;}
+a{color:#60a5fa;text-decoration:none;}
+
+/* ヘッダー */
+.header{background:linear-gradient(180deg,#1e3a5c,#0d2238);padding:14px 16px 12px;border-bottom:2px solid #1e4d7a;position:sticky;top:0;z-index:10;}
+.header-title{font-size:18px;font-weight:800;color:#93c5fd;letter-spacing:0.03em;}
+.header-sub{font-size:11px;color:#64748b;margin-top:2px;}
+
+/* TOC */
+.toc{background:#0f1f35;border:1px solid #1e3a5c;border-radius:10px;margin:12px;padding:10px 14px;}
+.toc-title{font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;}
+.toc a{display:block;font-size:13px;color:#93c5fd;padding:3px 0;border-bottom:1px solid #1a2d45;}
+.toc a:last-child{border-bottom:none;}
+.toc a:hover{color:#bfdbfe;}
+
+/* セクション */
+.section{margin:0 12px 16px;}
+.section-header{background:linear-gradient(90deg,#1e3a5c,#0f2240);border-left:4px solid #3b82f6;border-radius:6px;padding:8px 12px;margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.section-icon{font-size:18px;}
+.section-title{font-size:15px;font-weight:800;color:#93c5fd;}
+
+/* カード */
+.card{background:#0f1f35;border:1px solid #1e3a5c;border-radius:8px;padding:10px 12px;margin-bottom:8px;}
+.card-title{font-size:13px;font-weight:700;color:#60a5fa;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+.card-title::before{content:'';display:inline-block;width:3px;height:14px;background:#3b82f6;border-radius:2px;}
+
+/* テーブル */
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{background:#1a3a5c;color:#93c5fd;padding:6px 8px;text-align:left;font-weight:700;}
+td{padding:6px 8px;border-bottom:1px solid #1a2d45;color:#cbd5e1;}
+tr:last-child td{border-bottom:none;}
+tr:nth-child(even) td{background:#0d1b2a;}
+
+/* フェーズタイムライン */
+.phase-list{display:flex;flex-direction:column;gap:6px;}
+.phase{display:flex;gap:10px;align-items:flex-start;}
+.phase-num{background:#1e3a5c;border:2px solid #3b82f6;color:#93c5fd;font-size:12px;font-weight:800;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.phase-body{flex:1;}
+.phase-name{font-size:13px;font-weight:700;color:#e2e8f0;}
+.phase-time{font-size:11px;color:#3b82f6;font-weight:700;}
+.phase-desc{font-size:12px;color:#94a3b8;margin-top:2px;}
+
+/* スケジュール */
+.schedule{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;text-align:center;}
+.sch-day{background:#0d1b2a;border-radius:6px;padding:6px 4px;border:1px solid #1e3a5c;}
+.sch-label{font-size:10px;color:#64748b;margin-bottom:3px;}
+.sch-title{font-size:11px;font-weight:700;}
+.sch-vote{color:#f59e0b;}
+.sch-reg{color:#10b981;}
+.sch-match{color:#8b5cf6;}
+.sch-battle{color:#ef4444;}
+
+/* チップ */
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px;}
+.chip{background:#1a3a5c;color:#93c5fd;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;}
+.chip.red{background:#3f1515;color:#fca5a5;}
+.chip.green{background:#0f2f1f;color:#6ee7b7;}
+.chip.yellow{background:#2f2010;color:#fcd34d;}
+.chip.purple{background:#1f1040;color:#c4b5fd;}
+
+/* ポイントバー */
+.point-bar{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.pb-label{font-size:12px;color:#94a3b8;min-width:110px;}
+.pb-bar{flex:1;background:#1a2d45;border-radius:4px;height:8px;overflow:hidden;}
+.pb-fill{height:100%;border-radius:4px;}
+.pb-val{font-size:12px;font-weight:700;color:#60a5fa;min-width:30px;text-align:right;}
+
+/* ヒントボックス */
+.tip{background:#0f2a1a;border:1px solid #166534;border-radius:6px;padding:8px 10px;margin-bottom:8px;}
+.tip-head{font-size:12px;font-weight:700;color:#4ade80;margin-bottom:4px;}
+.tip p{font-size:12px;color:#a7f3d0;line-height:1.5;}
+.warn{background:#2a1a0a;border:1px solid #78350f;border-radius:6px;padding:8px 10px;margin-bottom:8px;}
+.warn-head{font-size:12px;font-weight:700;color:#fb923c;margin-bottom:4px;}
+.warn p{font-size:12px;color:#fed7aa;line-height:1.5;}
+
+/* リスト */
+ul.guide{padding-left:16px;}
+ul.guide li{font-size:12px;color:#cbd5e1;margin-bottom:4px;line-height:1.5;}
+ul.guide li strong{color:#93c5fd;}
+
+/* バッジ */
+.badge{display:inline-block;font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;vertical-align:middle;margin-left:4px;}
+.badge.high{background:#3f1515;color:#fca5a5;}
+.badge.mid{background:#2f2010;color:#fcd34d;}
+.badge.low{background:#0f2f1f;color:#6ee7b7;}
+
+/* フッター */
+.footer{text-align:center;padding:20px;font-size:11px;color:#334155;}
+
+/* スクロールアンカー用オフセット */
+.anchor{display:block;height:0;margin-top:-60px;padding-top:60px;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">峡谷合戦 完全ガイド</div>
+  <div class="header-sub">Whiteout Survival / Canyon Clash</div>
+</div>
+
+<!-- 目次 -->
+<div class="toc">
+  <div class="toc-title">目次</div>
+  <a href="#overview">1. 概要・基本ルール</a>
+  <a href="#schedule">2. スケジュール</a>
+  <a href="#requirements">3. 参加条件</a>
+  <a href="#phases">4. 試合フェーズ（全4フェーズ）</a>
+  <a href="#map">5. マップ・建物</a>
+  <a href="#scoring">6. スコアシステム</a>
+  <a href="#rewards">7. 報酬</a>
+  <a href="#strategy">8. 攻略・戦略</a>
+  <a href="#glossary">9. 用語集</a>
+</div>
+
+<!-- 1. 概要 -->
+<div class="section">
+  <span class="anchor" id="overview"></span>
+  <div class="section-header">
+    <span class="section-icon">⚔️</span>
+    <span class="section-title">1. 概要・基本ルール</span>
+  </div>
+
+  <div class="card">
+    <div class="card-title">峡谷合戦とは</div>
+    <p style="font-size:12px;color:#cbd5e1;margin-bottom:8px;">
+      峡谷合戦（Canyon Clash）は、異なるサーバーの連盟3組が「ロストキャニオン」マップで争う大規模連盟PvPイベント。
+      陣地占領・燃料管理・連携が勝敗を分ける月1回の大型イベントです。
+    </p>
+    <div class="chips">
+      <span class="chip">月1回開催</span>
+      <span class="chip">3連盟バトル</span>
+      <span class="chip">試合時間 約1時間</span>
+      <span class="chip red">炉Lv16以上</span>
+    </div>
+  </div>
+</div>
+
+<!-- 2. スケジュール -->
+<div class="section">
+  <span class="anchor" id="schedule"></span>
+  <div class="section-header">
+    <span class="section-icon">📅</span>
+    <span class="section-title">2. スケジュール（週次サイクル）</span>
+  </div>
+
+  <div class="card">
+    <div class="schedule">
+      <div class="sch-day">
+        <div class="sch-label">土〜日</div>
+        <div class="sch-title sch-vote">投票</div>
+      </div>
+      <div class="sch-day">
+        <div class="sch-label">月〜火</div>
+        <div class="sch-title sch-reg">登録</div>
+      </div>
+      <div class="sch-day">
+        <div class="sch-label">水</div>
+        <div class="sch-title sch-match">マッチング</div>
+      </div>
+      <div class="sch-day">
+        <div class="sch-label">木</div>
+        <div class="sch-title sch-battle">試合</div>
+      </div>
+      <div class="sch-day">
+        <div class="sch-label">翌週</div>
+        <div class="sch-title" style="color:#64748b;">繰り返し</div>
+      </div>
+    </div>
+    <p style="font-size:11px;color:#64748b;margin-top:6px;">※サーバーによってスケジュールが異なる場合あり</p>
+  </div>
+</div>
+
+<!-- 3. 参加条件 -->
+<div class="section">
+  <span class="anchor" id="requirements"></span>
+  <div class="section-header">
+    <span class="section-icon">📋</span>
+    <span class="section-title">3. 参加条件</span>
+  </div>
+
+  <div class="card">
+    <div class="card-title">連盟条件</div>
+    <table>
+      <tr><th>条件</th><th>内容</th></tr>
+      <tr><td>連盟ランク</td><td>サーバー勢力ランキング上位20連盟のみ</td></tr>
+      <tr><td>レギオン数</td><td>最大2レギオン登録可能</td></tr>
+      <tr><td>第2レギオン解放</td><td>連盟Lv6以上 + 週間ログイン40名以上</td></tr>
+      <tr><td>最低人数</td><td>戦闘員15名 + 補欠でマッチング成立</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-title">個人条件</div>
+    <table>
+      <tr><th>条件</th><th>内容</th></tr>
+      <tr><td>炉レベル</td><td>Lv16以上必須</td></tr>
+      <tr><td>登録タイミング</td><td>登録期間開始前に加入済みであること</td></tr>
+      <tr><td>ログイン状況</td><td>5日以上オフラインの場合は派遣不可</td></tr>
+      <tr><td>レギオン編成</td><td>R4以上が戦闘員30名 + 補欠10名を選出</td></tr>
+    </table>
+  </div>
+
+  <div class="warn">
+    <div class="warn-head">⚠️ 注意</div>
+    <p>戦場入場後は連盟を離脱できません。また参加メンバーは試合開始後に変更不可です。</p>
+  </div>
+</div>
+
+<!-- 4. フェーズ -->
+<div class="section">
+  <span class="anchor" id="phases"></span>
+  <div class="section-header">
+    <span class="section-icon">⏱️</span>
+    <span class="section-title">4. 試合フェーズ（全4フェーズ）</span>
+  </div>
+
+  <div class="card">
+    <div class="phase-list">
+      <div class="phase">
+        <div class="phase-num">0</div>
+        <div class="phase-body">
+          <div class="phase-name">準備フェーズ</div>
+          <div class="phase-time">3分間</div>
+          <div class="phase-desc">部隊配置・初期ルートの確認。拠点（バスティオン）から展開準備。</div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-num">1</div>
+        <div class="phase-body">
+          <div class="phase-name">奪取フェーズ（Seize &amp; Conquer）</div>
+          <div class="phase-time">17分間</div>
+          <div class="phase-desc">中立建物を占領し安全なルートを確保。序盤の展開速度が後半を大きく左右する。</div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-num">2</div>
+        <div class="phase-body">
+          <div class="phase-name">要塞占領フェーズ（Fortress Occupation）</div>
+          <div class="phase-time">20分間</div>
+          <div class="phase-desc">主要ルート上の要塞を制圧。要塞制御が移動フローとスコアを支配する。</div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-num">3</div>
+        <div class="phase-body">
+          <div class="phase-name">宮殿強攻フェーズ（Citadel Onslaught）</div>
+          <div class="phase-time">20分間</div>
+          <div class="phase-desc">マップ中央に<strong style="color:#fbbf24;">氷封宮殿</strong>が解禁。制圧で5万ポイントのボーナス。逆転の最終チャンス。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">戦闘メカニクス</div>
+    <ul class="guide">
+      <li>建物内での戦闘のみ（野外戦なし）、1対1で自動戦闘</li>
+      <li>部隊は到着順にキューへ並び、勝利部隊は列の後ろへ回る</li>
+      <li>各チーフは最大<strong>3部隊</strong>を編成・派遣可能</li>
+      <li>隊長（R4+）がレギオンごとに戦闘員30名＋補欠10名を選出</li>
+    </ul>
+  </div>
+</div>
+
+<!-- 5. マップ -->
+<div class="section">
+  <span class="anchor" id="map"></span>
+  <div class="section-header">
+    <span class="section-icon">🗺️</span>
+    <span class="section-title">5. マップ・建物</span>
+  </div>
+
+  <div class="card">
+    <div class="card-title">ロストキャニオン マップ構造</div>
+    <ul class="guide">
+      <li>3連盟それぞれが独立した<strong>拠点エリア</strong>から出発</li>
+      <li>連盟拠点（バスティオン）から部隊を展開</li>
+      <li>港（ポート）・ゲートで各島やエリアを接続</li>
+      <li>マップ中央に<strong style="color:#fbbf24;">氷封宮殿</strong>が配置</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="card-title">主要建物一覧</div>
+    <table>
+      <tr><th>建物</th><th>役割</th><th>優先度</th></tr>
+      <tr>
+        <td>氷封宮殿</td>
+        <td>最終フェーズの最重要拠点。5万pt</td>
+        <td><span class="badge high">最高</span></td>
+      </tr>
+      <tr>
+        <td>要塞（Fortress）</td>
+        <td>主要ルート制御・大量得点源</td>
+        <td><span class="badge high">高</span></td>
+      </tr>
+      <tr>
+        <td>港（Port）</td>
+        <td>島間移動・宮殿へのアクセス経路</td>
+        <td><span class="badge mid">中</span></td>
+      </tr>
+      <tr>
+        <td>ゲート（Gate）</td>
+        <td>エリア間接続</td>
+        <td><span class="badge mid">中</span></td>
+      </tr>
+      <tr>
+        <td>中立建物</td>
+        <td>安全ルート確保・継続得点</td>
+        <td><span class="badge low">低〜中</span></td>
+      </tr>
+      <tr>
+        <td>バスティオン</td>
+        <td>連盟拠点。撃破された部隊が回復</td>
+        <td>―</td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- 6. スコア -->
+<div class="section">
+  <span class="anchor" id="scoring"></span>
+  <div class="section-header">
+    <span class="section-icon">🏆</span>
+    <span class="section-title">6. スコアシステム</span>
+  </div>
+
+  <div class="card">
+    <div class="card-title">ポイント獲得方法</div>
+    <div class="point-bar">
+      <span class="pb-label">建物占領（継続）</span>
+      <div class="pb-bar"><div class="pb-fill" style="width:70%;background:#3b82f6;"></div></div>
+      <span class="pb-val">継続</span>
+    </div>
+    <div class="point-bar">
+      <span class="pb-label">要塞制圧</span>
+      <div class="pb-bar"><div class="pb-fill" style="width:85%;background:#8b5cf6;"></div></div>
+      <span class="pb-val">大</span>
+    </div>
+    <div class="point-bar">
+      <span class="pb-label">氷封宮殿占領</span>
+      <div class="pb-bar"><div class="pb-fill" style="width:100%;background:#f59e0b;"></div></div>
+      <span class="pb-val">50,000</span>
+    </div>
+    <p style="font-size:11px;color:#64748b;margin-top:4px;">保有建物が多いほど毎分のポイント蓄積量が増加</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">個人メリット（Personal Merit）</div>
+    <ul class="guide">
+      <li>個人参加・戦闘実績に応じて獲得</li>
+      <li><strong>最低10,000メリット</strong>で個人ランキング報酬の受取資格が発生</li>
+      <li>メリットはキャニオンショップで限定アイテムと交換可能</li>
+    </ul>
+  </div>
+</div>
+
+<!-- 7. 報酬 -->
+<div class="section">
+  <span class="anchor" id="rewards"></span>
+  <div class="section-header">
+    <span class="section-icon">🎁</span>
+    <span class="section-title">7. 報酬</span>
+  </div>
+
+  <div class="card">
+    <div class="card-title">報酬の種類</div>
+    <table>
+      <tr><th>種別</th><th>内容</th><th>配布対象</th></tr>
+      <tr><td>連盟ランキング報酬</td><td>1〜3位に応じた報酬。レギオン1の順位が基準</td><td>参加全員</td></tr>
+      <tr><td>個人ランキング報酬</td><td>個人ポイント順位に応じた報酬</td><td>10,000メリット以上</td></tr>
+      <tr><td>個人メリット報酬</td><td>キャニオンショップで使用可能なイベント通貨</td><td>参加者全員</td></tr>
+    </table>
+  </div>
+
+  <div class="tip">
+    <div class="tip-head">💡 報酬ポイント</div>
+    <p>自動昇格の場合は2位相当の報酬が配布されます。レギオン1・レギオン2それぞれで個人ランキング報酬が別途配布されます。</p>
+  </div>
+</div>
+
+<!-- 8. 攻略 -->
+<div class="section">
+  <span class="anchor" id="strategy"></span>
+  <div class="section-header">
+    <span class="section-icon">🧠</span>
+    <span class="section-title">8. 攻略・戦略</span>
+  </div>
+
+  <div class="card">
+    <div class="card-title">燃料管理（最重要）</div>
+    <ul class="guide">
+      <li>全行動（派遣・移動・回復・復活）が<strong>燃料を消費</strong></li>
+      <li>燃料は毎分自然回復。建物にガーディアンを配置すると収入増</li>
+      <li><strong style="color:#fca5a5;">即時復活は高コスト</strong>——「徴兵（Conscript）」を優先使用</li>
+      <li>徴兵は非戦闘建物に駐屯中の部隊にのみ有効</li>
+      <li>燃料切れは戦力の大幅低下に直結するため計画的に使用</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="card-title">序盤の動き</div>
+    <ul class="guide">
+      <li>部隊を<strong>3チームに分割</strong>し、各方向へ展開</li>
+      <li>中立建物を素早く占領して安全ルートを確保</li>
+      <li>進軍速度アップ（Speed Up）を積極的に使用</li>
+      <li>各チームに強力なプレイヤーを最低2名ずつ配置</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="card-title">中盤の動き</div>
+    <ul class="guide">
+      <li>主要要塞の奪取・保持に集中</li>
+      <li>港とゲートを確保して移動経路を支配</li>
+      <li>敵の侵攻ルートを絞り込むため要塞を死守</li>
+      <li>無駄な攻撃を避け、<strong>戦略的に重要な建物</strong>に集中</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="card-title">終盤・宮殿強攻フェーズ</div>
+    <ul class="guide">
+      <li>氷封宮殿が開放されたら全戦力で争奪</li>
+      <li><strong style="color:#fbbf24;">50,000ptボーナス</strong>は逆転に十分な威力</li>
+      <li>リードしている場合：宮殿を防衛しながら他建物も保持</li>
+      <li>負けている場合：宮殿のみに全戦力を集中する選択肢も有効</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="card-title">部隊・指揮管理</div>
+    <ul class="guide">
+      <li>司令官（Commander）は素早い意思決定ができる人を選出</li>
+      <li>試合中はチャット入力が追いつかないため、<strong>事前に作戦を共有</strong></li>
+      <li>重要拠点に戦力を集中させ、ランダム攻撃は避ける</li>
+      <li>バスティオンで回復中の部隊を効率よく再展開</li>
+    </ul>
+  </div>
+
+  <div class="tip">
+    <div class="tip-head">✅ 勝利の公式</div>
+    <p><strong>燃料効率 × 地の利（要塞制圧）× 宮殿争奪</strong> の3要素を制した連盟が勝利します。無差別な攻撃より「保持している建物を守る」ことが長期的にスコアを高めます。</p>
+  </div>
+
+  <div class="warn">
+    <div class="warn-head">❌ やってはいけないこと</div>
+    <p>・燃料を序盤に使い切ること<br>
+    ・重要でない建物に大量部隊を投入すること<br>
+    ・宮殿フェーズで戦力が燃料切れになること<br>
+    ・連盟内で事前連絡なく各自が動くこと</p>
+  </div>
+</div>
+
+<!-- 9. 用語集 -->
+<div class="section">
+  <span class="anchor" id="glossary"></span>
+  <div class="section-header">
+    <span class="section-icon">📖</span>
+    <span class="section-title">9. 用語集</span>
+  </div>
+
+  <div class="card">
+    <table>
+      <tr><th>日本語</th><th>英語</th><th>説明</th></tr>
+      <tr><td>峡谷合戦</td><td>Canyon Clash</td><td>イベント名</td></tr>
+      <tr><td>ロストキャニオン</td><td>Lost Canyon</td><td>戦場マップ名</td></tr>
+      <tr><td>氷封宮殿</td><td>Frozen Citadel</td><td>最終目標の中央拠点</td></tr>
+      <tr><td>拠点（バスティオン）</td><td>Bastion</td><td>連盟スタート地点・回復地</td></tr>
+      <tr><td>レギオン</td><td>Legion</td><td>連盟の参加部隊単位</td></tr>
+      <tr><td>徴兵</td><td>Conscript</td><td>低コストの部隊回復手段</td></tr>
+      <tr><td>守護者</td><td>Guardian</td><td>建物に配置し燃料収入増加</td></tr>
+      <tr><td>個人メリット</td><td>Personal Merit</td><td>個人貢献スコア・通貨</td></tr>
+      <tr><td>奪取フェーズ</td><td>Seize &amp; Conquer</td><td>第1フェーズ（17分）</td></tr>
+      <tr><td>要塞占領</td><td>Fortress Occupation</td><td>第2フェーズ（20分）</td></tr>
+      <tr><td>宮殿強攻</td><td>Citadel Onslaught</td><td>第3フェーズ（20分）</td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="footer">
+  峡谷合戦 完全ガイド &mdash; Whiteout Survival<br>
+  作成日: 2026年6月
+</div>
+
+</body>
+</html>

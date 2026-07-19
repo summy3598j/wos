@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ホワサバ 英雄装備バフ計算</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --card: #161b22;
+    --border: #30363d;
+    --accent: #58a6ff;
+    --accent2: #f78166;
+    --green: #3fb950;
+    --yellow: #d29922;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 15px;
+    padding: 12px;
+    min-height: 100vh;
+  }
+  h1 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--accent);
+    text-align: center;
+    margin-bottom: 16px;
+    letter-spacing: .5px;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 14px;
+  }
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    margin-bottom: 12px;
+  }
+  label {
+    display: block;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 4px;
+    margin-top: 10px;
+  }
+  label:first-of-type { margin-top: 0; }
+  select, input[type=number] {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 15px;
+    padding: 8px 10px;
+    outline: none;
+    -webkit-appearance: none;
+  }
+  select:focus, input[type=number]:focus {
+    border-color: var(--accent);
+  }
+  input[type=range] {
+    width: 100%;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  .row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .row input[type=number] {
+    width: 70px;
+    flex-shrink: 0;
+  }
+  .row input[type=range] { flex: 1; }
+  .result-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .stat-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+  }
+  .stat-box.highlight { border-color: var(--accent); }
+  .stat-label {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .stat-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .stat-value.hp { color: var(--green); }
+  .stat-value.lethality { color: var(--accent2); }
+  .stat-unit { font-size: 13px; font-weight: 400; }
+
+  .milestone-list { margin-top: 4px; }
+  .milestone-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .milestone-row:last-child { border-bottom: none; }
+  .milestone-row.locked { opacity: .35; }
+  .milestone-lv { font-weight: 600; color: var(--accent); min-width: 36px; }
+  .milestone-buffs { color: var(--text); }
+  .milestone-buffs span { color: var(--muted); font-size: 12px; }
+  .badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 99px;
+    font-weight: 600;
+  }
+  .badge-on { background: #1f4620; color: var(--green); }
+  .badge-off { background: #21262d; color: var(--muted); }
+
+  .resource-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .res-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 8px;
+    text-align: center;
+  }
+  .res-label { font-size: 11px; color: var(--muted); margin-bottom: 3px; }
+  .res-value { font-size: 20px; font-weight: 700; color: var(--yellow); }
+  .res-unit { font-size: 12px; color: var(--muted); font-weight: 400; }
+
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 14px;
+  }
+  .tab {
+    flex: 1;
+    padding: 9px 4px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    transition: all .15s;
+  }
+  .tab.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .mastery-bar-wrap {
+    background: var(--bg);
+    border-radius: 99px;
+    height: 8px;
+    overflow: hidden;
+    margin-top: 6px;
+  }
+  .mastery-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 99px;
+    transition: width .2s;
+  }
+  .mastery-hint {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+    text-align: right;
+  }
+</style>
+</head>
+<body>
+
+<h1>⚔️ ホワサバ 英雄装備バフ計算</h1>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('buff')">バフ計算</div>
+  <div class="tab" onclick="switchTab('resource')">素材計算</div>
+</div>
+
+<!-- ===== バフ計算タブ ===== -->
+<div id="tab-buff" class="panel active">
+
+  <div class="card">
+    <div class="card-title">装備設定</div>
+
+    <label>装備スロット</label>
+    <select id="slot" onchange="update()">
+      <option value="goggles">ゴーグル（殺傷力アップ）</option>
+      <option value="gloves">グローブ（HPアップ）</option>
+      <option value="belt">ベルト（HPアップ）</option>
+      <option value="boots">靴（殺傷力アップ）</option>
+    </select>
+
+    <label>強化レベル（0〜100）</label>
+    <div class="row">
+      <input type="range" id="enh-range" min="0" max="100" value="0"
+             oninput="sync('enh-range','enh-num');update()">
+      <input type="number" id="enh-num" min="0" max="100" value="0"
+             oninput="sync('enh-num','enh-range');update()">
+    </div>
+
+    <label>精錬鍛造レベル（0〜20）</label>
+    <div class="row">
+      <input type="range" id="mas-range" min="0" max="20" value="0"
+             oninput="sync('mas-range','mas-num');update()">
+      <input type="number" id="mas-num" min="0" max="20" value="0"
+             oninput="sync('mas-num','mas-range');update()">
+    </div>
+    <div class="mastery-bar-wrap"><div class="mastery-bar" id="mas-bar" style="width:0%"></div></div>
+    <div class="mastery-hint" id="mas-hint">倍率: ×1.00</div>
+
+    <label>基礎遠征バフ（装備の元の遠征ステータス %）</label>
+    <input type="number" id="base-exp" min="0" value="0" oninput="update()">
+
+    <label>基礎探検バフ（装備の元の探検ステータス %）</label>
+    <input type="number" id="base-expl" min="0" value="0" oninput="update()">
+  </div>
+
+  <div class="card">
+    <div class="card-title">計算結果</div>
+    <div class="result-grid">
+      <div class="stat-box highlight">
+        <div class="stat-label" id="exp-label">遠征 殺傷力</div>
+        <div class="stat-value lethality" id="exp-value">0<span class="stat-unit">%</span></div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">遠征 探検</div>
+        <div class="stat-value" id="expl-value">0<span class="stat-unit">%</span></div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">精錬倍率</div>
+        <div class="stat-value" id="mul-value">×1.00</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">配能ボーナス（遠征）</div>
+        <div class="stat-value" id="mile-value">+0<span class="stat-unit">%</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">配能（ミスリル強化）マイルストーン</div>
+    <div class="milestone-list" id="milestones"></div>
+  </div>
+
+</div><!-- /tab-buff -->
+
+<!-- ===== 素材計算タブ ===== -->
+<div id="tab-resource" class="panel">
+
+  <div class="card">
+    <div class="card-title">精錬鍛造 素材計算</div>
+    <label>目標 精錬レベル（1〜20）</label>
+    <div class="row">
+      <input type="range" id="r-mas-range" min="1" max="20" value="10"
+             oninput="sync('r-mas-range','r-mas-num');calcRes()">
+      <input type="number" id="r-mas-num" min="1" max="20" value="10"
+             oninput="sync('r-mas-num','r-mas-range');calcRes()">
+    </div>
+    <div class="resource-grid" style="margin-top:12px">
+      <div class="res-box">
+        <div class="res-label">エナジー源石（累計）</div>
+        <div class="res-value" id="r-stones">0<span class="res-unit"> 個</span></div>
+      </div>
+      <div class="res-box">
+        <div class="res-label">神話装備（累計）</div>
+        <div class="res-value" id="r-mythic">0<span class="res-unit"> 個</span></div>
+      </div>
+    </div>
+    <div id="r-mastery-table" style="margin-top:12px"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">配能（ミスリル） 素材計算</div>
+    <label>目標 強化レベル</label>
+    <select id="r-enh-target" onchange="calcRes()">
+      <option value="20">+20（第1段階）</option>
+      <option value="40">+40（第2段階）</option>
+      <option value="60">+60（第3段階）</option>
+      <option value="80">+80（第4段階）</option>
+      <option value="100">+100（第5段階・最大）</option>
+    </select>
+    <div class="resource-grid" style="margin-top:12px">
+      <div class="res-box">
+        <div class="res-label">ミスリル（累計）</div>
+        <div class="res-value" id="r-mithril">0<span class="res-unit"> 個</span></div>
+      </div>
+      <div class="res-box">
+        <div class="res-label">レジェンド装備（累計）</div>
+        <div class="res-value" id="r-legend">0<span class="res-unit"> 個</span></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /tab-resource -->
+
+<script>
+const MILESTONES = [
+  { lv: 20,  exp: 20,  expl: 7.5,  mithril: 10, legend: 3  },
+  { lv: 40,  exp: 30,  expl: 10,   mithril: 20, legend: 5  },
+  { lv: 60,  exp: 15,  expl: 10,   mithril: 30, legend: 5  },
+  { lv: 80,  exp: 50,  expl: 15,   mithril: 40, legend: 10 },
+  { lv: 100, exp: 30,  expl: 15,   mithril: 50, legend: 10 },
+];
+const SLOT_TYPE = { goggles:'lethality', gloves:'hp', belt:'hp', boots:'lethality' };
+const SLOT_JP   = { goggles:'殺傷力', gloves:'HP', belt:'HP', boots:'殺傷力' };
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) =>
+    t.classList.toggle('active', ['buff','resource'][i] === name));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+function sync(src, dst) {
+  const v = document.getElementById(src).value;
+  document.getElementById(dst).value = v;
+}
+
+function clamp(v, min, max) { return Math.min(Math.max(Number(v)||0, min), max); }
+function r2(v) { return Math.round(v * 100) / 100; }
+
+function update() {
+  const slot     = document.getElementById('slot').value;
+  const enhLv    = clamp(document.getElementById('enh-num').value, 0, 100);
+  const masLv    = clamp(document.getElementById('mas-num').value, 0, 20);
+  const baseExp  = clamp(document.getElementById('base-exp').value, 0, 9999);
+  const baseExpl = clamp(document.getElementById('base-expl').value, 0, 9999);
+
+  // mastery bar
+  document.getElementById('mas-bar').style.width = (masLv / 20 * 100) + '%';
+  const mul = 1 + masLv * 0.10;
+  document.getElementById('mas-hint').textContent = `倍率: ×${mul.toFixed(2)}`;
+
+  const boostedExp  = r2(baseExp  * mul);
+  const boostedExpl = r2(baseExpl * mul);
+
+  const unlocked = MILESTONES.filter(m => enhLv >= m.lv);
+  const mileExp  = unlocked.reduce((s, m) => s + m.exp,  0);
+  const mileExpl = unlocked.reduce((s, m) => s + m.expl, 0);
+
+  const totalExp  = r2(boostedExp  + mileExp);
+  const totalExpl = r2(boostedExpl + mileExpl);
+
+  const type = SLOT_TYPE[slot];
+  const jp   = SLOT_JP[slot];
+
+  document.getElementById('exp-label').textContent   = `遠征 ${jp}`;
+  document.getElementById('exp-value').innerHTML     = `${totalExp}<span class="stat-unit">%</span>`;
+  document.getElementById('exp-value').className     =
+    'stat-value ' + (type === 'hp' ? 'hp' : 'lethality');
+  document.getElementById('expl-value').innerHTML    = `${totalExpl}<span class="stat-unit">%</span>`;
+  document.getElementById('mul-value').textContent   = `×${mul.toFixed(2)}`;
+  document.getElementById('mile-value').innerHTML    = `+${mileExp}<span class="stat-unit">%</span>`;
+
+  // milestones list
+  const list = document.getElementById('milestones');
+  list.innerHTML = MILESTONES.map(m => {
+    const on = enhLv >= m.lv;
+    return `<div class="milestone-row ${on ? '' : 'locked'}">
+      <span class="milestone-lv">+${m.lv}</span>
+      <span class="milestone-buffs">
+        遠征+${m.exp}% <span>/ 探検+${m.expl}%</span>
+      </span>
+      <span class="badge ${on ? 'badge-on' : 'badge-off'}">${on ? '解放' : 'ロック'}</span>
+    </div>`;
+  }).join('');
+}
+
+function calcRes() {
+  const masLv = clamp(document.getElementById('r-mas-num').value, 1, 20);
+
+  // essence stones = sum(10, 20, ..., masLv*10) = masLv*(masLv+1)/2 * 10
+  const stones = masLv * (masLv + 1) / 2 * 10;
+  // mythic gear = sum(1..max(0, masLv-10))
+  const above = Math.max(0, masLv - 10);
+  const mythic = above * (above + 1) / 2;
+
+  document.getElementById('r-stones').innerHTML = `${stones}<span class="res-unit"> 個</span>`;
+  document.getElementById('r-mythic').innerHTML = `${mythic}<span class="res-unit"> 個</span>`;
+
+  // mastery table
+  const rows = Array.from({length: masLv}, (_, i) => {
+    const n = i + 1;
+    const mg = n > 10 ? n - 10 : 0;
+    return `<div class="milestone-row">
+      <span class="milestone-lv">Lv${n}</span>
+      <span class="milestone-buffs">+${n*10}% <span>× 全バフ</span></span>
+      <span style="font-size:12px;color:var(--muted)">石×${n*10}${mg > 0 ? ` 神×${mg}` : ''}</span>
+    </div>`;
+  });
+  document.getElementById('r-mastery-table').innerHTML = rows.join('');
+
+  // mithril
+  const target = Number(document.getElementById('r-enh-target').value);
+  const mithril = MILESTONES.filter(m => m.lv <= target).reduce((s,m) => s + m.mithril, 0);
+  const legend  = MILESTONES.filter(m => m.lv <= target).reduce((s,m) => s + m.legend, 0);
+  document.getElementById('r-mithril').innerHTML = `${mithril}<span class="res-unit"> 個</span>`;
+  document.getElementById('r-legend').innerHTML  = `${legend}<span class="res-unit"> 個</span>`;
+}
+
+// init
+update();
+calcRes();
+</script>
+</body>
+</html>
