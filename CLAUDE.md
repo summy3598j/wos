@@ -36,6 +36,19 @@ wos/
 
 このリポジトリは **`gh-pages` ブランチ**が GitHub Pages の公開ソースです。開発ブランチ（本ブランチ）での変更は、公開したい場合に `gh-pages` ブランチへ反映（コピー・コミット・push）する必要があります。
 
+`gh-pages` は必ず開発ブランチからの一方通行で反映すること。`gh-pages` を直接編集しない（hotfixも含む）。これを守っていれば、開発ブランチには常に公開版と同じかそれより新しい内容が入っている状態が保証される。
+
+### 開発開始前の同期チェック
+
+新しい作業を始める前に、公開対象ファイルが開発ブランチと `gh-pages` で一致しているか確認する。
+
+```
+git fetch origin gh-pages <開発ブランチ名>
+git diff --name-status origin/<開発ブランチ名> origin/gh-pages -- index.html fc-calculator.html phase2.html phase3.html heal-calculator.html resource-calc.html event-scheduler.html canyon-battle.html hero-gear-calc.html ocr-phase1.html manifest.json sw.js .nojekyll
+```
+
+出力が空であれば同一バージョン。差分がある場合は `gh-pages` にのみ存在する変更（直接編集されたhotfixなど）を先に開発ブランチへ取り込んでから、新しい作業を始めること。
+
 ## ブランチ運用
 
 開発ブランチはデフォルトブランチの `claude/wos-html-tool-consolidation-amqy1n` 一本に統一しています。以前は作業（新ツール追加など）のたびに新しいブランチ（`claude/xxx-yyyyy` 形式）が作られ、マージも削除もされないまま放置されて多数残ってしまっていました。今後は次のルールを守ること。
