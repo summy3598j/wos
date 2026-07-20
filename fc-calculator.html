@@ -123,6 +123,7 @@ input,select{outline:none;}
     <label class="buff-chk"><input type="checkbox" id="b-vice" onchange="onVice('vice')"><span>副官</span><span class="buff-tag">+10%</span></label>
     <label class="buff-chk"><input type="checkbox" id="b-vicesup" onchange="onVice('sup')"><span>副官(至高)</span><span class="buff-tag">+15%</span></label>
     <label class="buff-chk"><input type="checkbox" id="b-lords" onchange="save();render()"><span>領主指令</span><span class="buff-tag">+20%</span></label>
+    <label class="buff-chk"><input type="checkbox" id="b-chancellor" onchange="save();render()"><span>執政官</span><span class="buff-tag">+10%</span></label>
   </div>
   <div class="buff-row">
     <span class="buff-lbl">建造速度</span>
@@ -147,8 +148,14 @@ input,select{outline:none;}
       <option value="8">Lv5 -8h</option>
     </select>
     <span class="buff-lbl">建造コスト削減</span>
-    <input class="buff-inp" type="number" id="b-mat" value="0" min="0" max="100" oninput="save();render()">
-    <span class="buff-lbl">%</span>
+    <select class="buff-sel" id="b-mat" onchange="save();render()">
+      <option value="0">なし</option>
+      <option value="3">Lv1 +3%</option>
+      <option value="6">Lv2 +6%</option>
+      <option value="9">Lv3 +9%</option>
+      <option value="12">Lv4 +12%</option>
+      <option value="15">Lv5 +15%</option>
+    </select>
   </div>
 </div>
 
@@ -186,7 +193,7 @@ input,select{outline:none;}
     </div>
     <div class="help-sec">
       <h3>建築バフ</h3>
-      <p>副官(10%)と副官(至高)(15%)はどちらか一方のみ選択可。領主指令は建設時間-20%。<br>建造速度は領主ファイルの「総力」右の🔎マークで確認できます。<br>建造コスト削減はジンマンの遠征第2スキルによるものです。ペットスキルは建造速度ボーナス(%)です。<br>アグネスのスキルは建造アクションごとに時間を固定短縮（他のバフ適用後に減算）します。</p>
+      <p>副官(10%)と副官(至高)(15%)はどちらか一方のみ選択可。領主指令は建設時間-20%。執政官スキルは+10%の建造速度バフです。<br>建造速度は領主ファイルの「総力」右の🔎マークで確認できます。<br>建造コスト削減はジンマンの遠征第2スキルのレベル（Lv1: +3%〜Lv5: +15%）で選択します。ペットスキルは建造速度ボーナス(%)です。<br>アグネスのスキルは建造アクションごとに時間を固定短縮（他のバフ適用後に減算）します。</p>
     </div>
     <div class="help-sec">
       <h3>所持アイテム</h3>
@@ -319,7 +326,7 @@ const INV_FIELDS = [
 // ============================================================
 const defState = () => ({
   buildings: Object.fromEntries(BUILDINGS.map(b=>[b.id,{from:{fc:0,sub:0},to:{fc:5,sub:0},enabled:true}])),
-  buffs:{base:0,pet:0,agnes:0,vice:false,viceSup:false,lords:false,matReduce:0},
+  buffs:{base:0,pet:0,agnes:0,vice:false,viceSup:false,lords:false,chancellor:false,matReduce:0},
   inv:{fc:0,rfc:0,meat:0,wood:0,coal:0,iron:0},
 });
 
@@ -333,6 +340,7 @@ function save(){
     S.buffs.vice      = document.getElementById('b-vice')?.checked||false;
     S.buffs.viceSup   = document.getElementById('b-vicesup')?.checked||false;
     S.buffs.lords     = document.getElementById('b-lords')?.checked||false;
+    S.buffs.chancellor= document.getElementById('b-chancellor')?.checked||false;
     S.buffs.matReduce = parseFloat(document.getElementById('b-mat')?.value)||0;
     localStorage.setItem('fc3',JSON.stringify(S));
   }catch(e){}
@@ -418,8 +426,9 @@ function getBuffs(){
   const agnes=parseInt(document.getElementById('b-agnes')?.value)||0;
   const vice=document.getElementById('b-vice')?.checked?10:document.getElementById('b-vicesup')?.checked?15:0;
   const lords=document.getElementById('b-lords')?.checked?20:0;
+  const chancellor=document.getElementById('b-chancellor')?.checked?10:0;
   const matR=parseFloat(document.getElementById('b-mat')?.value)||0;
-  const accel=lords, speed=base+pet+vice;
+  const accel=lords, speed=base+pet+vice+chancellor;
   const agnesD=agnes/24;
   const tBuf=d=>d*(1-accel/100)/(1+speed/100);
   const tBufA=(d,n)=>Math.max(0, tBuf(d) - n*agnesD);
@@ -689,6 +698,7 @@ function restoreBackup(){
     document.getElementById('b-vice').checked    =S.buffs.vice||false;
     document.getElementById('b-vicesup').checked =S.buffs.viceSup||false;
     document.getElementById('b-lords').checked   =S.buffs.lords||false;
+    document.getElementById('b-chancellor').checked=S.buffs.chancellor||false;
     document.getElementById('b-mat').value       =S.buffs.matReduce||0;
     document.getElementById('b-agnes').value     =S.buffs.agnes||0;
     INV_FIELDS.forEach(f=>{const el=document.getElementById(`ii-${f.id}`);if(el)el.value=S.inv[f.id]||'';});
@@ -707,6 +717,7 @@ function clearAll(){
   document.getElementById('b-vice').checked=false;
   document.getElementById('b-vicesup').checked=false;
   document.getElementById('b-lords').checked=false;
+  document.getElementById('b-chancellor').checked=false;
   document.getElementById('b-mat').value=0;
   document.getElementById('b-agnes').value=0;
   INV_FIELDS.forEach(f=>{const el=document.getElementById(`ii-${f.id}`);if(el)el.value='';});
@@ -723,6 +734,7 @@ document.getElementById('b-agnes').value     = S.buffs.agnes||0;
 document.getElementById('b-vice').checked    = S.buffs.vice||false;
 document.getElementById('b-vicesup').checked = S.buffs.viceSup||false;
 document.getElementById('b-lords').checked   = S.buffs.lords||false;
+document.getElementById('b-chancellor').checked = S.buffs.chancellor||false;
 document.getElementById('b-mat').value       = S.buffs.matReduce||0;
 render();
 </script>
