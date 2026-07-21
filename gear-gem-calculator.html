@@ -714,7 +714,7 @@ function renderParts(){
           +'</div>';
         const jl=jlLabel(lv);
         return '<div class="lvbox" style="border-color:'+bc+';min-height:34px;padding:1px 3px;flex:1;min-width:0;overflow:hidden">'
-          +'<span style="font-size:9px;font-weight:700;color:'+tc+';line-height:1">Lv'+jl.level+'</span>'
+          +'<span style="font-size:9px;font-weight:700;color:'+tc+';line-height:1">'+jl.level+'</span>'
           +'<span style="display:block;font-size:7px;letter-spacing:1px;color:'+tc+';line-height:1.25;height:15px">'+(jl.sub>=0?gemDotsHtml(jl.sub):"")+'</span>'
           +'</div>';
       }
@@ -806,7 +806,7 @@ function renderBulkForm(){
   let html='<p style="font-size:11px;color:#64748b;margin-bottom:8px;">⚔️ 装備 現在レベル</p>';
   PARTS.forEach(p=>{ html+=row(p.label,sel("bulk-g-"+p.id,gCur[p.id],gearOpts)); });
 
-  html+='<p style="font-size:11px;color:#64748b;margin:12px 0 8px;">💎 宝石 現在レベル（スワイプ or ⏫レベル/▲サブステージ）</p>';
+  html+='<p style="font-size:11px;color:#64748b;margin:12px 0 8px;">💎 宝石 現在レベル（スワイプ or ⏫レベル/🔼サブステージ）</p>';
   const bulkBtn=(lbl,onclick)=>'<button style="flex:1;min-width:0;background:#1e3a5c;color:#60a5fa;border:none;border-radius:4px;font-size:10px;padding:2px 0;cursor:pointer;font-weight:700" onclick="'+onclick+'">'+lbl+'</button>';
   PARTS.forEach(p=>{
     const tc=TC[p.troop];
@@ -820,7 +820,7 @@ function renderBulkForm(){
       html+='<div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:1px">';
       html+='<div style="display:flex;gap:1px">'
            +bulkBtn('⏫','setBulkJLevel('+jArg+',1)')
-           +bulkBtn('▲','setBulkJ('+jArg+',(_bulkJ[\''+p.id+'\']['+sl+']+1))')
+           +bulkBtn('🔼','setBulkJ('+jArg+',(_bulkJ[\''+p.id+'\']['+sl+']+1))')
            +'</div>';
       html+='<div id="bjbox-'+p.id+'-'+sl+'" data-id="'+p.id+'" data-sl="'+sl+'"'
            +' style="text-align:center;border:1.5px solid '+bc+';border-radius:5px;background:#0d1b2a;'
@@ -829,7 +829,7 @@ function renderBulkForm(){
            +bulkGemBoxHtml(v)+'</div>';
       html+='<div style="display:flex;gap:1px">'
            +bulkBtn('⏬','setBulkJLevel('+jArg+',-1)')
-           +bulkBtn('▼','setBulkJ('+jArg+',(_bulkJ[\''+p.id+'\']['+sl+']-1))')
+           +bulkBtn('🔽','setBulkJ('+jArg+',(_bulkJ[\''+p.id+'\']['+sl+']-1))')
            +'</div>';
       html+='</div>';
     }
