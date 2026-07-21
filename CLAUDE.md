@@ -8,7 +8,7 @@
 
 ```
 wos/
-├── home.html                  # ホーム（4ツールへのリンク一覧、公開時のトップページ案内先）
+├── index.html                 # ホーム（4ツールへのリンク一覧。旧 home.html）
 ├── gear-gem-calculator.html   # 領主装備・宝石計算ツール（装備強化・宝石LvUP プランナー、PWA本体。旧 index.html）
 ├── manifest.json              # PWA manifest（gear-gem-calculator.html 用）
 ├── sw.js                      # Service Worker（gear-gem-calculator.html 用、cache-first）
@@ -31,9 +31,9 @@ wos/
 
 **各 HTML ファイルは基本的に単一ファイル完結（HTML + CSS + JS 一体）で、ビルド不要です。** `src/` 以下の TypeScript は `hero-gear-calc.html` のロジック検証用テストであり、HTML 自体はこの TS をビルドして使っているわけではない（ロジックは HTML 内に直接インラインで書かれている）ので、`src/` を編集しても `hero-gear-calc.html` には自動反映されません。両方を編集する場合は手動で同期してください。
 
-`wos/` 直下に `index.html` は存在しない（`gear-gem-calculator.html` にリネーム済み）。そのため `https://summy3598j.github.io/wos/`（末尾スラッシュのみ）は 404 になる。公開時のトップページ案内は `home.html` を使うこと。
+`index.html` は旧 `home.html` をリネームしたホーム（各ツールへのリンク一覧）で、`https://summy3598j.github.io/wos/`（末尾スラッシュのみ）でアクセスできる。装備・宝石計算ツール自体は別途 `gear-gem-calculator.html`（旧 `index.html`）に存在するので、ファイル名の使い回しに注意すること。
 
-`home.html` は領主装備・宝石／火晶建築資源／都市資源生産／治療資源の4ツールへのリンクを持つ。それ以外のツール間はページ間リンクを持たない独立したページで、相互参照はなく、それぞれ直接 URL（例: `https://summy3598j.github.io/wos/fc-calculator.html`）でアクセスします。
+`index.html`（ホーム）は領主装備・宝石／火晶建築資源／都市資源生産／治療資源の4ツールへのリンクを持つ。それ以外のツール間はページ間リンクを持たない独立したページで、相互参照はなく、それぞれ直接 URL（例: `https://summy3598j.github.io/wos/fc-calculator.html`）でアクセスします。
 
 ## デプロイ
 
@@ -47,7 +47,7 @@ wos/
 
 ```
 git fetch origin gh-pages <開発ブランチ名>
-git diff --name-status origin/<開発ブランチ名> origin/gh-pages -- home.html gear-gem-calculator.html fc-calculator.html phase2.html phase3.html heal-calculator.html resource-calc.html event-scheduler.html canyon-battle.html hero-gear-calc.html ocr-phase1.html manifest.json sw.js .nojekyll
+git diff --name-status origin/<開発ブランチ名> origin/gh-pages -- index.html gear-gem-calculator.html fc-calculator.html phase2.html phase3.html heal-calculator.html resource-calc.html event-scheduler.html canyon-battle.html hero-gear-calc.html ocr-phase1.html manifest.json sw.js .nojekyll
 ```
 
 出力が空であれば同一バージョン。差分がある場合は `gh-pages` にのみ存在する変更（直接編集されたhotfixなど）を先に開発ブランチへ取り込んでから、新しい作業を始めること。
