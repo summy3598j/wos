@@ -6,11 +6,14 @@
 
 開発はこのリポジトリ（`summy3598j/wos`）に一本化しています。以前 `wos-search` リポジトリで開発していた英雄装備バフ計算・OCR系ツールもこちらに統合済みです。
 
+`https://summy3598j.github.io/wos/` にはファイルが存在しないため、公開時のトップページとしては [home.html](https://summy3598j.github.io/wos/home.html) を案内する。
+
 ## 公開中のツール
 
 | ファイル | 内容 |
 |---|---|
-| [index.html](https://summy3598j.github.io/wos/) | WOS 装備計算機（装備強化・宝石LvUP プランナー、PWA） |
+| [home.html](https://summy3598j.github.io/wos/home.html) | ホーム（各ツールへのリンク一覧） |
+| [gear-gem-calculator.html](https://summy3598j.github.io/wos/gear-gem-calculator.html) | 領主装備・宝石計算ツール（装備強化・宝石LvUP プランナー、PWA） |
 | [fc-calculator.html](https://summy3598j.github.io/wos/fc-calculator.html) | 火晶計算ツール |
 | [hero-gear-calc.html](https://summy3598j.github.io/wos/hero-gear-calc.html) | 英雄装備バフ計算 |
 | [heal-calculator.html](https://summy3598j.github.io/wos/heal-calculator.html) | 治療計算ツール |
@@ -21,7 +24,7 @@
 | [phase3.html](https://summy3598j.github.io/wos/phase3.html) | スクショ解析 Phase 3（アイコン照合＋ROIデジット認識） |
 | [ocr-phase1.html](https://summy3598j.github.io/wos/ocr-phase1.html) | スクショ解析 Phase 1（袋の中の数値OCR） |
 
-各ページは独立したツールで、相互リンクはありません。
+`home.html` は上記4ツール（gear-gem-calculator / fc-calculator / resource-calc / heal-calculator）へのリンクを持つが、それ以外のページは独立したツールで相互リンクはない。
 
 ## 開発
 

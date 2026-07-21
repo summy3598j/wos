@@ -8,19 +8,20 @@
 
 ```
 wos/
-├── index.html            # WOS 装備計算機（装備強化・宝石LvUP プランナー、PWA本体）
-├── manifest.json         # PWA manifest（index.html 用）
-├── sw.js                 # Service Worker（index.html 用、cache-first）
-├── fc-calculator.html    # 火晶計算ツール
-├── phase2.html           # スクショ解析 Phase 2（テンプレートマッチ）
-├── phase3.html           # スクショ解析 Phase 3（アイコン照合＋ROIデジット認識）
-├── heal-calculator.html  # 治療計算ツール
-├── resource-calc.html    # 都市資源生産量計算
-├── event-scheduler.html  # 予定告知メーカー
-├── canyon-battle.html    # 峡谷合戦 完全ガイド
-├── hero-gear-calc.html   # 英雄装備バフ計算（旧 wos-search / index.html）
-├── ocr-phase1.html       # スクショ解析 Phase 1（袋の中の数値OCR、Tesseract.js）
-├── src/                  # hero-gear-calc.html のロジックの TypeScript 版 + テスト（Jest）
+├── home.html                  # ホーム（4ツールへのリンク一覧、公開時のトップページ案内先）
+├── gear-gem-calculator.html   # 領主装備・宝石計算ツール（装備強化・宝石LvUP プランナー、PWA本体。旧 index.html）
+├── manifest.json              # PWA manifest（gear-gem-calculator.html 用）
+├── sw.js                      # Service Worker（gear-gem-calculator.html 用、cache-first）
+├── fc-calculator.html         # 火晶計算ツール
+├── phase2.html                # スクショ解析 Phase 2（テンプレートマッチ）
+├── phase3.html                # スクショ解析 Phase 3（アイコン照合＋ROIデジット認識）
+├── heal-calculator.html       # 治療計算ツール
+├── resource-calc.html         # 都市資源生産量計算
+├── event-scheduler.html       # 予定告知メーカー
+├── canyon-battle.html         # 峡谷合戦 完全ガイド
+├── hero-gear-calc.html        # 英雄装備バフ計算（旧 wos-search / index.html）
+├── ocr-phase1.html            # スクショ解析 Phase 1（袋の中の数値OCR、Tesseract.js）
+├── src/                       # hero-gear-calc.html のロジックの TypeScript 版 + テスト（Jest）
 │   ├── calc/heroGearBuffs.ts
 │   ├── calc/heroGearBuffs.test.ts
 │   └── data/heroGear.ts
@@ -30,7 +31,9 @@ wos/
 
 **各 HTML ファイルは基本的に単一ファイル完結（HTML + CSS + JS 一体）で、ビルド不要です。** `src/` 以下の TypeScript は `hero-gear-calc.html` のロジック検証用テストであり、HTML 自体はこの TS をビルドして使っているわけではない（ロジックは HTML 内に直接インラインで書かれている）ので、`src/` を編集しても `hero-gear-calc.html` には自動反映されません。両方を編集する場合は手動で同期してください。
 
-各ツールはページ間リンクを持たない独立したページです。相互参照はなく、それぞれ直接 URL（例: `https://summy3598j.github.io/wos/fc-calculator.html`）でアクセスします。
+`wos/` 直下に `index.html` は存在しない（`gear-gem-calculator.html` にリネーム済み）。そのため `https://summy3598j.github.io/wos/`（末尾スラッシュのみ）は 404 になる。公開時のトップページ案内は `home.html` を使うこと。
+
+`home.html` は領主装備・宝石／火晶建築資源／都市資源生産／治療資源の4ツールへのリンクを持つ。それ以外のツール間はページ間リンクを持たない独立したページで、相互参照はなく、それぞれ直接 URL（例: `https://summy3598j.github.io/wos/fc-calculator.html`）でアクセスします。
 
 ## デプロイ
 
@@ -44,7 +47,7 @@ wos/
 
 ```
 git fetch origin gh-pages <開発ブランチ名>
-git diff --name-status origin/<開発ブランチ名> origin/gh-pages -- index.html fc-calculator.html phase2.html phase3.html heal-calculator.html resource-calc.html event-scheduler.html canyon-battle.html hero-gear-calc.html ocr-phase1.html manifest.json sw.js .nojekyll
+git diff --name-status origin/<開発ブランチ名> origin/gh-pages -- home.html gear-gem-calculator.html fc-calculator.html phase2.html phase3.html heal-calculator.html resource-calc.html event-scheduler.html canyon-battle.html hero-gear-calc.html ocr-phase1.html manifest.json sw.js .nojekyll
 ```
 
 出力が空であれば同一バージョン。差分がある場合は `gh-pages` にのみ存在する変更（直接編集されたhotfixなど）を先に開発ブランチへ取り込んでから、新しい作業を始めること。
@@ -57,11 +60,11 @@ git diff --name-status origin/<開発ブランチ名> origin/gh-pages -- index.h
 - 可能な限り、新規ブランチを切らずデフォルトブランチ上で直接作業する。
 - `gh-pages` ブランチは公開専用として残す（削除しない）。
 
-## Application Architecture（index.html — WOS 装備計算機）
+## Application Architecture（gear-gem-calculator.html — 領主装備・宝石計算ツール）
 
 ### Single-file design
 
-All logic, styles, and markup live in `index.html`. The structure inside the file is:
+All logic, styles, and markup live in `gear-gem-calculator.html`. The structure inside the file is:
 
 1. `<head>` — meta tags + embedded CSS (minified inline styles)
 2. `<body>` — static shell (header, mode bar, buff area, material row, parts grid, modals)
@@ -78,7 +81,7 @@ Mode is toggled via `setMode(m)` and persisted in `localStorage`.
 
 ## Data Tables
 
-### `GL[]` — Gear Level table (index.html ~line 160)
+### `GL[]` — Gear Level table (gear-gem-calculator.html ~line 160)
 
 27 entries (index 0 = sentinel "none", 1–26 = actual grades).
 
@@ -97,7 +100,7 @@ Key fields per entry:
 | `def3` | 3-piece set bonus value (changes at tier boundaries) |
 | `atk6` | 6-piece set bonus value (changes at tier boundaries) |
 
-### `JL[]` — Gem Level table (index.html ~line 189)
+### `JL[]` — Gem Level table (gear-gem-calculator.html ~line 189)
 
 17 entries (index 0 = level 0, 1–16 = gem levels).
 
@@ -151,10 +154,10 @@ The 6-piece attack bonus uses the **6th-lowest-ranked** (minimum) equipped part'
 
 `GL_TIERS` is a filtered subset of `GL` containing only the first entry per distinct `def3` value — used to find the minimum rank at which each set bonus tier activates.
 
-## PWA / Service Worker (index.html)
+## PWA / Service Worker (gear-gem-calculator.html)
 
 `sw.js` implements a **cache-first** strategy:
-- On install: caches `./`, `./index.html`, `./manifest.json`, `./sw.js` under a versioned cache key
+- On install: caches `./gear-gem-calculator.html`, `./manifest.json`, `./sw.js` under a versioned cache key
 - On activate: deletes all caches whose key ≠ current version
 - On fetch: serves from cache; if miss, fetches from network and caches the response
 
@@ -175,7 +178,7 @@ The 6-piece attack bonus uses the **6th-lowest-ranked** (minimum) equipped part'
 - **No comments by default**: The codebase has minimal comments. Add a comment only when the logic is non-obvious.
 - **Language**: All user-visible text is Japanese. Keep it that way. Variable names and code are English.
 
-## Notification Dots (index.html)
+## Notification Dots (gear-gem-calculator.html)
 
 Each part card shows a colored dot in its top-right corner:
 
