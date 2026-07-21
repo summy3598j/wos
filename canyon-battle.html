@@ -493,5 +493,6 @@ ul.guide li strong{color:#93c5fd;}
   作成日: 2026年6月
 </div>
 
+<script>if("serviceWorker" in navigator)navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>{if(!r.scope.endsWith("/gear-gem-calculator.html"))r.unregister();}));</script>
 </body>
 </html>
