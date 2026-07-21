@@ -738,6 +738,6 @@ document.getElementById('b-chancellor').checked = S.buffs.chancellor||false;
 document.getElementById('b-mat').value       = S.buffs.matReduce||0;
 render();
 </script>
-<script>if("serviceWorker" in navigator)navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>{if(!r.scope.endsWith("/gear-gem-calculator.html"))r.unregister();}));</script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("./sw.js",{scope:"./"});});}</script>
 </body>
 </html>

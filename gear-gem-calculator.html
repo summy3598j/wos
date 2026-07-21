@@ -929,8 +929,9 @@ function checkPw(){
 
 render();
 if('serviceWorker' in navigator){
-  // scopeを明示し、他ページ（index.htmlなど）まで誤ってキャッシュ制御下に入らないようにする
-  window.addEventListener('load',()=>{ navigator.serviceWorker.register('./sw.js',{scope:'./gear-gem-calculator.html'}); });
+  // index.html/fc-calculator.html/resource-calc.html/heal-calculator.htmlと共有のSW（オフライン対応の対象は
+  // sw.js内のAPP_FILESで明示的に絞っているので、scopeをルートにしても他の独立ツールはキャッシュされない）
+  window.addEventListener('load',()=>{ navigator.serviceWorker.register('./sw.js',{scope:'./'}); });
 }
 </script>
 
