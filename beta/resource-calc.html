@@ -164,6 +164,62 @@
       padding-bottom: 8px;
     }
 
+    .hdr-wrap { position: relative; }
+
+    .help-btn {
+      position: absolute;
+      top: 50%;
+      right: 14px;
+      transform: translateY(-50%);
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(255,215,0,0.15);
+      border: 1px solid rgba(255,215,0,0.4);
+      color: #ffd700;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    #help-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.82);
+      z-index: 600;
+      display: none;
+      align-items: flex-start;
+      justify-content: center;
+      overflow-y: auto;
+      padding: 16px 10px;
+    }
+    .help-box {
+      background: #1a1e30;
+      border: 1px solid #2a3050;
+      border-radius: 14px;
+      max-width: 480px;
+      width: 100%;
+      padding: 16px 15px;
+    }
+    .help-ttl { font-size: 1rem; font-weight: 700; color: #ffd700; margin-bottom: 12px; }
+    .help-sec { margin-bottom: 12px; }
+    .help-sec h3 { font-size: 0.8rem; font-weight: 700; color: #ffd700; margin-bottom: 4px; }
+    .help-sec p { font-size: 0.78rem; color: #99a; line-height: 1.6; }
+    .help-close {
+      display: block;
+      width: 100%;
+      background: rgba(255,215,0,0.12);
+      border: 1px solid rgba(255,215,0,0.35);
+      color: #ffd700;
+      border-radius: 9px;
+      padding: 10px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      margin-top: 6px;
+      text-align: center;
+      cursor: pointer;
+    }
+
     @media (min-width: 520px) {
       body { padding: 20px; max-width: 640px; margin: 0 auto; }
     }
@@ -171,9 +227,39 @@
 </head>
 <body>
 
-<h1>⚔️ WOS 都市資源生産量計算</h1>
+<div class="hdr-wrap">
+  <h1>⚔️ WOS 都市資源生産量計算</h1>
+  <button class="help-btn" onclick="openHelp()">？</button>
+</div>
 
 <div id="cards"></div>
+
+<div id="help-modal">
+  <div class="help-box">
+    <div class="help-ttl">📖 使い方</div>
+    <div class="help-sec">
+      <h3>入力する項目</h3>
+      <p>各資源カードをタップすると開閉します。「稼働中の総生産速度」「研究バフ（%）」「英雄バフ（%）」の3つを入力すると、下の生産量一覧が自動計算されます。</p>
+    </div>
+    <div class="help-sec">
+      <h3>① 稼働中の総生産速度の調べ方</h3>
+      <p>ゲーム内で各資源アイコンをタップ→「分配一覧」画面の「生産量」列の数値を入力します。<br>例: 生肉 110.2K/回、木材 42.7K/分、石炭 8.6K/分、鉄鉱 2.0K/分</p>
+    </div>
+    <div class="help-sec">
+      <h3>② 研究バフ（%）の調べ方</h3>
+      <p>「科学研究」→「経済」タブ→画面左上のリストアイコン→「テクノロジー強化一覧」を開き、「経済」セクションの「◯◯生産量」の%値を入力します。<br>例: 生肉生産量 +109.50%、木材生産量 +101.50%、石炭生産量 +101.50%、鉄鉱生産量 +98.00%</p>
+    </div>
+    <div class="help-sec">
+      <h3>③ 英雄バフ（%）の調べ方</h3>
+      <p>英雄のスキルによる資源生産量アップ効果があれば、その合計%を入力します。無い場合は0のままで構いません。</p>
+    </div>
+    <div class="help-sec">
+      <h3>計算方法</h3>
+      <p>稼働率 10/24 を自動適用し、バフ = 1 +（研究バフ＋英雄バフ）÷100 として計算します。</p>
+    </div>
+    <button class="help-close" onclick="closeHelp()">閉じる</button>
+  </div>
+</div>
 
 <div class="result-card">
   <div class="result-title">📊 生産量一覧</div>
@@ -229,6 +315,9 @@
       perWorkerDay: rWorking * 720,
     };
   }
+
+  function openHelp() { document.getElementById('help-modal').style.display = 'flex'; }
+  function closeHelp() { document.getElementById('help-modal').style.display = 'none'; }
 
   const LS_KEY = 'wos_resource_calc_v2';
 
