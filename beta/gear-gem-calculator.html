@@ -704,12 +704,15 @@ function renderParts(){
           +' onclick="event.preventDefault();_gTap(this)">'+lbl+'</button>';
       }
       function gemLvBox(lv,bc){
+        // ドット行は常に確保（sub<0の場合は空）し、レベルが変わっても高さ・位置が動かないようにする
         if(lv<=0) return '<div class="lvbox" style="border-color:#1e3a5c;min-height:28px;padding:1px 3px;flex:1">'
-          +'<span style="font-size:9px;font-weight:700;color:#475569;line-height:1">—</span></div>';
+          +'<span style="font-size:9px;font-weight:700;color:#475569;line-height:1">—</span>'
+          +'<span style="display:block;font-size:6px;letter-spacing:1px;line-height:1.3;height:8px"></span>'
+          +'</div>';
         const jl=jlLabel(lv);
         return '<div class="lvbox" style="border-color:'+bc+';min-height:28px;padding:1px 3px;flex:1">'
           +'<span style="font-size:9px;font-weight:700;color:'+tc+';line-height:1">Lv'+jl.level+'</span>'
-          +(jl.sub>=0?'<span style="font-size:6px;letter-spacing:1px;color:'+tc+';line-height:1.3">'+gemDots(jl.sub)+'</span>':"")
+          +'<span style="display:block;font-size:6px;letter-spacing:1px;color:'+tc+';line-height:1.3;height:8px">'+(jl.sub>=0?gemDots(jl.sub):"")+'</span>'
           +'</div>';
       }
       let lv_row='<div style="display:flex;align-items:center;gap:2px">';
@@ -864,9 +867,10 @@ function applyBulk(){
 function openHelp(){document.getElementById("modal-help").style.display="flex";}
 function closeHelp(){document.getElementById("modal-help").style.display="none";}
 function bulkGemBoxHtml(v){
-  if(v<=0) return '—';
+  // ドット行は常に確保（サブステージが無いレベルでは空）し、高さが変わらないようにする
+  if(v<=0) return '<div>—</div><div style="font-size:7px;letter-spacing:1px;height:9px"></div>';
   const jl=jlLabel(v);
-  return '<div>Lv'+jl.level+'</div>'+(jl.sub>=0?'<div style="font-size:7px;letter-spacing:1px">'+gemDots(jl.sub)+'</div>':"");
+  return '<div>Lv'+jl.level+'</div><div style="font-size:7px;letter-spacing:1px;height:9px">'+(jl.sub>=0?gemDots(jl.sub):"")+'</div>';
 }
 function setBulkJ(id,sl,v){
   if(!_bulkJ)return;
