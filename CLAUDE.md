@@ -100,9 +100,11 @@ Key fields per entry:
 | `def3` | 3-piece set bonus value (changes at tier boundaries) |
 | `atk6` | 6-piece set bonus value (changes at tier boundaries) |
 
-### `JL[]` — Gem Level table (gear-gem-calculator.html ~line 189)
+### `JL_BASE[]` / `JL[]` — Gem Level table (gear-gem-calculator.html ~line 189)
 
-17 entries (index 0 = level 0, 1–16 = gem levels).
+`JL_BASE` holds the 17 whole-level entries (index 0 = level 0, 1–16 = gem levels), same as the original data. `JL` is generated from it at load time: index 0–4 map 1:1 to levels 0–4 unchanged, but from level 4 onward each level-up is split into `GEM_SUB` (5) sub-stages (4.0→4.1→4.2→4.3→4.4→5.0→…→16.0), so `JL` ends up with 65 entries and `JL_MAX` is 64. Material cost per whole-level entry in `JL_BASE` is divided evenly across its 5 sub-stage entries (`splitEven`); `lethality`/`hp` only change at the whole-level boundary (the 5th sub-stage), not on every sub-stage, since the buff itself doesn't increase until the level is fully reached. `jlLabel(idx)` converts a `JL` index back to `{level, sub}` for display, and `gemDots(sub)` renders the sub-stage progress as `●○` dots.
+
+Saved gem levels are versioned (`SAVE_VER`, currently 2) because this sub-stage split changed what a raw index means; `migrateGemLvs` converts any pre-v2 saved index (old scheme: index === whole level, 0–16) to the new index via `migrateOldGemIndex` before use.
 
 ## State Management
 

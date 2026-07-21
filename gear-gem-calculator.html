@@ -186,7 +186,8 @@ const GL = [
   {rarity:"Legend",tier:"T2",stars:2, rank:25, alloy:45000, polish:460, plan:80,  buff:82.28, def3:9.0, atk6:9.0},
   {rarity:"Legend",tier:"T2",stars:3, rank:26, alloy:48000, polish:500, plan:85,  buff:85.00, def3:9.0, atk6:9.0},
 ];
-const JL = [
+// JL_BASE: レベル0〜16の丸ごと1段分のデータ（旧テーブル、Lv4以降はここからサブステージに分割される）
+const JL_BASE = [
   {lethality:0,   hp:0,   plan:0,   hb:0,   secret:0},
   {lethality:9.0, hp:9.0, plan:5,   hb:5,   secret:0},
   {lethality:12.0,hp:12.0,plan:15,  hb:40,  secret:0},
@@ -205,6 +206,44 @@ const JL = [
   {lethality:91.0,hp:91.0,plan:500, hb:600, secret:70},
   {lethality:100.0,hp:100.0,plan:550,hb:640,secret:100},
 ];
+const GEM_SUB=5; // Lv4以降、1レベルにつき5サブステージ（4.0→4.1→4.2→4.3→4.4→5.0 …）
+
+// 合計をn個の整数に過不足なく分割（端数は前方に1ずつ乗せる）
+function splitEven(total,n){
+  const base=Math.floor(total/n), rem=total-base*n;
+  return Array.from({length:n},(_,i)=>base+(i<rem?1:0));
+}
+
+// JL_BASE を Lv4 以降サブステージ展開した実データ。index<=4 はそのまま、
+// index5以降は JL_BASE[L] のレベルアップ必要数を5分割し、バフ(lethality/hp)は
+// そのレベルを完全に達成するまでは前レベルの値を維持する（サブステージ自体は
+// バフを増やさず、次レベルへの素材消化の途中経過として扱う）。
+const JL=(function(){
+  const out=JL_BASE.slice(0,5);
+  for(let L=5;L<JL_BASE.length;L++){
+    const step=JL_BASE[L], prev=JL_BASE[L-1];
+    const plans=splitEven(step.plan,GEM_SUB), hbs=splitEven(step.hb,GEM_SUB), secrets=splitEven(step.secret,GEM_SUB);
+    for(let s=0;s<GEM_SUB;s++){
+      const reachesFullLevel=s===GEM_SUB-1;
+      out.push({
+        lethality:reachesFullLevel?step.lethality:prev.lethality,
+        hp:reachesFullLevel?step.hp:prev.hp,
+        plan:plans[s], hb:hbs[s], secret:secrets[s],
+      });
+    }
+  }
+  return out;
+})();
+
+// index → {level, sub}。sub は次の整数レベルまでの進捗（0〜4）。Lv0〜3はサブステージなし(sub:-1)。
+function jlLabel(idx){
+  if(idx<=3) return {level:idx, sub:-1};
+  const u=idx-4;
+  return {level:4+Math.floor(u/GEM_SUB), sub:u%GEM_SUB};
+}
+// サブステージ進捗のドット表示（●が完了分）
+function gemDots(sub){return sub<0?"":"●".repeat(sub)+"○".repeat(GEM_SUB-sub);}
+
 const PARTS=[
   {id:"cap",  label:"帽子",  troop:"槍"},{id:"watch",label:"時計",  troop:"槍"},
   {id:"coat", label:"コート",troop:"盾"},{id:"pants",label:"ズボン",troop:"盾"},
@@ -238,20 +277,34 @@ function glLabel1(g){
 function defLvs(){return {cap:0,watch:0,coat:0,pants:0,ring:0,staff:0};}
 function defGemLvs(){return {cap:[0,0,0],watch:[0,0,0],coat:[0,0,0],pants:[0,0,0],ring:[0,0,0],staff:[0,0,0]};}
 function defInv(){return {alloy:0,polish:0,plan:0,gemPlan:0,gemHb:0,gemSecret:0};}
-// 旧形式（数値フラット）→新形式（配列）へ移行
-function migrateGemLvs(d){
+// SAVE_VER 2: 宝石レベルをLv4以降サブステージ展開（1レベル→5段）した際のindex体系変更。
+// ver未満2（旧データ）は「旧index=そのままのレベル」から新indexへ変換してから読み込む。
+const SAVE_VER=2;
+function migrateOldGemIndex(oldIdx){
+  const L=Math.max(0,Math.min(16,oldIdx));
+  return L<=4?L:4+(L-4)*GEM_SUB;
+}
+// 旧形式（数値フラット）→新形式（配列）へ移行。verが2未満ならindex体系も変換する。
+function migrateGemLvs(d,ver){
   if(!d) return defGemLvs();
   const r=defGemLvs();
-  PARTS.forEach(p=>{if(Array.isArray(d[p.id]))r[p.id]=d[p.id].slice(0,3).map(v=>Math.max(0,Math.min(JL_MAX,+v||0)));});
+  const oldScheme=(ver||1)<2;
+  PARTS.forEach(p=>{
+    if(Array.isArray(d[p.id]))r[p.id]=d[p.id].slice(0,3).map(v=>{
+      let n=Math.max(0,+v||0);
+      if(oldScheme) n=migrateOldGemIndex(n);
+      return Math.min(JL_MAX,n);
+    });
+  });
   return r;
 }
 
 // 自動保存（変更のたびに呼ばれる）
-function saveBk(){try{localStorage.setItem("wos_bk",JSON.stringify({mode,gCur,gTgt,jCur,jTgt,inv}));}catch{}}
+function saveBk(){try{localStorage.setItem("wos_bk",JSON.stringify({ver:SAVE_VER,mode,gCur,gTgt,jCur,jTgt,inv}));}catch{}}
 function loadBk(){try{const s=localStorage.getItem("wos_bk");return s?JSON.parse(s):null;}catch{return null;}}
 // 手動保存/復元（設定画面から）
 function saveData(){
-  try{localStorage.setItem("wos_save",JSON.stringify({mode,gCur,gTgt,jCur,jTgt,inv}));alert("保存しました");}
+  try{localStorage.setItem("wos_save",JSON.stringify({ver:SAVE_VER,mode,gCur,gTgt,jCur,jTgt,inv}));alert("保存しました");}
   catch{alert("保存に失敗しました");}
 }
 function loadData(){
@@ -260,7 +313,7 @@ function loadData(){
     if(!s){alert("保存データがありません");return;}
     const d=JSON.parse(s);
     mode=d.mode||"gear"; gCur=d.gCur||defLvs(); gTgt=d.gTgt||defLvs();
-    jCur=migrateGemLvs(d.jCur); jTgt=migrateGemLvs(d.jTgt); inv=d.inv||defInv();
+    jCur=migrateGemLvs(d.jCur,d.ver); jTgt=migrateGemLvs(d.jTgt,d.ver); inv=d.inv||defInv();
     saveBk(); render(); closeSettings(); alert("復元しました");
   }catch{alert("復元に失敗しました");}
 }
@@ -271,8 +324,8 @@ const _auto=loadBk();
 let mode=_auto?.mode||"gear";
 let gCur=_auto?.gCur||defLvs();
 let gTgt=_auto?.gTgt||defLvs();
-let jCur=migrateGemLvs(_auto?.jCur);
-let jTgt=migrateGemLvs(_auto?.jTgt);
+let jCur=migrateGemLvs(_auto?.jCur,_auto?.ver);
+let jTgt=migrateGemLvs(_auto?.jTgt,_auto?.ver);
 let inv=_auto?.inv||defInv();
 let editKey=null;
 let _bulkJ=null;
@@ -650,21 +703,24 @@ function renderParts(){
           +' onpointerdown="event.preventDefault();_gRep(this)" onpointerup="stopRep()" onpointerleave="stopRep()"'
           +' onclick="event.preventDefault();_gTap(this)">'+lbl+'</button>';
       }
+      function gemLvBox(lv,bc){
+        if(lv<=0) return '<div class="lvbox" style="border-color:#1e3a5c;min-height:28px;padding:1px 3px;flex:1">'
+          +'<span style="font-size:9px;font-weight:700;color:#475569;line-height:1">—</span></div>';
+        const jl=jlLabel(lv);
+        return '<div class="lvbox" style="border-color:'+bc+';min-height:28px;padding:1px 3px;flex:1">'
+          +'<span style="font-size:9px;font-weight:700;color:'+tc+';line-height:1">Lv'+jl.level+'</span>'
+          +(jl.sub>=0?'<span style="font-size:6px;letter-spacing:1px;color:'+tc+';line-height:1.3">'+gemDots(jl.sub)+'</span>':"")
+          +'</div>';
+      }
       let lv_row='<div style="display:flex;align-items:center;gap:2px">';
       for(let sl=0;sl<3;sl++){
         const cl=cls[sl],cbc=cl>0?tc:"#1e3a5c";
-        lv_row+='<div class="lvbox" style="border-color:'+cbc+';min-height:24px;padding:1px 3px;flex:1">'
-          +'<span style="font-size:9px;font-weight:700;color:'+(cl>0?tc:"#475569")+';line-height:1">'+(cl>0?"Lv":"—")+'</span>'
-          +(cl>0?'<span style="font-size:9px;font-weight:700;color:#e2e8f0;line-height:1">'+cl+'</span>':"")
-          +'</div>';
+        lv_row+=gemLvBox(cl,cbc);
       }
       lv_row+='<span style="color:#334155;font-size:10px;flex-shrink:0;padding:0 2px">→</span>';
       for(let sl=0;sl<3;sl++){
         const tl=tls[sl],tbc=tl>cls[sl]?tc:"#1e3a5c";
-        lv_row+='<div class="lvbox" style="border-color:'+tbc+';min-height:24px;padding:1px 3px;flex:1">'
-          +'<span style="font-size:9px;font-weight:700;color:'+(tl>0?tc:"#475569")+';line-height:1">'+(tl>0?"Lv":"—")+'</span>'
-          +(tl>0?'<span style="font-size:9px;font-weight:700;color:#e2e8f0;line-height:1">'+tl+'</span>':"")
-          +'</div>';
+        lv_row+=gemLvBox(tl,tbc);
       }
       lv_row+='</div>';
       let up_row='<div style="display:flex;gap:2px">';
@@ -758,9 +814,9 @@ function renderBulkForm(){
            +' onclick="setBulkJ(\''+p.id+'\','+sl+',(_bulkJ[\''+p.id+'\']['+sl+']+1))">▲</button>';
       html+='<div id="bjbox-'+p.id+'-'+sl+'" data-id="'+p.id+'" data-sl="'+sl+'"'
            +' style="text-align:center;border:1.5px solid '+bc+';border-radius:5px;background:#0d1b2a;'
-           +'padding:3px 0;font-size:12px;font-weight:700;color:'+(v>0?'#e2e8f0':'#475569')+';touch-action:none;cursor:ns-resize;"'
+           +'padding:3px 0;font-size:12px;font-weight:700;color:'+(v>0?'#e2e8f0':'#475569')+';touch-action:none;cursor:ns-resize;line-height:1.3;"'
            +' ontouchstart="_bSwipeStart(event,this)" ontouchmove="_bSwipeMove(event,this)" ontouchend="_bSwY=null">'
-           +(v>0?v:'—')+'</div>';
+           +bulkGemBoxHtml(v)+'</div>';
       html+='<button style="background:#1e3a5c;color:#60a5fa;border:none;border-radius:4px;font-size:11px;padding:2px 0;cursor:pointer;font-weight:700"'
            +' onclick="setBulkJ(\''+p.id+'\','+sl+',(_bulkJ[\''+p.id+'\']['+sl+']-1))">▼</button>';
       html+='</div>';
@@ -807,13 +863,18 @@ function applyBulk(){
 }
 function openHelp(){document.getElementById("modal-help").style.display="flex";}
 function closeHelp(){document.getElementById("modal-help").style.display="none";}
+function bulkGemBoxHtml(v){
+  if(v<=0) return '—';
+  const jl=jlLabel(v);
+  return '<div>Lv'+jl.level+'</div>'+(jl.sub>=0?'<div style="font-size:7px;letter-spacing:1px">'+gemDots(jl.sub)+'</div>':"");
+}
 function setBulkJ(id,sl,v){
   if(!_bulkJ)return;
   _bulkJ[id][sl]=Math.max(0,Math.min(JL_MAX,+v||0));
   const val=_bulkJ[id][sl];
   const box=document.getElementById('bjbox-'+id+'-'+sl);
   if(!box)return;
-  box.textContent=val>0?val:'—';
+  box.innerHTML=bulkGemBoxHtml(val);
   box.style.color=val>0?'#e2e8f0':'#475569';
   box.style.borderColor=val>0?TC[PARTS.find(p=>p.id===id).troop]:'#334155';
 }
