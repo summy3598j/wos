@@ -81,6 +81,6 @@ a.card:active{background:#16304d;}
 
 <div class="ftr">summy3598j/wos</div>
 
-<script>if("serviceWorker" in navigator)navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>{if(!r.scope.endsWith("/gear-gem-calculator.html"))r.unregister();}));</script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("./sw.js",{scope:"./"});});}</script>
 </body>
 </html>

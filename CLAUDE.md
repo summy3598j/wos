@@ -11,7 +11,7 @@ wos/
 ├── index.html                 # ホーム（4ツールへのリンク一覧。旧 home.html）
 ├── gear-gem-calculator.html   # 領主装備・宝石計算ツール（装備強化・宝石LvUP プランナー、PWA本体。旧 index.html）
 ├── manifest.json              # PWA manifest（gear-gem-calculator.html 用）
-├── sw.js                      # Service Worker（gear-gem-calculator.html 用、cache-first）
+├── sw.js                      # Service Worker（index.html＋4ツールのオフライン対応、cache-first）
 ├── fc-calculator.html         # 火晶計算ツール
 ├── phase2.html                # スクショ解析 Phase 2（テンプレートマッチ）
 ├── phase3.html                # スクショ解析 Phase 3（アイコン照合＋ROIデジット認識）
@@ -156,14 +156,18 @@ The 6-piece attack bonus uses the **6th-lowest-ranked** (minimum) equipped part'
 
 `GL_TIERS` is a filtered subset of `GL` containing only the first entry per distinct `def3` value — used to find the minimum rank at which each set bonus tier activates.
 
-## PWA / Service Worker (gear-gem-calculator.html)
+## PWA / Service Worker (offline support)
 
-`sw.js` implements a **cache-first** strategy:
-- On install: caches `./gear-gem-calculator.html`, `./manifest.json`, `./sw.js` under a versioned cache key
+`sw.js` is shared by the 5 pages that make up the installable app — `index.html` (home) and the 4 tools linked from it: `gear-gem-calculator.html`, `fc-calculator.html`, `resource-calc.html`, `heal-calculator.html`. Each of those 5 pages registers it with `{scope:'./'}` (the `wos/` directory root) so that the bare root URL (`/`) is covered too — a single-file scope can't cover a directory-index request.
+
+Registering at the directory root would, by default, let the service worker intercept every page under `wos/`, including the independent tools (`phase2.html`, `phase3.html`, `event-scheduler.html`, `canyon-battle.html`, `hero-gear-calc.html`, `ocr-phase1.html`) that were never meant to be part of this offline app. To prevent that, `sw.js`'s `fetch` handler checks the request URL against an explicit allowlist (`APP_URLS`, built from `APP_FILES`) and does nothing (`return` without calling `respondWith`) for anything not in it — those pages fall through to a normal, uncached network request. Only the 5 pages don't register the service worker at all.
+
+`sw.js` implements a **cache-first** strategy for the allowlisted files:
+- On install: caches `APP_FILES` (`./`, `./index.html`, and the 4 tool pages, plus `./manifest.json`/`./sw.js`) under a versioned cache key — precached in full on first visit to *any* of the 5 pages, so all 5 work offline even if the others were never individually visited
 - On activate: deletes all caches whose key ≠ current version
-- On fetch: serves from cache; if miss, fetches from network and caches the response
+- On fetch: for allowlisted URLs, serves from cache; if miss, fetches from network and caches the response
 
-**When updating the app:** bump the cache version string in `sw.js` so returning users get the new version rather than the stale cached files.
+**When updating the app:** bump the cache version string in `sw.js` so returning users get the new version rather than the stale cached files. If you add or remove a page from the offline app, update `APP_FILES` in `sw.js` and the registration list above together.
 
 ## Development Workflow
 
