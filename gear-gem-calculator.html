@@ -242,7 +242,9 @@ function jlLabel(idx){
   return {level:4+Math.floor(u/GEM_SUB), sub:u%GEM_SUB};
 }
 // サブステージ進捗のドット表示（●が完了分）。subは0〜4の4段階分の進捗そのものなのでドットは4つ。
+// 横幅が狭いボックスでも切れないよう2個ずつ2行に分けて表示する。
 function gemDots(sub){return sub<0?"":"●".repeat(sub)+"○".repeat(GEM_SUB-1-sub);}
+function gemDotsHtml(sub){if(sub<0)return"";const d=gemDots(sub);return d.slice(0,2)+"<br>"+d.slice(2,4);}
 
 const PARTS=[
   {id:"cap",  label:"帽子",  troop:"槍"},{id:"watch",label:"時計",  troop:"槍"},
@@ -705,15 +707,15 @@ function renderParts(){
       }
       function gemLvBox(lv,bc){
         // ドット行は常に確保（sub<0の場合は空）し、レベルが変わっても高さ・位置が動かないようにする。
-        // min-width:0とoverflow:hiddenで、ドット文字の内容幅がflex:1の等分配を崩さないようにする。
-        if(lv<=0) return '<div class="lvbox" style="border-color:#1e3a5c;min-height:28px;padding:1px 3px;flex:1;min-width:0;overflow:hidden">'
+        // min-width:0とoverflow:hiddenで、ドット文字の内容幅がflex:1の等分配を崩さないようにする。ドットは2行×2個。
+        if(lv<=0) return '<div class="lvbox" style="border-color:#1e3a5c;min-height:34px;padding:1px 3px;flex:1;min-width:0;overflow:hidden">'
           +'<span style="font-size:9px;font-weight:700;color:#475569;line-height:1">—</span>'
-          +'<span style="display:block;font-size:6px;letter-spacing:1px;line-height:1.3;height:8px"></span>'
+          +'<span style="display:block;font-size:7px;letter-spacing:1px;line-height:1.25;height:15px"></span>'
           +'</div>';
         const jl=jlLabel(lv);
-        return '<div class="lvbox" style="border-color:'+bc+';min-height:28px;padding:1px 3px;flex:1;min-width:0;overflow:hidden">'
+        return '<div class="lvbox" style="border-color:'+bc+';min-height:34px;padding:1px 3px;flex:1;min-width:0;overflow:hidden">'
           +'<span style="font-size:9px;font-weight:700;color:'+tc+';line-height:1">Lv'+jl.level+'</span>'
-          +'<span style="display:block;font-size:6px;letter-spacing:1px;color:'+tc+';line-height:1.3;height:8px;white-space:nowrap">'+(jl.sub>=0?gemDots(jl.sub):"")+'</span>'
+          +'<span style="display:block;font-size:7px;letter-spacing:1px;color:'+tc+';line-height:1.25;height:15px">'+(jl.sub>=0?gemDotsHtml(jl.sub):"")+'</span>'
           +'</div>';
       }
       let lv_row='<div style="display:flex;align-items:center;gap:2px">';
@@ -804,7 +806,8 @@ function renderBulkForm(){
   let html='<p style="font-size:11px;color:#64748b;margin-bottom:8px;">⚔️ 装備 現在レベル</p>';
   PARTS.forEach(p=>{ html+=row(p.label,sel("bulk-g-"+p.id,gCur[p.id],gearOpts)); });
 
-  html+='<p style="font-size:11px;color:#64748b;margin:12px 0 8px;">💎 宝石 現在レベル（スワイプ or ▲▼）</p>';
+  html+='<p style="font-size:11px;color:#64748b;margin:12px 0 8px;">💎 宝石 現在レベル（スワイプ or ⏫レベル/▲サブステージ）</p>';
+  const bulkBtn=(lbl,onclick)=>'<button style="flex:1;min-width:0;background:#1e3a5c;color:#60a5fa;border:none;border-radius:4px;font-size:10px;padding:2px 0;cursor:pointer;font-weight:700" onclick="'+onclick+'">'+lbl+'</button>';
   PARTS.forEach(p=>{
     const tc=TC[p.troop];
     html+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">';
@@ -813,16 +816,21 @@ function renderBulkForm(){
     for(let sl=0;sl<3;sl++){
       const v=_bulkJ[p.id][sl];
       const bc=v>0?tc:'#334155';
+      const jArg="'"+p.id+"',"+sl;
       html+='<div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:1px">';
-      html+='<button style="background:#1e3a5c;color:#60a5fa;border:none;border-radius:4px;font-size:11px;padding:2px 0;cursor:pointer;font-weight:700"'
-           +' onclick="setBulkJ(\''+p.id+'\','+sl+',(_bulkJ[\''+p.id+'\']['+sl+']+1))">▲</button>';
+      html+='<div style="display:flex;gap:1px">'
+           +bulkBtn('⏫','setBulkJLevel('+jArg+',1)')
+           +bulkBtn('▲','setBulkJ('+jArg+',(_bulkJ[\''+p.id+'\']['+sl+']+1))')
+           +'</div>';
       html+='<div id="bjbox-'+p.id+'-'+sl+'" data-id="'+p.id+'" data-sl="'+sl+'"'
            +' style="text-align:center;border:1.5px solid '+bc+';border-radius:5px;background:#0d1b2a;'
            +'padding:3px 0;font-size:12px;font-weight:700;color:'+(v>0?'#e2e8f0':'#475569')+';touch-action:none;cursor:ns-resize;line-height:1.3;overflow:hidden;"'
            +' ontouchstart="_bSwipeStart(event,this)" ontouchmove="_bSwipeMove(event,this)" ontouchend="_bSwY=null">'
            +bulkGemBoxHtml(v)+'</div>';
-      html+='<button style="background:#1e3a5c;color:#60a5fa;border:none;border-radius:4px;font-size:11px;padding:2px 0;cursor:pointer;font-weight:700"'
-           +' onclick="setBulkJ(\''+p.id+'\','+sl+',(_bulkJ[\''+p.id+'\']['+sl+']-1))">▼</button>';
+      html+='<div style="display:flex;gap:1px">'
+           +bulkBtn('⏬','setBulkJLevel('+jArg+',-1)')
+           +bulkBtn('▼','setBulkJ('+jArg+',(_bulkJ[\''+p.id+'\']['+sl+']-1))')
+           +'</div>';
       html+='</div>';
     }
     html+='</div></div>';
@@ -868,10 +876,23 @@ function applyBulk(){
 function openHelp(){document.getElementById("modal-help").style.display="flex";}
 function closeHelp(){document.getElementById("modal-help").style.display="none";}
 function bulkGemBoxHtml(v){
-  // ドット行は常に確保（サブステージが無いレベルでは空）し、高さが変わらないようにする
-  if(v<=0) return '<div>—</div><div style="font-size:7px;letter-spacing:1px;height:9px"></div>';
+  // ドット行は常に確保（サブステージが無いレベルでは空）し、高さが変わらないようにする。ドットは2行×2個。
+  if(v<=0) return '<div>—</div><div style="font-size:7px;letter-spacing:1px;line-height:1.25;height:15px"></div>';
   const jl=jlLabel(v);
-  return '<div>Lv'+jl.level+'</div><div style="font-size:7px;letter-spacing:1px;height:9px">'+(jl.sub>=0?gemDots(jl.sub):"")+'</div>';
+  return '<div>Lv'+jl.level+'</div><div style="font-size:7px;letter-spacing:1px;line-height:1.25;height:15px">'+(jl.sub>=0?gemDotsHtml(jl.sub):"")+'</div>';
+}
+// (level, sub) → raw index。levelは0〜16、subは0〜(GEM_SUB-1)。Lv3以下はsubなしとして扱う。
+function jlIndexFromLabel(level,sub){
+  level=Math.max(0,Math.min(16,level));
+  if(level<=3) return level;
+  sub=Math.max(0,Math.min(GEM_SUB-1,sub||0));
+  return Math.min(JL_MAX,4+(level-4)*GEM_SUB+sub);
+}
+// 一括入力: レベル単位で±1段（同じサブステージ位置を維持）
+function setBulkJLevel(id,sl,dir){
+  if(!_bulkJ)return;
+  const jl=jlLabel(_bulkJ[id][sl]);
+  setBulkJ(id,sl,jlIndexFromLabel(jl.level+dir,jl.sub>=0?jl.sub:0));
 }
 function setBulkJ(id,sl,v){
   if(!_bulkJ)return;
