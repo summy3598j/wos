@@ -241,8 +241,8 @@ function jlLabel(idx){
   const u=idx-4;
   return {level:4+Math.floor(u/GEM_SUB), sub:u%GEM_SUB};
 }
-// サブステージ進捗のドット表示（●が完了分）
-function gemDots(sub){return sub<0?"":"●".repeat(sub)+"○".repeat(GEM_SUB-sub);}
+// サブステージ進捗のドット表示（●が完了分）。subは0〜4の4段階分の進捗そのものなのでドットは4つ。
+function gemDots(sub){return sub<0?"":"●".repeat(sub)+"○".repeat(GEM_SUB-1-sub);}
 
 const PARTS=[
   {id:"cap",  label:"帽子",  troop:"槍"},{id:"watch",label:"時計",  troop:"槍"},
