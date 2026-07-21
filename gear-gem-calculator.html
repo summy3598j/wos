@@ -876,10 +876,10 @@ function applyBulk(){
 function openHelp(){document.getElementById("modal-help").style.display="flex";}
 function closeHelp(){document.getElementById("modal-help").style.display="none";}
 function bulkGemBoxHtml(v){
-  // ドット行は常に確保（サブステージが無いレベルでは空）し、高さが変わらないようにする。ドットは2行×2個。
-  if(v<=0) return '<div>—</div><div style="font-size:7px;letter-spacing:1px;line-height:1.25;height:15px"></div>';
+  // ドット行は常に確保（サブステージが無いレベルでは空）し、高さが変わらないようにする。一括入力欄は横幅に余裕があるので1行表示。
+  if(v<=0) return '<div>—</div><div style="font-size:7px;letter-spacing:1px;height:9px"></div>';
   const jl=jlLabel(v);
-  return '<div>Lv'+jl.level+'</div><div style="font-size:7px;letter-spacing:1px;line-height:1.25;height:15px">'+(jl.sub>=0?gemDotsHtml(jl.sub):"")+'</div>';
+  return '<div>Lv'+jl.level+'</div><div style="font-size:7px;letter-spacing:1px;height:9px">'+(jl.sub>=0?gemDots(jl.sub):"")+'</div>';
 }
 // (level, sub) → raw index。levelは0〜16、subは0〜(GEM_SUB-1)。Lv3以下はsubなしとして扱う。
 function jlIndexFromLabel(level,sub){
