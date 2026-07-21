@@ -929,7 +929,8 @@ function checkPw(){
 
 render();
 if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>{ navigator.serviceWorker.register('./sw.js'); });
+  // scopeを明示し、他ページ（index.htmlなど）まで誤ってキャッシュ制御下に入らないようにする
+  window.addEventListener('load',()=>{ navigator.serviceWorker.register('./sw.js',{scope:'./gear-gem-calculator.html'}); });
 }
 </script>
 
