@@ -523,15 +523,27 @@ function renderMat(){
       :'<div class="mstat" style="color:'+statColor+'">'+statText+'</div>';
     const needColor=none?"#334155":"#e2e8f0";
     const needText=none?"—":fmt(need);
-    return '<div class="mcell" onclick="openEdit(\''+hk+'\')">'
+    return '<div class="mcell" id="mcell-'+hk+'" onclick="openEdit(\''+hk+'\')">'
       +'<div class="mlbl">'+label+'</div>'
       +'<div class="mneed" style="color:'+needColor+'">'+needText+'</div>'
       +inp+'</div>';
   }
-  el.innerHTML=mode==="gear"
-    ?mc("強靱な合金",tr.alloy,"alloy")+mc("研磨剤",tr.polish,"polish")+mc("設計図面",tr.plan,"plan")
-    :mc("宝石図面",tr.plan,"gemPlan")+mc("宝石HB",tr.hb,"gemHb")+mc("宝石秘典",tr.secret,"gemSecret");
-  if(editKey){requestAnimationFrame(()=>{const i=document.getElementById(`ei-${editKey}`);if(i){i.focus();i.select();}});}
+  const cells=mode==="gear"
+    ?[["強靱な合金",tr.alloy,"alloy"],["研磨剤",tr.polish,"polish"],["設計図面",tr.plan,"plan"]]
+    :[["宝石図面",tr.plan,"gemPlan"],["宝石HB",tr.hb,"gemHb"],["宝石秘典",tr.secret,"gemSecret"]];
+  const sameSet=el.children.length===cells.length&&cells.every((c,i)=>el.children[i].id==="mcell-"+c[2]);
+  if(!sameSet){
+    el.innerHTML=cells.map(c=>mc(c[0],c[1],c[2])).join("");
+  }else{
+    cells.forEach(c=>{
+      if(c[2]===editKey&&document.getElementById("ei-"+editKey)) return;
+      document.getElementById("mcell-"+c[2]).outerHTML=mc(c[0],c[1],c[2]);
+    });
+  }
+  if(editKey){
+    const i=document.getElementById(`ei-${editKey}`);
+    if(i&&document.activeElement!==i){i.focus();i.select();}
+  }
 }
 
 function renderParts(){
