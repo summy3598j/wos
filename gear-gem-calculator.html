@@ -78,7 +78,7 @@ input{outline:none;}
 </div>
 <script>if(localStorage.getItem('wos_auth')==='1')document.getElementById('pw-gate').style.display='none';</script>
 <div class="header">
-  <span class="title">⚔️ WOS 装備計算機 <span style="font-size:9px;color:#475569;font-weight:400;">v9</span></span>
+  <span class="title">⚔️ WOS 装備計算機 <span style="font-size:9px;color:#475569;font-weight:400;">v10</span></span>
   <button class="hbtn" onclick="resetAllTgt()" style="background:#334155;color:#94a3b8;margin-right:4px;">目標R</button>
   <button class="hbtn" onclick="openSettings()" style="background:#1e3a5c;color:#60a5fa;margin-right:4px;">⚙️ 設定</button>
   <button class="hbtn" onclick="openHelp()" style="background:#1e3a5c;color:#93c5fd;">ヘルプ</button>
@@ -215,9 +215,9 @@ function splitEven(total,n){
 }
 
 // JL_BASE を Lv4 以降サブステージ展開した実データ。index<=4 はそのまま、
-// index5以降は JL_BASE[L] のレベルアップ必要数を5分割し、バフ(lethality/hp)は
-// そのレベルを完全に達成するまでは前レベルの値を維持する（サブステージ自体は
-// バフを増やさず、次レベルへの素材消化の途中経過として扱う）。
+// index5以降は JL_BASE[L] のレベルアップ必要数をGEM_SUB分割し、バフ(lethality/hp)も
+// 前レベルから今レベルへ向けて等間隔で徐々に上昇させる（最終段は丸め誤差を避けるため
+// step側の値をそのまま使う）。
 const JL=(function(){
   const out=JL_BASE.slice(0,5);
   for(let L=5;L<JL_BASE.length;L++){
@@ -226,8 +226,8 @@ const JL=(function(){
     for(let s=0;s<GEM_SUB;s++){
       const reachesFullLevel=s===GEM_SUB-1;
       out.push({
-        lethality:reachesFullLevel?step.lethality:prev.lethality,
-        hp:reachesFullLevel?step.hp:prev.hp,
+        lethality:reachesFullLevel?step.lethality:prev.lethality+(step.lethality-prev.lethality)*(s+1)/GEM_SUB,
+        hp:reachesFullLevel?step.hp:prev.hp+(step.hp-prev.hp)*(s+1)/GEM_SUB,
         plan:plans[s], hb:hbs[s], secret:secrets[s],
       });
     }
