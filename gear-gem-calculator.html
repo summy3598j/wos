@@ -206,7 +206,7 @@ const JL_BASE = [
   {lethality:91.0,hp:91.0,plan:500, hb:600, secret:70},
   {lethality:100.0,hp:100.0,plan:550,hb:640,secret:100},
 ];
-const GEM_SUB=5; // Lv4以降、1レベルにつき5サブステージ（4.0→4.1→4.2→4.3→4.4→5.0 …）
+const GEM_SUB=4; // Lv4以降、1レベルにつき4サブステージ（4.0→4.1→4.2→4.3→5.0 …。4個全部埋まった状態=次のレベルの0）
 
 // 合計をn個の整数に過不足なく分割（端数は前方に1ずつ乗せる）
 function splitEven(total,n){
@@ -235,15 +235,15 @@ const JL=(function(){
   return out;
 })();
 
-// index → {level, sub}。sub は次の整数レベルまでの進捗（0〜4）。Lv0〜3はサブステージなし(sub:-1)。
+// index → {level, sub}。sub は次の整数レベルまでの進捗（0〜GEM_SUB-1）。Lv0〜3はサブステージなし(sub:-1)。
 function jlLabel(idx){
   if(idx<=3) return {level:idx, sub:-1};
   const u=idx-4;
   return {level:4+Math.floor(u/GEM_SUB), sub:u%GEM_SUB};
 }
-// サブステージ進捗のドット表示（●が完了分）。subは0〜4の4段階分の進捗そのものなのでドットは4つ。
+// サブステージ進捗のドット表示（●が完了分）。全部埋まる＝次のレベルの0なので、subがGEM_SUBに達することはない。
 // 横幅が狭いボックスでも切れないよう2個ずつ2行に分けて表示する。
-function gemDots(sub){return sub<0?"":"●".repeat(sub)+"○".repeat(GEM_SUB-1-sub);}
+function gemDots(sub){return sub<0?"":"●".repeat(sub)+"○".repeat(GEM_SUB-sub);}
 function gemDotsHtml(sub){if(sub<0)return"";const d=gemDots(sub);return d.slice(0,2)+"<br>"+d.slice(2,4);}
 
 const PARTS=[
