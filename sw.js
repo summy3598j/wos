@@ -1,4 +1,4 @@
-const CACHE='wos-v9';
+const CACHE='wos-v10';
 // オフライン対応の対象（ホームから辿れる4ツール＋ホーム自身）。他の独立ツールは対象外。
 const APP_FILES=['./','./index.html','./gear-gem-calculator.html','./fc-calculator.html','./resource-calc.html','./heal-calculator.html','./manifest.json','./sw.js'];
 const APP_URLS=new Set(APP_FILES.map(f=>new URL(f,self.registration.scope).href));
