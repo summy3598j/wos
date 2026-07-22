@@ -215,9 +215,9 @@ function splitEven(total,n){
 }
 
 // JL_BASE を Lv4 以降サブステージ展開した実データ。index<=4 はそのまま、
-// index5以降は JL_BASE[L] のレベルアップ必要数を5分割し、バフ(lethality/hp)は
-// そのレベルを完全に達成するまでは前レベルの値を維持する（サブステージ自体は
-// バフを増やさず、次レベルへの素材消化の途中経過として扱う）。
+// index5以降は JL_BASE[L] のレベルアップ必要数をGEM_SUB分割し、バフ(lethality/hp)も
+// 前レベルから今レベルへ向けて等間隔で徐々に上昇させる（最終段は丸め誤差を避けるため
+// step側の値をそのまま使う）。
 const JL=(function(){
   const out=JL_BASE.slice(0,5);
   for(let L=5;L<JL_BASE.length;L++){
@@ -226,8 +226,8 @@ const JL=(function(){
     for(let s=0;s<GEM_SUB;s++){
       const reachesFullLevel=s===GEM_SUB-1;
       out.push({
-        lethality:reachesFullLevel?step.lethality:prev.lethality,
-        hp:reachesFullLevel?step.hp:prev.hp,
+        lethality:reachesFullLevel?step.lethality:prev.lethality+(step.lethality-prev.lethality)*(s+1)/GEM_SUB,
+        hp:reachesFullLevel?step.hp:prev.hp+(step.hp-prev.hp)*(s+1)/GEM_SUB,
         plan:plans[s], hb:hbs[s], secret:secrets[s],
       });
     }
