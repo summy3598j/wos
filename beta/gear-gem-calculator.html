@@ -206,7 +206,7 @@ const JL_BASE = [
   {lethality:91.0,hp:91.0,plan:500, hb:600, secret:70},
   {lethality:100.0,hp:100.0,plan:550,hb:640,secret:100},
 ];
-const GEM_SUB=5; // Lv4以降、1レベルにつき5サブステージ（4.0→4.1→4.2→4.3→4.4→5.0 …）
+const GEM_SUB=4; // Lv4以降、1レベルにつき4サブステージ（4.0→4.1→4.2→4.3→5.0 …。4個全部埋まった状態=次のレベルの0）
 
 // 合計をn個の整数に過不足なく分割（端数は前方に1ずつ乗せる）
 function splitEven(total,n){
@@ -235,15 +235,15 @@ const JL=(function(){
   return out;
 })();
 
-// index → {level, sub}。sub は次の整数レベルまでの進捗（0〜4）。Lv0〜3はサブステージなし(sub:-1)。
+// index → {level, sub}。sub は次の整数レベルまでの進捗（0〜GEM_SUB-1）。Lv0〜3はサブステージなし(sub:-1)。
 function jlLabel(idx){
   if(idx<=3) return {level:idx, sub:-1};
   const u=idx-4;
   return {level:4+Math.floor(u/GEM_SUB), sub:u%GEM_SUB};
 }
-// サブステージ進捗のドット表示（●が完了分）。subは0〜4の4段階分の進捗そのものなのでドットは4つ。
+// サブステージ進捗のドット表示（●が完了分）。全部埋まる＝次のレベルの0なので、subがGEM_SUBに達することはない。
 // 横幅が狭いボックスでも切れないよう2個ずつ2行に分けて表示する。
-function gemDots(sub){return sub<0?"":"●".repeat(sub)+"○".repeat(GEM_SUB-1-sub);}
+function gemDots(sub){return sub<0?"":"●".repeat(sub)+"○".repeat(GEM_SUB-sub);}
 function gemDotsHtml(sub){if(sub<0)return"";const d=gemDots(sub);return d.slice(0,2)+"<br>"+d.slice(2,4);}
 
 const PARTS=[
@@ -279,22 +279,33 @@ function glLabel1(g){
 function defLvs(){return {cap:0,watch:0,coat:0,pants:0,ring:0,staff:0};}
 function defGemLvs(){return {cap:[0,0,0],watch:[0,0,0],coat:[0,0,0],pants:[0,0,0],ring:[0,0,0],staff:[0,0,0]};}
 function defInv(){return {alloy:0,polish:0,plan:0,gemPlan:0,gemHb:0,gemSecret:0};}
-// SAVE_VER 2: 宝石レベルをLv4以降サブステージ展開（1レベル→5段）した際のindex体系変更。
-// ver未満2（旧データ）は「旧index=そのままのレベル」から新indexへ変換してから読み込む。
-const SAVE_VER=2;
+// SAVE_VER 2: 宝石レベルをLv4以降サブステージ展開（1レベル→GEM_SUB段）した際のindex体系変更。
+// SAVE_VER 3: サブステージ数をGEM_SUB=5→4に修正（4個全部埋まった状態=次レベルの0、という重複を解消）。
+// verが古いデータは、それぞれの旧index体系から現行のindex体系へ変換してから読み込む。
+const SAVE_VER=3;
 function migrateOldGemIndex(oldIdx){
   const L=Math.max(0,Math.min(16,oldIdx));
   return L<=4?L:4+(L-4)*GEM_SUB;
 }
-// 旧形式（数値フラット）→新形式（配列）へ移行。verが2未満ならindex体系も変換する。
+// ver2（旧GEM_SUB=5）のindexを現行（GEM_SUB=4）のindexへ変換。サブ位置は範囲内にクランプする近似変換。
+function migrateV2GemIndex(oldIdx){
+  if(oldIdx<=3) return oldIdx;
+  const OLD_SUB=5;
+  const u=oldIdx-4;
+  const level=4+Math.floor(u/OLD_SUB);
+  const subOld=u%OLD_SUB;
+  return jlIndexFromLabel(level,Math.min(subOld,GEM_SUB-1));
+}
+// 旧形式（数値フラット）→新形式（配列）へ移行。verに応じてindex体系も変換する。
 function migrateGemLvs(d,ver){
   if(!d) return defGemLvs();
   const r=defGemLvs();
-  const oldScheme=(ver||1)<2;
+  const v=ver||1;
   PARTS.forEach(p=>{
-    if(Array.isArray(d[p.id]))r[p.id]=d[p.id].slice(0,3).map(v=>{
-      let n=Math.max(0,+v||0);
-      if(oldScheme) n=migrateOldGemIndex(n);
+    if(Array.isArray(d[p.id]))r[p.id]=d[p.id].slice(0,3).map(v2=>{
+      let n=Math.max(0,+v2||0);
+      if(v<2) n=migrateOldGemIndex(n);
+      else if(v===2) n=migrateV2GemIndex(n);
       return Math.min(JL_MAX,n);
     });
   });
