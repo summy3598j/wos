@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>都市移転ガイド | WOS</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{background:#0a1628;color:#e2e8f0;font-family:'Hiragino Sans','Noto Sans JP',sans-serif;max-width:520px;margin:0 auto;min-height:100dvh;font-size:14px;line-height:1.6;}
+a{color:#60a5fa;text-decoration:none;}
+
+/* ヘッダー */
+.header{background:linear-gradient(180deg,#1e3a5c,#0d2238);padding:14px 16px 12px;border-bottom:2px solid #1e4d7a;position:sticky;top:0;z-index:10;}
+.header-title{font-size:18px;font-weight:800;color:#93c5fd;letter-spacing:0.03em;}
+.header-sub{font-size:11px;color:#64748b;margin-top:2px;}
+
+/* TOC */
+.toc{background:#0f1f35;border:1px solid #1e3a5c;border-radius:10px;margin:12px;padding:10px 14px;}
+.toc-title{font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;}
+.toc a{display:block;font-size:13px;color:#93c5fd;padding:3px 0;border-bottom:1px solid #1a2d45;}
+.toc a:last-child{border-bottom:none;}
+.toc a:hover{color:#bfdbfe;}
+
+/* セクション */
+.section{margin:0 12px 16px;}
+.section-header{background:linear-gradient(90deg,#1e3a5c,#0f2240);border-left:4px solid #3b82f6;border-radius:6px;padding:8px 12px;margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.section-icon{font-size:18px;}
+.section-title{font-size:15px;font-weight:800;color:#93c5fd;}
+
+/* カード */
+.card{background:#0f1f35;border:1px solid #1e3a5c;border-radius:8px;padding:10px 12px;margin-bottom:8px;}
+.card-title{font-size:13px;font-weight:700;color:#60a5fa;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+.card-title::before{content:'';display:inline-block;width:3px;height:14px;background:#3b82f6;border-radius:2px;}
+
+/* テーブル */
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{background:#1a3a5c;color:#93c5fd;padding:6px 8px;text-align:left;font-weight:700;}
+td{padding:6px 8px;border-bottom:1px solid #1a2d45;color:#cbd5e1;}
+tr:last-child td{border-bottom:none;}
+tr:nth-child(even) td{background:#0d1b2a;}
+
+/* 手順ステップ */
+.phase-list{display:flex;flex-direction:column;gap:6px;}
+.phase{display:flex;gap:10px;align-items:flex-start;}
+.phase-num{background:#1e3a5c;border:2px solid #3b82f6;color:#93c5fd;font-size:12px;font-weight:800;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.phase-body{flex:1;}
+.phase-name{font-size:13px;font-weight:700;color:#e2e8f0;}
+.phase-desc{font-size:12px;color:#94a3b8;margin-top:2px;}
+
+/* チップ */
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px;}
+.chip{background:#1a3a5c;color:#93c5fd;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;}
+.chip.red{background:#3f1515;color:#fca5a5;}
+.chip.green{background:#0f2f1f;color:#6ee7b7;}
+
+/* 座標例 */
+.coord-example{display:flex;gap:8px;margin-top:6px;}
+.coord-box{flex:1;background:#0d1b2a;border:1px solid #1e3a5c;border-radius:6px;padding:8px;text-align:center;}
+.coord-axis{font-size:11px;color:#64748b;margin-bottom:4px;}
+.coord-val{font-size:16px;font-weight:800;}
+.coord-val.ok{color:#4ade80;}
+.coord-val.ng{color:#f87171;}
+
+/* ヒントボックス */
+.tip{background:#0f2a1a;border:1px solid #166534;border-radius:6px;padding:8px 10px;margin-bottom:8px;}
+.tip-head{font-size:12px;font-weight:700;color:#4ade80;margin-bottom:4px;}
+.tip p{font-size:12px;color:#a7f3d0;line-height:1.5;}
+.warn{background:#2a1a0a;border:1px solid #78350f;border-radius:6px;padding:8px 10px;margin-bottom:8px;}
+.warn-head{font-size:12px;font-weight:700;color:#fb923c;margin-bottom:4px;}
+.warn p{font-size:12px;color:#fed7aa;line-height:1.5;}
+.danger{background:#2a0f0f;border:1px solid #7f1d1d;border-radius:6px;padding:8px 10px;margin-bottom:8px;}
+.danger-head{font-size:12px;font-weight:700;color:#f87171;margin-bottom:4px;}
+.danger p{font-size:12px;color:#fecaca;line-height:1.5;}
+
+/* リスト */
+ul.guide{padding-left:16px;}
+ul.guide li{font-size:12px;color:#cbd5e1;margin-bottom:4px;line-height:1.5;}
+ul.guide li strong{color:#93c5fd;}
+
+/* フッター */
+.footer{text-align:center;padding:20px;font-size:11px;color:#334155;}
+
+/* スクロールアンカー用オフセット */
+.anchor{display:block;height:0;margin-top:-60px;padding-top:60px;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">都市移転ガイド</div>
+  <div class="header-sub">Whiteout Survival / 領地都市移転の座標ルール</div>
+</div>
+
+<!-- 目次 -->
+<div class="toc">
+  <div class="toc-title">目次</div>
+  <a href="#overview">1. 概要</a>
+  <a href="#rule">2. 移転先座標のルール</a>
+  <a href="#why">3. なぜ座標を守る必要があるのか</a>
+  <a href="#howto">4. 移転の操作手順</a>
+  <a href="#glossary">5. 用語集</a>
+</div>
+
+<!-- 1. 概要 -->
+<div class="section">
+  <span class="anchor" id="overview"></span>
+  <div class="section-header">
+    <span class="section-icon">🏰</span>
+    <span class="section-title">1. 概要</span>
+  </div>
+
+  <div class="card">
+    <div class="card-title">このガイドについて</div>
+    <p style="font-size:12px;color:#cbd5e1;">
+      同盟領地内で都市を移転（配置）する際の座標ルールをまとめたものです。
+      同盟の陣形は個々の都市の座標が正しく揃っていることで初めて成立するため、
+      移転前に必ず本ガイドの座標条件を確認してください。
+    </p>
+    <div class="chips">
+      <span class="chip">アイテム: 領地都市移転</span>
+      <span class="chip green">X座標: 偶数</span>
+      <span class="chip green">Y座標: 奇数</span>
+    </div>
+  </div>
+</div>
+
+<!-- 2. ルール -->
+<div class="section">
+  <span class="anchor" id="rule"></span>
+  <div class="section-header">
+    <span class="section-icon">📐</span>
+    <span class="section-title">2. 移転先座標のルール</span>
+  </div>
+
+  <div class="card">
+    <div class="card-title">座標条件（必須）</div>
+    <ul class="guide">
+      <li><strong>X座標は偶数</strong>の場所に移転すること</li>
+      <li><strong>Y座標は奇数</strong>の場所に移転すること</li>
+    </ul>
+    <div class="coord-example">
+      <div class="coord-box">
+        <div class="coord-axis">X座標</div>
+        <div class="coord-val ok">766 ✓ 偶数</div>
+      </div>
+      <div class="coord-box">
+        <div class="coord-axis">Y座標</div>
+        <div class="coord-val ok">499 ✓ 奇数</div>
+      </div>
+    </div>
+    <p style="font-size:11px;color:#64748b;margin-top:6px;">※移転先タップ時のポップアップに表示される座標（例: X:766 Y:499）で必ず確認する</p>
+  </div>
+
+  <div class="warn">
+    <div class="warn-head">⚠️ 採集場・野獣を理由にずらさない</div>
+    <p>移転先付近に採集場や野獣（モンスター）が湧いていても、座標をずらす理由にはならない。座標条件（X偶数・Y奇数）を優先すること。</p>
+  </div>
+</div>
+
+<!-- 3. なぜ重要か -->
+<div class="section">
+  <span class="anchor" id="why"></span>
+  <div class="section-header">
+    <span class="section-icon">⚠️</span>
+    <span class="section-title">3. なぜ座標を守る必要があるのか</span>
+  </div>
+
+  <div class="card">
+    <div class="card-title">ズレの影響度</div>
+    <table>
+      <tr><th>ズレの大きさ</th><th>影響</th></tr>
+      <tr><td>都市1つ分のズレ</td><td>後で調整可能。大きな問題にはなりにくい</td></tr>
+      <tr><td>1マス（都市の半分）のズレ</td><td>他の複数の都市が正しい位置に入れなくなるなど、影響が大きい</td></tr>
+    </table>
+  </div>
+
+  <div class="danger">
+    <div class="danger-head">❌ 特に注意すべき場所</div>
+    <p>クマ罠の近く・クマ罠の間に入る場合は、1マスのズレが周囲の複数都市の配置に連鎖的な影響を及ぼすため、<strong>X座標偶数・Y座標奇数を必ず守ること</strong>。</p>
+  </div>
+</div>
+
+<!-- 4. 操作手順 -->
+<div class="section">
+  <span class="anchor" id="howto"></span>
+  <div class="section-header">
+    <span class="section-icon">🛠️</span>
+    <span class="section-title">4. 移転の操作手順</span>
+  </div>
+
+  <div class="card">
+    <div class="phase-list">
+      <div class="phase">
+        <div class="phase-num">1</div>
+        <div class="phase-body">
+          <div class="phase-name">同盟領地内の空き地をタップ</div>
+          <div class="phase-desc">マップ上で移転候補地（緑色表示のマス）を選択し、座標表示（X:○○ Y:○○）でルールに合致しているか確認する。</div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-num">2</div>
+        <div class="phase-body">
+          <div class="phase-name">「移転」を選択</div>
+          <div class="phase-desc">ポップアップの「建造／移転／占領／爆弾使用」から「移転」をタップする。</div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-num">3</div>
+        <div class="phase-body">
+          <div class="phase-name">「領地都市移転」アイテムで確定</div>
+          <div class="phase-desc">所持数を確認し、アイテムを消費して都市を移転する。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tip">
+    <div class="tip-head">✅ 移転前チェックリスト</div>
+    <p>① 座標のX＝偶数・Y＝奇数か　② 採集場・野獣の有無で判断していないか　③ クマ罠周辺なら特に慎重に確認したか</p>
+  </div>
+</div>
+
+<!-- 5. 用語集 -->
+<div class="section">
+  <span class="anchor" id="glossary"></span>
+  <div class="section-header">
+    <span class="section-icon">📖</span>
+    <span class="section-title">5. 用語集</span>
+  </div>
+
+  <div class="card">
+    <table>
+      <tr><th>用語</th><th>説明</th></tr>
+      <tr><td>領地都市移転</td><td>都市を同盟領地内の空き地へ移動させる消費アイテム</td></tr>
+      <tr><td>X座標 / Y座標</td><td>マップ上の位置を示す2つの数値。移転先タップ時のポップアップで確認できる</td></tr>
+      <tr><td>クマ罠</td><td>同盟領地内に設置される拠点建造物。周辺は都市配置が密集しやすく座標ズレの影響が大きい</td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="footer">
+  都市移転ガイド &mdash; Whiteout Survival<br>
+  作成日: 2026年8月
+</div>
+
+</body>
+</html>
