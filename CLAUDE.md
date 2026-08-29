@@ -19,6 +19,7 @@ wos/
 ├── resource-calc.html         # 都市資源生産量計算
 ├── event-scheduler.html       # 予定告知メーカー
 ├── canyon-battle.html         # 峡谷合戦 完全ガイド
+├── city-relocation.html       # 都市移転ガイド（座標ルール解説）
 ├── hero-gear-calc.html        # 英雄装備バフ計算（旧 wos-search / index.html）
 ├── ocr-phase1.html            # スクショ解析 Phase 1（袋の中の数値OCR、Tesseract.js）
 ├── src/                       # hero-gear-calc.html のロジックの TypeScript 版 + テスト（Jest）
@@ -33,7 +34,7 @@ wos/
 
 `index.html` は旧 `home.html` をリネームしたホーム（各ツールへのリンク一覧）で、`https://summy3598j.github.io/wos/`（末尾スラッシュのみ）でアクセスできる。装備・宝石計算ツール自体は別途 `gear-gem-calculator.html`（旧 `index.html`）に存在するので、ファイル名の使い回しに注意すること。
 
-`index.html`（ホーム）は領主装備・宝石／火晶建築資源／都市資源生産／治療資源の4ツールへのリンクを持つ。それ以外のツール間はページ間リンクを持たない独立したページで、相互参照はなく、それぞれ直接 URL（例: `https://summy3598j.github.io/wos/fc-calculator.html`）でアクセスします。
+`index.html`（ホーム）は領主装備・宝石／火晶建築資源／都市資源生産／治療資源の4ツールへのリンクを持つ。それ以外のツール（`city-relocation.html` を含む）間はページ間リンクを持たない独立したページで、相互参照はなく、それぞれ直接 URL（例: `https://summy3598j.github.io/wos/fc-calculator.html`）でアクセスします。
 
 ## デプロイ
 
@@ -47,7 +48,7 @@ wos/
 
 ```
 git fetch origin gh-pages <開発ブランチ名>
-git diff --name-status origin/<開発ブランチ名> origin/gh-pages -- index.html gear-gem-calculator.html fc-calculator.html phase2.html phase3.html heal-calculator.html resource-calc.html event-scheduler.html canyon-battle.html hero-gear-calc.html ocr-phase1.html manifest.json sw.js .nojekyll
+git diff --name-status origin/<開発ブランチ名> origin/gh-pages -- index.html gear-gem-calculator.html fc-calculator.html phase2.html phase3.html heal-calculator.html resource-calc.html event-scheduler.html canyon-battle.html city-relocation.html hero-gear-calc.html ocr-phase1.html manifest.json sw.js .nojekyll
 ```
 
 出力が空であれば同一バージョン。差分がある場合は `gh-pages` にのみ存在する変更（直接編集されたhotfixなど）を先に開発ブランチへ取り込んでから、新しい作業を始めること。
@@ -160,7 +161,7 @@ The 6-piece attack bonus uses the **6th-lowest-ranked** (minimum) equipped part'
 
 `sw.js` is shared by the 5 pages that make up the installable app — `index.html` (home) and the 4 tools linked from it: `gear-gem-calculator.html`, `fc-calculator.html`, `resource-calc.html`, `heal-calculator.html`. Each of those 5 pages registers it with `{scope:'./'}` (the `wos/` directory root) so that the bare root URL (`/`) is covered too — a single-file scope can't cover a directory-index request.
 
-Registering at the directory root would, by default, let the service worker intercept every page under `wos/`, including the independent tools (`phase2.html`, `phase3.html`, `event-scheduler.html`, `canyon-battle.html`, `hero-gear-calc.html`, `ocr-phase1.html`) that were never meant to be part of this offline app. To prevent that, `sw.js`'s `fetch` handler checks the request URL against an explicit allowlist (`APP_URLS`, built from `APP_FILES`) and does nothing (`return` without calling `respondWith`) for anything not in it — those pages fall through to a normal, uncached network request. Only the 5 pages don't register the service worker at all.
+Registering at the directory root would, by default, let the service worker intercept every page under `wos/`, including the independent tools (`phase2.html`, `phase3.html`, `event-scheduler.html`, `canyon-battle.html`, `city-relocation.html`, `hero-gear-calc.html`, `ocr-phase1.html`) that were never meant to be part of this offline app. To prevent that, `sw.js`'s `fetch` handler checks the request URL against an explicit allowlist (`APP_URLS`, built from `APP_FILES`) and does nothing (`return` without calling `respondWith`) for anything not in it — those pages fall through to a normal, uncached network request. Only the 5 pages don't register the service worker at all.
 
 `sw.js` implements a **cache-first** strategy for the allowlisted files:
 - On install: caches `APP_FILES` (`./`, `./index.html`, and the 4 tool pages, plus `./manifest.json`/`./sw.js`) under a versioned cache key — precached in full on first visit to *any* of the 5 pages, so all 5 work offline even if the others were never individually visited
