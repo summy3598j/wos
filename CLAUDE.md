@@ -52,6 +52,20 @@ git diff --name-status origin/<開発ブランチ名> origin/gh-pages -- index.h
 
 出力が空であれば同一バージョン。差分がある場合は `gh-pages` にのみ存在する変更（直接編集されたhotfixなど）を先に開発ブランチへ取り込んでから、新しい作業を始めること。
 
+### 確認版（dev/）— スマホでの動作確認
+
+動作確認はスマホで行うため、開発中の変更も GitHub Pages に公開する必要がある。ただし本番ページには他の利用者がいるので、確認中の版で本番ファイルを上書きしない。確認版は `gh-pages` の **`dev/` 配下**に置く（例: `https://summy3598j.github.io/wos/dev/fc-calculator.html`）。
+
+1. 開発ブランチで変更 → commit・push
+2. 変更したHTMLを `gh-pages` の `dev/` にコピー → commit・push（開発ブランチからの一方通行ルールはここでも同じ）
+3. スマホで `dev/` のURLを開いて確認。問題があれば 1 に戻る
+4. 確認OKなら、同じファイルを `gh-pages` のルート（本番）に反映し、`sw.js` のキャッシュバージョンと各ページのバージョン表示を上げる
+
+- `dev/` は `gh-pages` にのみ存在し、開発ブランチには置かない（中身は開発ブランチのファイルのコピー）。上の同期チェックの対象にも含めない。
+- 確認版と本番は同一オリジンなので localStorage を共有する。確認版で本番データを壊さないよう、パスに `/dev/` を含むときは保存キーを分ける（`fc-calculator.html` では `IS_DEV` 判定で `fc3` → `dev_fc3`）。確認版はヘッダーに「確認版」バッジを表示し、Service Worker を登録しない。本番データで確認したいときは 💾 バックアップを本番でコピーし確認版で復元する。
+- `dev/` のURLは `sw.js` の `APP_URLS` に含まれないため、Service Worker にキャッシュされずネットワークから取得される（ただし GitHub Pages のHTTPキャッシュで反映に数分かかることがある）。
+- 現時点で `IS_DEV` 対応済みなのは `fc-calculator.html` のみ。他のツールを `dev/` で確認する場合は、先に同じ対応（保存キー分離・SW登録スキップ・バッジ）を入れること。
+
 ## ブランチ運用
 
 開発ブランチはデフォルトブランチの `claude/wos-html-tool-consolidation-amqy1n` 一本に統一しています。以前は作業（新ツール追加など）のたびに新しいブランチ（`claude/xxx-yyyyy` 形式）が作られ、マージも削除もされないまま放置されて多数残ってしまっていました。今後は次のルールを守ること。
@@ -174,7 +188,7 @@ Registering at the directory root would, by default, let the service worker inte
 1. Edit the relevant `.html` file directly — no build step required for any tool.
 2. Open the file in a browser to test (or serve with any static HTTP server: `python3 -m http.server`).
 3. For `src/` (hero-gear-calc logic tests): `npm install && npm test` (Jest).
-4. Commit and push to this branch. To publish, sync the changed files to the `gh-pages` branch.
+4. Commit and push to this branch. スマホ確認は `gh-pages` の `dev/` に反映して行い（「確認版（dev/）」参照）、確認後に本番（`gh-pages` ルート）へ反映する。
 
 ## Conventions
 
