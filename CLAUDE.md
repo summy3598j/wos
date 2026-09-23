@@ -11,7 +11,7 @@ wos/
 ├── index.html                 # ホーム（5ツールへのリンク一覧。旧 home.html）
 ├── gear-gem-calculator.html   # 領主装備・宝石計算ツール（装備強化・宝石LvUP プランナー、PWA本体。旧 index.html）
 ├── manifest.json              # PWA manifest（gear-gem-calculator.html 用）
-├── sw.js                      # Service Worker（index.html＋4ツールのオフライン対応、cache-first）
+├── sw.js                      # Service Worker（index.html＋5ツールのオフライン対応、cache-first）
 ├── fc-calculator.html         # 火晶計算ツール
 ├── phase2.html                # スクショ解析 Phase 2（テンプレートマッチ）
 ├── phase3.html                # スクショ解析 Phase 3（アイコン照合＋ROIデジット認識）
@@ -36,7 +36,7 @@ wos/
 
 `index.html` は旧 `home.html` をリネームしたホーム（各ツールへのリンク一覧）で、`https://summy3598j.github.io/wos/`（末尾スラッシュのみ）でアクセスできる。装備・宝石計算ツール自体は別途 `gear-gem-calculator.html`（旧 `index.html`）に存在するので、ファイル名の使い回しに注意すること。
 
-`index.html`（ホーム）は領主装備・宝石／火晶建築資源／戦争学園／都市資源生産／治療資源の5ツールへのリンクを持つ（オフライン対応は戦争学園を除く4ツール）。それ以外のツール間はページ間リンクを持たない独立したページで、相互参照はなく、それぞれ直接 URL（例: `https://summy3598j.github.io/wos/fc-calculator.html`）でアクセスします。
+`index.html`（ホーム）は領主装備・宝石／火晶建築資源／戦争学園／都市資源生産／治療資源の5ツールへのリンクを持つ（5ツールともオフライン対応）。それ以外のツール間はページ間リンクを持たない独立したページで、相互参照はなく、それぞれ直接 URL（例: `https://summy3598j.github.io/wos/fc-calculator.html`）でアクセスします。
 
 ## デプロイ
 
@@ -176,12 +176,12 @@ The 6-piece attack bonus uses the **6th-lowest-ranked** (minimum) equipped part'
 
 ## PWA / Service Worker (offline support)
 
-`sw.js` is shared by the 5 pages that make up the installable app — `index.html` (home) and the 4 tools linked from it: `gear-gem-calculator.html`, `fc-calculator.html`, `resource-calc.html`, `heal-calculator.html`. Each of those 5 pages registers it with `{scope:'./'}` (the `wos/` directory root) so that the bare root URL (`/`) is covered too — a single-file scope can't cover a directory-index request.
+`sw.js` is shared by the 6 pages that make up the installable app — `index.html` (home) and the 5 tools linked from it: `gear-gem-calculator.html`, `fc-calculator.html`, `war-academy.html`, `resource-calc.html`, `heal-calculator.html`. Each of those 6 pages registers it with `{scope:'./'}` (the `wos/` directory root) so that the bare root URL (`/`) is covered too — a single-file scope can't cover a directory-index request.
 
-Registering at the directory root would, by default, let the service worker intercept every page under `wos/`, including the independent tools (`phase2.html`, `phase3.html`, `event-scheduler.html`, `canyon-battle.html`, `hero-gear-calc.html`, `ocr-phase1.html`, `city-relocation.html`, `war-academy.html`) that were never meant to be part of this offline app. To prevent that, `sw.js`'s `fetch` handler checks the request URL against an explicit allowlist (`APP_URLS`, built from `APP_FILES`) and does nothing (`return` without calling `respondWith`) for anything not in it — those pages fall through to a normal, uncached network request. Only the 5 pages don't register the service worker at all.
+Registering at the directory root would, by default, let the service worker intercept every page under `wos/`, including the independent tools (`phase2.html`, `phase3.html`, `event-scheduler.html`, `canyon-battle.html`, `hero-gear-calc.html`, `ocr-phase1.html`, `city-relocation.html`) that were never meant to be part of this offline app. To prevent that, `sw.js`'s `fetch` handler checks the request URL against an explicit allowlist (`APP_URLS`, built from `APP_FILES`) and does nothing (`return` without calling `respondWith`) for anything not in it — those pages fall through to a normal, uncached network request. Only the 6 pages register the service worker at all.
 
 `sw.js` implements a **cache-first** strategy for the allowlisted files:
-- On install: caches `APP_FILES` (`./`, `./index.html`, and the 4 tool pages, plus `./manifest.json`/`./sw.js`) under a versioned cache key — precached in full on first visit to *any* of the 5 pages, so all 5 work offline even if the others were never individually visited
+- On install: caches `APP_FILES` (`./`, `./index.html`, and the 5 tool pages, plus `./manifest.json`/`./sw.js`) under a versioned cache key, fetched with `cache:'reload'` so a stale HTTP-cached copy is never precached — precached in full on first visit to *any* of the 6 pages, so all 6 work offline even if the others were never individually visited
 - On activate: deletes all caches whose key ≠ current version
 - On fetch: for allowlisted URLs, serves from cache; if miss, fetches from network and caches the response
 
