@@ -30,7 +30,7 @@ a.card:active{background:#16304d;}
 <body>
 
 <div class="hdr">
-  <h1>❄️ WOS ツール <span class="ver">v10</span></h1>
+  <h1>❄️ WOS ツール <span class="ver">v10</span><span id="beta-badge"></span></h1>
   <p>Whiteout Survival 攻略ツール集</p>
 </div>
 
@@ -63,6 +63,14 @@ a.card:active{background:#16304d;}
     </div>
     <div class="arr">›</div>
   </a>
+  <a class="card" href="war-academy.html">
+    <div class="icon">🎓</div>
+    <div class="txt">
+      <div class="name">戦争学園計算ツール<span class="ver">v10</span></div>
+      <div class="desc">戦争学園の研究・火晶強化の必要資源と日数を計算</div>
+    </div>
+    <div class="arr">›</div>
+  </a>
   <a class="card" href="resource-calc.html">
     <div class="icon">🏭</div>
     <div class="txt">
@@ -83,6 +91,14 @@ a.card:active{background:#16304d;}
 
 <div class="ftr">summy3598j/wos</div>
 
-<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("./sw.js",{scope:"./"});});}</script>
+<script>
+// gh-pages の beta/ 配下（確認版）では SW を登録せず、確認版対応済みでないツールへのリンクは本番を開く
+if(location.pathname.includes("/beta/")){
+  document.getElementById("beta-badge").outerHTML='<span style="font-size:9px;font-weight:700;color:#0d1b2a;background:#f0c040;border-radius:4px;padding:0 4px;margin-left:4px;">確認版</span>';
+  const BETA_READY=["fc-calculator.html","war-academy.html"];
+  document.querySelectorAll("a.card").forEach(a=>{if(!BETA_READY.includes(a.getAttribute("href")))a.setAttribute("href","../"+a.getAttribute("href"));});
+}
+</script>
+<script>if(!location.pathname.includes("/beta/")&&"serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("./sw.js",{scope:"./"});});}</script>
 </body>
 </html>

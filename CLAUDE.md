@@ -8,7 +8,7 @@
 
 ```
 wos/
-├── index.html                 # ホーム（4ツールへのリンク一覧。旧 home.html）
+├── index.html                 # ホーム（5ツールへのリンク一覧。旧 home.html）
 ├── gear-gem-calculator.html   # 領主装備・宝石計算ツール（装備強化・宝石LvUP プランナー、PWA本体。旧 index.html）
 ├── manifest.json              # PWA manifest（gear-gem-calculator.html 用）
 ├── sw.js                      # Service Worker（index.html＋4ツールのオフライン対応、cache-first）
@@ -36,7 +36,7 @@ wos/
 
 `index.html` は旧 `home.html` をリネームしたホーム（各ツールへのリンク一覧）で、`https://summy3598j.github.io/wos/`（末尾スラッシュのみ）でアクセスできる。装備・宝石計算ツール自体は別途 `gear-gem-calculator.html`（旧 `index.html`）に存在するので、ファイル名の使い回しに注意すること。
 
-`index.html`（ホーム）は領主装備・宝石／火晶建築資源／都市資源生産／治療資源の4ツールへのリンクを持つ。それ以外のツール間はページ間リンクを持たない独立したページで、相互参照はなく、それぞれ直接 URL（例: `https://summy3598j.github.io/wos/fc-calculator.html`）でアクセスします。
+`index.html`（ホーム）は領主装備・宝石／火晶建築資源／戦争学園／都市資源生産／治療資源の5ツールへのリンクを持つ（オフライン対応は戦争学園を除く4ツール）。それ以外のツール間はページ間リンクを持たない独立したページで、相互参照はなく、それぞれ直接 URL（例: `https://summy3598j.github.io/wos/fc-calculator.html`）でアクセスします。
 
 ## デプロイ
 
@@ -68,7 +68,7 @@ git diff --name-status origin/<開発ブランチ名> origin/gh-pages -- index.h
 - `beta/sw.js` は登録を解除するだけの Service Worker。以前の `beta/` は本番と同じ cache-first の SW を `beta/` スコープで登録していたため、スマホに古い確認版が残り続けていた。これを差し替えて解除させる（反映後、1回目の再読み込みで解除され、2回目から新しい確認版が表示される）。確認版のページ自体は SW を登録しない。
 - 確認版と本番は同一オリジンなので localStorage を共有する。確認版で本番データを壊さないよう、パスに `/beta/` を含むときは保存キーを分ける（`fc-calculator.html` では `IS_BETA` 判定で `fc3` → `beta_fc3`）。確認版はヘッダーに「確認版」バッジを表示する。本番データで確認したいときは 💾 バックアップを本番でコピーし確認版で復元する。
 - `beta/` のURLは本番 `sw.js` の `APP_URLS` に含まれないため、本番の SW にもキャッシュされない（ただし GitHub Pages のHTTPキャッシュで反映に数分かかることがある）。
-- 現時点で `IS_BETA` 対応済みなのは `fc-calculator.html` と `war-academy.html`（`wa1` → `beta_wa1`）。`gh-pages` の `beta/` に残っている他のページ（index / gear-gem-calculator / resource-calc / heal-calculator）は旧来のコピーで、保存キーが本番と共通。これらを `beta/` で確認する場合は、先に同じ対応（保存キー分離・SW登録スキップ・バッジ）を入れてからコピーすること。新しいページは最初からこの対応を入れる。
+- 現時点で確認版対応済みなのは `fc-calculator.html`・`war-academy.html`（`wa1` → `beta_wa1`）・`index.html`（保存データなし。SW登録スキップとバッジのみ）。`index.html` は `beta/` 配下では、`BETA_READY` に入っていないツールへのリンクを本番（`../`）に書き換える。確認版対応したツールは `BETA_READY` に追加すること。`gh-pages` の `beta/` に残っている他のページ（gear-gem-calculator / resource-calc / heal-calculator）は旧来のコピーで、保存キーが本番と共通。これらを `beta/` で確認する場合は、先に同じ対応（保存キー分離・SW登録スキップ・バッジ）を入れてからコピーすること。新しいページは最初からこの対応を入れる。
 
 ## ブランチ運用
 
