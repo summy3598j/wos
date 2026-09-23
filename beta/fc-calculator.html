@@ -111,7 +111,7 @@ input,select{outline:none;}
 <body>
 
 <div class="hdr">
-  <h1>🔥 火晶計算ツール <span style="font-size:9px;color:#64748b;font-weight:400;">v10</span></h1>
+  <h1>🔥 火晶計算ツール <span style="font-size:9px;color:#64748b;font-weight:400;">v10</span><span id="dev-badge"></span></h1>
   <button class="hdr-btn" onclick="showHelp()">？</button>
   <button class="hdr-btn" onclick="showBackup()">💾</button>
   <button class="hdr-btn" onclick="location.reload()">更新</button>
@@ -324,6 +324,11 @@ const INV_FIELDS = [
 // ============================================================
 // STATE
 // ============================================================
+// gh-pages の beta/ 配下（スマホ確認用）では本番と保存データを分ける
+const IS_BETA=location.pathname.includes('/beta/');
+const LS_KEY=IS_BETA?'beta_fc3':'fc3';
+if(IS_BETA) document.getElementById('dev-badge').outerHTML='<span style="font-size:9px;font-weight:700;color:#0d1b2a;background:#f0c040;border-radius:4px;padding:0 4px;margin-left:4px;">確認版</span>';
+
 const defState = () => ({
   buildings: Object.fromEntries(BUILDINGS.map(b=>[b.id,{from:{fc:0,sub:0},to:{fc:5,sub:0},enabled:true}])),
   buffs:{base:0,pet:0,agnes:0,vice:false,viceSup:false,lords:false,chancellor:false,matReduce:0},
@@ -342,13 +347,13 @@ function save(){
     S.buffs.lords     = document.getElementById('b-lords')?.checked||false;
     S.buffs.chancellor= document.getElementById('b-chancellor')?.checked||false;
     S.buffs.matReduce = parseFloat(document.getElementById('b-mat')?.value)||0;
-    localStorage.setItem('fc3',JSON.stringify(S));
+    localStorage.setItem(LS_KEY,JSON.stringify(S));
   }catch(e){}
 }
 
 function load(){
   try{
-    const d=JSON.parse(localStorage.getItem('fc3')||'null');
+    const d=JSON.parse(localStorage.getItem(LS_KEY)||'null');
     if(!d) return;
     if(d.buildings) BUILDINGS.forEach(b=>{
       const bs=d.buildings[b.id];
@@ -692,7 +697,7 @@ function restoreBackup(){
     });
     if(d.buffs) S.buffs={...S.buffs,...d.buffs};
     if(d.inv)   S.inv={...S.inv,...d.inv};
-    localStorage.setItem('fc3',JSON.stringify(S));
+    localStorage.setItem(LS_KEY,JSON.stringify(S));
     document.getElementById('b-base').value      =S.buffs.base||0;
     document.getElementById('b-pet').value       =S.buffs.pet||0;
     document.getElementById('b-vice').checked    =S.buffs.vice||false;
@@ -710,7 +715,7 @@ function restoreBackup(){
 
 function clearAll(){
   if(!confirm('全設定をリセットしますか？')) return;
-  localStorage.removeItem('fc3');
+  localStorage.removeItem(LS_KEY);
   S=defState();
   document.getElementById('b-base').value=0;
   document.getElementById('b-pet').value=0;
@@ -738,6 +743,6 @@ document.getElementById('b-chancellor').checked = S.buffs.chancellor||false;
 document.getElementById('b-mat').value       = S.buffs.matReduce||0;
 render();
 </script>
-<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("./sw.js",{scope:"./"});});}</script>
+<script>if(!location.pathname.includes("/beta/")&&"serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("./sw.js",{scope:"./"});});}</script>
 </body>
 </html>
