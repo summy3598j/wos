@@ -95,7 +95,7 @@ a.card:active{background:#16304d;}
 // gh-pages の beta/ 配下（確認版）では SW を登録せず、確認版対応済みでないツールへのリンクは本番を開く
 if(location.pathname.includes("/beta/")){
   document.getElementById("beta-badge").outerHTML='<span style="font-size:9px;font-weight:700;color:#0d1b2a;background:#f0c040;border-radius:4px;padding:0 4px;margin-left:4px;">確認版</span>';
-  const BETA_READY=["fc-calculator.html","war-academy.html"];
+  const BETA_READY=["fc-calculator.html","war-academy.html","resource-calc.html"];
   document.querySelectorAll("a.card").forEach(a=>{if(!BETA_READY.includes(a.getAttribute("href")))a.setAttribute("href","../"+a.getAttribute("href"));});
 }
 </script>
