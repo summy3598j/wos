@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>戦争学園 研究計算</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{background:#0d1b2a;color:#e2e8f0;font-family:'Hiragino Sans','Noto Sans JP',sans-serif;max-width:480px;margin:0 auto;min-height:100dvh;overscroll-behavior:none;-webkit-user-select:none;user-select:none;}
+button{cursor:pointer;border:none;outline:none;background:none;}
+input,select{outline:none;}
+.hdr{background:linear-gradient(180deg,#1a3a5c,#0d2238);padding:6px 12px 5px;border-bottom:2px solid #1e4d7a;display:flex;align-items:center;}
+.hdr h1{font-size:14px;font-weight:700;color:#93c5fd;flex:1;}
+.hdr-btn{font-size:12px;font-weight:700;color:#94a3b8;background:#0d2238;border:1px solid #1e3a5c;border-radius:7px;padding:2px 8px;margin-left:5px;}
+.hdr-btn:active{opacity:.7;}
+.buff-strip{background:#112233;padding:5px 10px 6px;border-bottom:1px solid #1e3a5c;}
+.buff-row{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;margin-bottom:4px;}
+.buff-row:last-child{margin-bottom:0;}
+.buff-lbl{font-size:10px;color:#64748b;white-space:nowrap;}
+.buff-inp{background:#0d1b2a;border:1px solid #334155;border-radius:5px;color:#e2e8f0;font-size:13px;font-weight:700;padding:2px 5px;width:56px;text-align:right;-webkit-user-select:text;user-select:text;}
+.buff-inp.sm{width:40px;}
+.buff-sel{background:#0d1b2a;border:1px solid #334155;border-radius:5px;color:#e2e8f0;font-size:11px;padding:2px 4px;-webkit-appearance:none;appearance:none;}
+.buff-chk{display:flex;align-items:center;gap:3px;font-size:11px;color:#94a3b8;cursor:pointer;}
+.buff-chk input{accent-color:#3b82f6;width:14px;height:14px;cursor:pointer;}
+.buff-tag{font-size:9px;background:rgba(61,214,140,.18);color:#4ade80;border-radius:6px;padding:1px 4px;font-weight:700;}
+.time-strip{background:#0a1520;padding:5px 12px;border-bottom:1px solid #1e3a5c;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.time-lbl{font-size:10px;color:#475569;}
+.time-val{font-size:14px;font-weight:700;color:#60a5fa;}
+.time-arr{font-size:10px;color:#334155;}
+.time-buf{font-size:13px;font-weight:700;color:#4ade80;}
+.inv-strip{background:#0d1b2a;padding:5px 10px 8px;border-bottom:2px solid #1e3a5c;}
+.inv-top{display:flex;align-items:baseline;gap:8px;margin-bottom:5px;}
+.inv-title{font-size:11px;font-weight:700;color:#3b82f6;}
+.inv-unit{font-size:9px;color:#475569;}
+.inv-cols{display:grid;grid-template-columns:auto 1fr 70px auto;gap:4px 6px;align-items:center;}
+.inv-ch{font-size:10px;color:#475569;text-align:right;}
+.inv-ch:first-child{text-align:left;}
+.inv-name{font-size:12px;color:#94a3b8;white-space:nowrap;}
+.inv-req{font-size:14px;font-weight:700;color:#e2e8f0;text-align:right;}
+.inv-inp{background:#112233;border:1px solid #334155;border-radius:4px;color:#e2e8f0;font-size:13px;font-weight:700;padding:2px 4px;width:100%;text-align:right;-webkit-user-select:text;user-select:text;}
+.inv-lack{font-size:12px;font-weight:700;text-align:right;white-space:nowrap;}
+.inv-lack.ok{color:#4ade80;}
+.inv-lack.ng{color:#f87171;}
+.fceq{margin-top:6px;padding-top:5px;border-top:1px solid #1e3a5c;font-size:11px;color:#94a3b8;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;}
+.fceq b{color:#f97316;font-size:13px;}
+.fceq .ng{color:#f87171;}
+.tier{padding:6px 8px 0;}
+.tier-hdr{display:flex;align-items:baseline;gap:6px;padding:4px 2px;}
+.tier-ttl{font-size:12px;font-weight:700;color:#93c5fd;}
+.tier-req{font-size:10px;color:#64748b;}
+.r-list{display:flex;flex-direction:column;gap:5px;}
+.r-card{background:#112233;border:1px solid #1e3a5c;border-radius:9px;overflow:hidden;}
+.r-card.warn{border-color:#7f1d1d;}
+.r-hdr{display:flex;align-items:center;gap:6px;padding:4px 8px;background:#0d1b2a;}
+.r-name{font-size:12px;font-weight:700;}
+.r-desc{font-size:9px;color:#64748b;flex:1;}
+.r-max{font-size:9px;color:#475569;}
+.r-body{padding:5px 8px;}
+.sides{display:flex;align-items:center;gap:6px;}
+.side{flex:1;display:flex;align-items:center;gap:3px;}
+.side-lbl{font-size:9px;color:#475569;width:22px;}
+.spbtn{background:#1e3a5c;color:#60a5fa;border-radius:4px;font-size:11px;font-weight:700;height:26px;width:28px;display:flex;align-items:center;justify-content:center;touch-action:none;}
+.spbtn:active{background:#2a4a7c;}
+.lvv{flex:1;text-align:center;font-size:15px;font-weight:700;background:#0d1b2a;border:1.5px solid #334155;border-radius:6px;height:26px;line-height:23px;}
+.arr{color:#334155;font-size:13px;}
+.r-res{margin-top:4px;padding-top:4px;border-top:1px solid #1e3a5c;display:flex;flex-wrap:wrap;gap:2px 8px;font-size:10px;}
+.r-sh{color:#f97316;}
+.r-st{color:#cbd5e1;}
+.r-day{color:#60a5fa;}
+.r-dayb{color:#4ade80;}
+.r-mat{color:#94a3b8;}
+.r-pre{margin-top:3px;display:flex;flex-wrap:wrap;gap:2px 6px;font-size:9px;}
+.pq{color:#475569;}
+.pq.ok{color:#4ade80;}
+.pq.ng{color:#f87171;font-weight:700;}
+.note{font-size:9px;color:#f0c040;}
+.foot{padding:8px 12px 18px;font-size:9px;color:#475569;line-height:1.6;}
+#help-modal,#bkup-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:600;display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:16px 10px;}
+.help-box{background:#112233;border-radius:14px;border:2px solid #1e4d7a;max-width:440px;width:100%;padding:16px 15px;}
+.help-ttl{font-size:15px;font-weight:700;color:#93c5fd;margin-bottom:12px;}
+.help-sec{margin-bottom:10px;}
+.help-sec h3{font-size:11px;font-weight:700;color:#3b82f6;margin-bottom:4px;}
+.help-sec p{font-size:11px;color:#94a3b8;line-height:1.6;}
+.help-close{display:block;width:100%;background:#1e3a5c;color:#60a5fa;border-radius:9px;padding:9px;font-size:13px;font-weight:700;margin-top:12px;text-align:center;cursor:pointer;}
+.bkup-ta{width:100%;background:#0a1520;border:1px solid #334155;border-radius:6px;color:#94a3b8;font-size:11px;padding:6px 8px;min-height:70px;resize:none;-webkit-user-select:text;user-select:text;font-family:monospace;margin-top:5px;}
+.bkup-btn{display:block;width:100%;border-radius:8px;padding:8px;font-size:13px;font-weight:700;text-align:center;cursor:pointer;margin-top:6px;background:#1e3a5c;color:#60a5fa;}
+.bkup-btn.restore{background:#1a3a1a;color:#4ade80;border:1px solid #2d5a2d;}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <h1>⚔️ 戦争学園 研究計算 <span style="font-size:9px;color:#64748b;font-weight:400;">v10</span><span id="beta-badge"></span></h1>
+  <button class="hdr-btn" onclick="showModal('help-modal')">？</button>
+  <button class="hdr-btn" onclick="showBackup()">💾</button>
+  <button class="hdr-btn" onclick="clearAll()">クリア</button>
+</div>
+
+<div class="buff-strip">
+  <div class="buff-row">
+    <label class="buff-chk"><input type="checkbox" id="b-vice" onchange="onVice('vice')"><span>副執政官</span><span class="buff-tag">+10%</span></label>
+    <label class="buff-chk"><input type="checkbox" id="b-vicesup" onchange="onVice('sup')"><span>副執政官(至高)</span><span class="buff-tag">+15%</span></label>
+    <label class="buff-chk"><input type="checkbox" id="b-chancellor" onchange="onInput()"><span>執政官</span><span class="buff-tag">+10%</span></label>
+  </div>
+  <div class="buff-row">
+    <span class="buff-lbl">研究速度</span>
+    <input class="buff-inp" type="number" id="b-base" value="0" min="0" inputmode="decimal" oninput="onInput()">
+    <span class="buff-lbl">%</span>
+    <span class="buff-lbl" style="margin-left:6px;">戦争学園</span>
+    <select class="buff-sel" id="b-academy" onchange="onInput()"></select>
+  </div>
+</div>
+
+<div class="time-strip" id="time-strip"></div>
+
+<div class="inv-strip">
+  <div class="inv-top">
+    <span class="inv-title">所持アイテム</span>
+    <span class="inv-unit">資源:M単位 / 鋼材・微粒子:個</span>
+  </div>
+  <div class="inv-cols" id="inv-grid"></div>
+  <div class="fceq" id="fceq"></div>
+</div>
+
+<div id="tiers"></div>
+
+<div class="foot">
+  研究コスト・時間・前提条件は Whiteout Survival 公式Wiki（盾兵）の値。槍兵・弓兵も同じコスト。<br>
+  火晶→微粒子の交換レートの初期値（火晶10→微粒子13）は攻略サイトの記載で、ゲーム内では未確認。違う場合は上の欄で変更してください。
+</div>
+
+<div id="help-modal" onclick="if(event.target===this)hideModal(this.id)">
+  <div class="help-box">
+    <div class="help-ttl">⚔️ 戦争学園 研究計算 使い方</div>
+    <div class="help-sec">
+      <h3>操作</h3>
+      <p>各研究の「現在」と「目標」のレベルを▲▼で設定すると、必要な資源・鋼材・火晶微粒子・研究時間を合計します。長押しで連続変更。MAXで目標を最大レベルにします。</p>
+    </div>
+    <div class="help-sec">
+      <h3>前提条件</h3>
+      <p>目標までの各レベルに必要な前提条件を表示します。赤は未達（戦争学園の火晶Lvが足りない、または前提研究の目標レベルが足りない）、緑は達成済みです。前提研究は「目標」レベルで判定します。</p>
+    </div>
+    <div class="help-sec">
+      <h3>研究バフ</h3>
+      <p>研究速度には、副執政官・執政官を除いた研究速度（%）を入力します。副執政官(10%)と副執政官(至高)(15%)はどちらか一方のみ選択可。執政官は+10%。研究時間 = 基本時間 ÷ (1 + 研究速度合計/100)。</p>
+    </div>
+    <div class="help-sec">
+      <h3>火晶換算</h3>
+      <p>必要な火晶微粒子（と不足分）を、交換レートで火晶に換算して表示します。</p>
+    </div>
+    <button class="help-close" onclick="hideModal('help-modal')">閉じる</button>
+  </div>
+</div>
+
+<div id="bkup-modal" onclick="if(event.target===this)hideModal(this.id)">
+  <div class="help-box">
+    <div class="help-ttl">💾 データのバックアップ・復元</div>
+    <div class="help-sec">
+      <h3>バックアップ</h3>
+      <p>下のテキストをコピーして保存してください。</p>
+      <textarea class="bkup-ta" id="bkup-out" readonly></textarea>
+      <button class="bkup-btn" onclick="copyBackup(this)">コピー</button>
+    </div>
+    <div class="help-sec">
+      <h3>復元</h3>
+      <textarea class="bkup-ta" id="bkup-in" placeholder="ここにバックアップデータを貼り付け"></textarea>
+      <button class="bkup-btn restore" onclick="restoreBackup()">復元する</button>
+    </div>
+    <button class="help-close" onclick="hideModal('bkup-modal')">閉じる</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DATA（公式Wiki 盾兵の研究。c=[生肉,木材,石炭,鉄鉱,鋼材,火晶微粒子], p=前提条件 ['A',n]=戦争学園 火晶Lv.n / [研究id,n]）
+// ============================================================
+const tsec=s=>{let d=0;if(s.includes('d')){[d,s]=s.split('d');d=+d;}const[h,m,x]=s.split(':').map(Number);return d*86400+h*3600+m*60+x;};
+const L=(meat,wood,coal,iron,steel,shard,t,p=[])=>({c:[meat,wood,coal,iron,steel,shard],t:tsec(t),p});
+
+const RESEARCH=[
+  {id:'squad',name:'烈焰戦隊',desc:'出撃部隊の容量上限',tier:1,lv:[
+    L(300000,300000,60000,15000,5000,16,'08:00:00',[['A',1]]),
+    L(480000,480000,96000,24000,8000,25,'12:48:00'),
+    L(780000,780000,150000,39000,13000,41,'20:48:00'),
+    L(1200000,1200000,250000,64000,21000,68,'1d10:24:00'),
+    L(2000000,2000000,400000,100000,33000,108,'2d06:00:00'),
+  ]},
+  {id:'strike',name:'怒炎の猛撃',desc:'盾兵の殺傷力',tier:2,lv:[
+    L(800000,800000,160000,40000,10000,40,'20:00:00',[['squad',3]]),
+    L(1100000,1100000,290000,56000,14000,56,'1d04:00:00',[['A',2]]),
+    L(1400000,1400000,290000,74000,18000,74,'1d13:00:00'),
+    L(2000000,2000000,400000,100000,25000,102,'2d03:00:00'),
+    L(2700000,2700000,540000,130000,34000,136,'2d20:00:00',[['squad',5]]),
+    L(3600000,3600000,730000,180000,46000,184,'3d20:00:00'),
+    L(4900000,4900000,990000,240000,62000,248,'5d04:00:00'),
+    L(6600000,6600000,1300000,330000,83000,334,'6d23:00:00'),
+  ]},
+  {id:'shield',name:'怒炎の盾',desc:'盾兵のHP',tier:2,lv:[
+    L(800000,800000,160000,40000,10000,40,'20:00:00',[['squad',3]]),
+    L(1100000,1100000,290000,56000,14000,56,'1d04:00:00',[['A',2]]),
+    L(1400000,1400000,290000,74000,18000,74,'1d13:00:00'),
+    L(2000000,2000000,400000,100000,25000,102,'2d03:00:00'),
+    L(2700000,2700000,540000,130000,34000,136,'2d20:00:00',[['squad',5]]),
+    L(3600000,3600000,730000,180000,46000,184,'3d20:00:00'),
+    L(4900000,4900000,990000,240000,62000,248,'5d04:00:00'),
+    L(6600000,6600000,1300000,330000,83000,334,'6d23:00:00'),
+  ]},
+  // 公式Wikiでは Lv7・Lv8 の前提が「怒炎の戦斧 7/8」（自分自身）と表記されている。怒炎の庇護が「怒炎の盾 7/8」なので、対になる「怒炎の猛撃」と推定
+  {id:'axe',name:'怒炎の戦斧',desc:'盾兵の攻撃力',tier:3,note:'Lv7・8の前提「怒炎の猛撃」は推定（公式Wikiの表記は「怒炎の戦斧」）',lv:[
+    L(700000,700000,140000,35000,15000,54,'18:55:40',[['A',3],['strike',6]]),
+    L(860000,860000,170000,43000,18000,66,'23:16:52'),
+    L(1000000,1000000,210000,52000,22000,81,'1d04:23:30'),
+    L(1200000,1200000,250000,63000,27000,97,'1d10:04:12'),
+    L(1500000,1500000,300000,77000,33000,118,'1d17:38:28'),
+    L(1800000,1800000,370000,94000,40000,145,'2d03:06:18'),
+    L(2300000,2300000,460000,110000,49000,178,'2d14:27:42',[['A',5],['strike',7]]),
+    L(2800000,2800000,560000,140000,60000,216,'3d03:42:20',[['strike',8]]),
+    L(3500000,3500000,700000,170000,75000,270,'3d22:38:20'),
+    L(4200000,4200000,840000,210000,90000,324,'4d17:34:00'),
+    L(5000000,5000000,1000000,250000,100000,388,'5d16:16:48'),
+    L(6200000,6200000,1200000,310000,130000,480,'7d00:27:26'),
+  ]},
+  {id:'protect',name:'怒炎の庇護',desc:'盾兵の防御力',tier:3,lv:[
+    L(700000,700000,140000,35000,15000,54,'18:55:40',[['A',3],['shield',6]]),
+    L(860000,860000,170000,43000,18000,66,'23:16:52'),
+    L(1000000,1000000,210000,52000,22000,81,'1d04:23:30'),
+    L(1200000,1200000,250000,63000,27000,97,'1d10:04:12'),
+    L(1500000,1500000,300000,77000,33000,118,'1d17:38:28'),
+    L(1800000,1800000,370000,94000,40000,145,'2d03:06:18'),
+    L(2300000,2300000,460000,110000,49000,178,'2d14:27:42',[['A',5],['shield',7]]),
+    L(2800000,2800000,560000,140000,60000,216,'3d03:42:20',[['shield',8]]),
+    L(3500000,3500000,700000,170000,75000,270,'3d22:38:20'),
+    L(4200000,4200000,840000,210000,90000,324,'4d17:34:00'),
+    L(5000000,5000000,1000000,250000,100000,388,'5d16:16:48'),
+    L(6200000,6200000,1200000,310000,130000,480,'7d00:27:26'),
+  ]},
+  {id:'legion',name:'烈焰軍団',desc:'集結部隊の容量上限',tier:3,lv:[
+    L(1000000,1000000,210000,54000,23000,83,'1d05:20:17',[['A',4],['strike',6],['shield',6]]),
+    L(1300000,1300000,260000,66000,28000,102,'1d12:05:08'),
+    L(1600000,1600000,320000,81000,34000,125,'1d20:00:25'),
+    L(1900000,1900000,390000,97000,41000,150,'2d04:48:30'),
+    L(2300000,2300000,470000,110000,51000,184,'2d16:32:37'),
+    L(2900000,2900000,580000,140000,62000,225,'3d07:12:45'),
+    L(3500000,3500000,710000,170000,76000,276,'4d00:48:56',[['shield',7]]),
+    L(4300000,4300000,860000,210000,93000,334,'4d21:21:08'),
+    L(5400000,5400000,1000000,270000,110000,418,'6d02:41:25'),
+    L(6500000,6500000,1300000,320000,130000,502,'7d08:01:42'),
+    L(7800000,7800000,1500000,390000,160000,602,'8d19:14:02'),
+    L(9600000,9600000,1900000,480000,200000,744,'10d21:06:31'),
+  ]},
+  {id:'helios',name:'烈日盾兵',desc:'烈日盾兵(T11)の訓練が可能に',tier:4,lv:[
+    L(85000000,85000000,17000000,4200000,1000000,2236,'54d23:50:14',[['A',5],['axe',12],['protect',12],['legion',12]]),
+  ]},
+  {id:'aid',name:'烈日盾兵救急',desc:'烈日盾兵の治療時間短縮',tier:5,lv:[
+    L(1200000,1200000,250000,62000,15000,51,'1d01:00:00',[['A',5],['helios',1]]),
+    L(1600000,1600000,330000,84000,20000,68,'1d09:45:00'),
+    L(2300000,2300000,460000,110000,27000,94,'1d22:15:00'),
+    L(3100000,3100000,620000,150000,37000,127,'2d14:30:00'),
+    L(4100000,4100000,830000,200000,50000,170,'3d11:45:00'),
+    L(5600000,5600000,1100000,280000,67000,229,'4d16:30:00'),
+    L(7500000,7500000,1500000,370000,90000,306,'6d06:00:00'),
+    L(10000000,10000000,2000000,510000,120000,418,'8d13:00:00'),
+    L(13000000,13000000,2700000,680000,160000,561,'11d11:00:00'),
+    L(18000000,18000000,3700000,930000,220000,765,'15d15:00:00'),
+  ]},
+  {id:'heal',name:'烈日盾兵治療',desc:'烈日盾兵の治療資源消費低下',tier:5,lv:[
+    L(2500000,2500000,500000,120000,30000,102,'2d02:00:00',[['A',5],['helios',1]]),
+    L(3300000,3300000,670000,160000,40000,137,'2d19:30:00'),
+    L(4600000,4600000,920000,230000,55000,188,'3d20:30:00'),
+    L(6200000,6200000,1200000,310000,75000,255,'5d05:00:00'),
+    L(8300000,8300000,1600000,410000,100000,341,'6d23:30:00'),
+    L(11000000,11000000,2200000,560000,130000,459,'9d09:00:00'),
+    L(15000000,15000000,3000000,750000,180000,612,'12d12:00:00'),
+    L(20000000,20000000,4100000,1000000,240000,836,'17d02:00:00'),
+    L(27000000,27000000,5500000,1300000,330000,1122,'22d22:00:00'),
+    L(37000000,37000000,7500000,1800000,450000,1500,'31d06:00:00'),
+  ]},
+];
+const RMAP=Object.fromEntries(RESEARCH.map(r=>[r.id,r]));
+const TIERS=[
+  {n:1,name:'ティア1',req:'戦争学園 火晶Lv.1'},
+  {n:2,name:'ティア2',req:'烈焰戦隊 Lv.3'},
+  {n:3,name:'ティア3',req:'戦争学園 火晶Lv.3〜4・怒炎の猛撃/盾 Lv.6'},
+  {n:4,name:'ティア4（T11解放）',req:'戦争学園 火晶Lv.5・戦斧/庇護/軍団 Lv.12'},
+  {n:5,name:'ティア5',req:'烈日盾兵 Lv.1'},
+];
+const ACADEMY_MAX=10;
+const INV_FIELDS=[
+  {id:'meat', name:'🥩 生肉', i:0,m:true},
+  {id:'wood', name:'🪵 木材', i:1,m:true},
+  {id:'coal', name:'🪨 石炭', i:2,m:true},
+  {id:'iron', name:'🔩 鉄鉱', i:3,m:true},
+  {id:'steel',name:'⚙️ 鋼材', i:4,m:false},
+  {id:'shard',name:'🔥 微粒子',i:5,m:false},
+];
+
+// ============================================================
+// STATE（gh-pages の beta/ 配下では本番と保存データを分ける）
+// ============================================================
+const IS_BETA=location.pathname.includes('/beta/');
+const LS_KEY=IS_BETA?'beta_wa1':'wa1';
+if(IS_BETA) document.getElementById('beta-badge').outerHTML='<span style="font-size:9px;font-weight:700;color:#0d1b2a;background:#f0c040;border-radius:4px;padding:0 4px;margin-left:4px;">確認版</span>';
+
+const defState=()=>({
+  cur:Object.fromEntries(RESEARCH.map(r=>[r.id,0])),
+  tgt:Object.fromEntries(RESEARCH.map(r=>[r.id,0])),
+  academy:1,
+  buffs:{base:0,vice:false,viceSup:false,chancellor:false},
+  inv:{meat:0,wood:0,coal:0,iron:0,steel:0,shard:0},
+  rate:{fc:10,shard:13},
+});
+let S=defState();
+
+function save(){try{localStorage.setItem(LS_KEY,JSON.stringify(S));}catch(e){}}
+function applyLoaded(d){
+  const s=defState();
+  RESEARCH.forEach(r=>{
+    const mx=r.lv.length;
+    const c=Math.min(mx,Math.max(0,parseInt(d.cur?.[r.id])||0));
+    const t=Math.min(mx,Math.max(c,parseInt(d.tgt?.[r.id])||0));
+    s.cur[r.id]=c; s.tgt[r.id]=t;
+  });
+  s.academy=Math.min(ACADEMY_MAX,Math.max(0,parseInt(d.academy)||0));
+  if(d.buffs) s.buffs={...s.buffs,...d.buffs};
+  if(d.inv) INV_FIELDS.forEach(f=>{s.inv[f.id]=parseFloat(d.inv[f.id])||0;});
+  if(d.rate) s.rate={fc:parseFloat(d.rate.fc)||10,shard:parseFloat(d.rate.shard)||13};
+  S=s;
+}
+function load(){try{const d=JSON.parse(localStorage.getItem(LS_KEY)||'null');if(d)applyLoaded(d);}catch(e){}}
+
+// ============================================================
+// MUTATORS
+// ============================================================
+function setCur(id,v){
+  const mx=RMAP[id].lv.length;
+  v=Math.min(mx,Math.max(0,v));
+  S.cur[id]=v;
+  if(S.tgt[id]<v) S.tgt[id]=v;
+  save();render();
+}
+function setTgt(id,v){
+  const mx=RMAP[id].lv.length;
+  S.tgt[id]=Math.min(mx,Math.max(S.cur[id],v));
+  save();render();
+}
+function onVice(type){
+  const v=document.getElementById('b-vice'),s=document.getElementById('b-vicesup');
+  if(type==='vice'&&v.checked) s.checked=false;
+  if(type==='sup'&&s.checked) v.checked=false;
+  onInput();
+}
+function onInput(){
+  S.buffs.base=parseFloat(document.getElementById('b-base').value)||0;
+  S.buffs.vice=document.getElementById('b-vice').checked;
+  S.buffs.viceSup=document.getElementById('b-vicesup').checked;
+  S.buffs.chancellor=document.getElementById('b-chancellor').checked;
+  S.academy=parseInt(document.getElementById('b-academy').value)||0;
+  save();render();
+}
+function onInv(k,el){S.inv[k]=parseFloat(el.value)||0;save();renderSummary();}
+function onRate(k,el){const v=parseFloat(el.value);S.rate[k]=v>0?v:S.rate[k];save();renderSummary();}
+
+// ============================================================
+// CALC
+// ============================================================
+function speedPct(){
+  const b=S.buffs;
+  return b.base+(b.viceSup?15:b.vice?10:0)+(b.chancellor?10:0);
+}
+const tBuf=t=>t/(1+speedPct()/100);
+function rangeCost(id,from,to){
+  const r=RMAP[id],c=[0,0,0,0,0,0];let t=0;
+  for(let l=from+1;l<=to;l++){const d=r.lv[l-1];d.c.forEach((v,i)=>c[i]+=v);t+=d.t;}
+  return {c,t};
+}
+function preOk(p){return p[0]==='A'?S.academy>=p[1]:S.tgt[p[0]]>=p[1];}
+function preLabel(p){return p[0]==='A'?`戦争学園 火晶Lv.${p[1]}`:`${RMAP[p[0]].name} ${p[1]}`;}
+function totals(){
+  const c=[0,0,0,0,0,0];let t=0;
+  RESEARCH.forEach(r=>{const x=rangeCost(r.id,S.cur[r.id],S.tgt[r.id]);x.c.forEach((v,i)=>c[i]+=v);t+=x.t;});
+  return {c,t};
+}
+const fcEq=sh=>Math.ceil(sh*S.rate.fc/S.rate.shard);
+
+// ============================================================
+// FORMAT
+// ============================================================
+function fmtM(v){const m=v/1e6;return m>=1000?(m/1000).toFixed(2)+'B':(m>=100?m.toFixed(0):m>=10?m.toFixed(1):m.toFixed(2)).replace(/\.?0+$/,'')+'M';}
+const fmtN=v=>Math.round(v).toLocaleString();
+function fmtT(sec){
+  const tot=Math.round(sec);
+  if(tot<=0) return '0';
+  const d=Math.floor(tot/86400),h=Math.floor(tot%86400/3600),m=Math.floor(tot%3600/60),s=tot%60;
+  const hms=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  return d>0?`${d}日 ${hms}`:hms;
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function render(){renderSummary();renderTiers();}
+function renderSummary(){
+  const T=totals();
+  document.getElementById('time-strip').innerHTML=T.t>0
+    ?`<span class="time-lbl">研究時間</span><span class="time-val">${fmtT(T.t)}</span><span class="time-arr">→ バフ後</span><span class="time-buf">${fmtT(tBuf(T.t))}</span><span class="time-lbl">（${(tBuf(T.t)/86400).toFixed(1)}日・研究速度+${speedPct()}%）</span>`
+    :`<span class="time-lbl">目標レベルを設定すると研究時間を計算します</span>`;
+  const grid=document.getElementById('inv-grid');
+  if(!grid.dataset.built){
+    grid.innerHTML='<div class="inv-ch"></div><div class="inv-ch">必要</div><div class="inv-ch">所持</div><div class="inv-ch">不足</div>'
+      +INV_FIELDS.map(f=>`<div class="inv-name">${f.name}</div><div class="inv-req" id="iq-${f.id}"></div><input class="inv-inp" type="number" min="0" inputmode="decimal" id="ii-${f.id}" oninput="onInv('${f.id}',this)"><div class="inv-lack" id="il-${f.id}"></div>`).join('');
+    grid.dataset.built='1';
+    INV_FIELDS.forEach(f=>{document.getElementById(`ii-${f.id}`).value=S.inv[f.id]||'';});
+  }
+  INV_FIELDS.forEach(f=>{
+    const req=f.m?T.c[f.i]/1e6:T.c[f.i],own=S.inv[f.id]||0,lack=req-own;
+    document.getElementById(`iq-${f.id}`).textContent=f.m?fmtM(T.c[f.i]):fmtN(req);
+    const el=document.getElementById(`il-${f.id}`);
+    if(req<=0){el.textContent='';el.className='inv-lack';}
+    else if(lack>0){el.textContent=f.m?fmtM(lack*1e6):fmtN(lack);el.className='inv-lack ng';}
+    else{el.textContent='✓';el.className='inv-lack ok';}
+  });
+  const sh=T.c[5],lackSh=Math.max(0,sh-(S.inv.shard||0));
+  const fe=document.getElementById('fceq');
+  const rateHtml=`<span>交換レート 火晶</span><input class="buff-inp sm" type="number" min="1" inputmode="decimal" value="${S.rate.fc}" onchange="onRate('fc',this)"><span>→ 微粒子</span><input class="buff-inp sm" type="number" min="1" inputmode="decimal" value="${S.rate.shard}" onchange="onRate('shard',this)">`;
+  if(!fe.dataset.built){fe.innerHTML=`<span id="fceq-val"></span>${rateHtml}`;fe.dataset.built='1';}
+  document.getElementById('fceq-val').innerHTML=sh>0
+    ?`微粒子の火晶換算 <b>${fmtN(fcEq(sh))}</b>${lackSh>0?`（不足分 <span class="ng">${fmtN(fcEq(lackSh))}</span>）`:''}`
+    :'微粒子の火晶換算 —';
+}
+function spin(fn,id,dir){
+  return `<button class="spbtn" oncontextmenu="return false" data-fn="${fn}" data-id="${id}" data-dir="${dir}" onpointerdown="event.preventDefault();_rep(this)" onpointerup="stopRep()" onpointerleave="stopRep()" onclick="event.preventDefault();_tap(this)">${dir>0?'▲':'▼'}</button>`;
+}
+function renderTiers(){
+  document.getElementById('tiers').innerHTML=TIERS.map(tr=>{
+    const cards=RESEARCH.filter(r=>r.tier===tr.n).map(r=>{
+      const cur=S.cur[r.id],tgt=S.tgt[r.id],mx=r.lv.length;
+      const x=rangeCost(r.id,cur,tgt);
+      let warn=false;
+      const pre=r.lv.map((d,i)=>d.p.length?{lv:i+1,p:d.p}:null).filter(Boolean).map(({lv,p})=>{
+        const inRange=lv>cur&&lv<=tgt;
+        return `<span class="pq">Lv${lv}:</span>`+p.map(q=>{
+          const ok=preOk(q); if(inRange&&!ok) warn=true;
+          return `<span class="pq${inRange?(ok?' ok':' ng'):''}">${preLabel(q)}</span>`;
+        }).join('');
+      }).join(' ');
+      const res=tgt>cur
+        ?`<span class="r-sh">🔥微粒子 ${fmtN(x.c[5])}</span><span class="r-st">⚙️${fmtN(x.c[4])}</span><span class="r-mat">🥩${fmtM(x.c[0])} 🪵${fmtM(x.c[1])} 🪨${fmtM(x.c[2])} 🔩${fmtM(x.c[3])}</span><span class="r-day">⏱${fmtT(x.t)}</span><span class="r-dayb">→${fmtT(tBuf(x.t))}</span>`
+        :`<span class="r-mat">目標を上げるとコストを表示</span>`;
+      return `<div class="r-card${warn?' warn':''}">
+        <div class="r-hdr"><span class="r-name">${r.name}</span><span class="r-desc">${r.desc}</span><span class="r-max">最大Lv${mx}</span></div>
+        <div class="r-body">
+          <div class="sides">
+            <div class="side"><span class="side-lbl">現在</span>${spin('cur',r.id,-1)}<span class="lvv">${cur}</span>${spin('cur',r.id,1)}</div>
+            <span class="arr">→</span>
+            <div class="side"><span class="side-lbl">目標</span>${spin('tgt',r.id,-1)}<span class="lvv" style="color:${tgt>cur?'#fbbf24':'#e2e8f0'}">${tgt}</span>${spin('tgt',r.id,1)}<button class="spbtn" style="width:34px;font-size:9px;" onclick="setTgt('${r.id}',${mx})">MAX</button></div>
+          </div>
+          <div class="r-res">${res}</div>
+          <div class="r-pre">${pre}</div>
+          ${r.note?`<div class="note">※${r.note}</div>`:''}
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="tier"><div class="tier-hdr"><span class="tier-ttl">${tr.name}</span><span class="tier-req">解放: ${tr.req}</span></div><div class="r-list">${cards}</div></div>`;
+  }).join('');
+}
+
+// ============================================================
+// LONG-PRESS
+// ============================================================
+let repT=null,repI=null,repeated=false;
+function stopRep(){clearTimeout(repT);clearInterval(repI);repT=repI=null;}
+function _step(fn,id,dir){
+  const before=fn==='cur'?S.cur[id]:S.tgt[id];
+  fn==='cur'?setCur(id,before+dir):setTgt(id,before+dir);
+  return (fn==='cur'?S.cur[id]:S.tgt[id])!==before;
+}
+// 長押しで連続変更した直後の click は無視（離した時に1段余分に進むのを防ぐ）
+function _tap(btn){if(repeated){repeated=false;return;}_step(btn.dataset.fn,btn.dataset.id,+btn.dataset.dir);}
+function _rep(btn){
+  const fn=btn.dataset.fn,id=btn.dataset.id,dir=+btn.dataset.dir;
+  stopRep();repeated=false;
+  repT=setTimeout(()=>{repI=setInterval(()=>{repeated=true;if(!_step(fn,id,dir))stopRep();},120);},400);
+}
+['pointerup','pointercancel','touchend','blur'].forEach(e=>window.addEventListener(e,stopRep));
+
+// ============================================================
+// MODALS / BACKUP
+// ============================================================
+function showModal(id){document.getElementById(id).style.display='flex';}
+function hideModal(id){document.getElementById(id).style.display='none';}
+function showBackup(){document.getElementById('bkup-out').value=JSON.stringify(S);document.getElementById('bkup-in').value='';showModal('bkup-modal');}
+function copyBackup(btn){
+  const ta=document.getElementById('bkup-out');ta.select();
+  const done=()=>{btn.textContent='コピーしました';setTimeout(()=>btn.textContent='コピー',1500);};
+  if(navigator.clipboard) navigator.clipboard.writeText(ta.value).then(done,()=>{document.execCommand('copy');done();});
+  else{document.execCommand('copy');done();}
+}
+function restoreBackup(){
+  try{
+    const d=JSON.parse(document.getElementById('bkup-in').value.trim());
+    if(!d||typeof d!=='object'||!d.cur) throw 0;
+    applyLoaded(d);save();syncInputs();render();hideModal('bkup-modal');alert('データを復元しました');
+  }catch(e){alert('データの形式が正しくありません');}
+}
+function clearAll(){
+  if(!confirm('全設定をリセットしますか？')) return;
+  try{localStorage.removeItem(LS_KEY);}catch(e){}
+  S=defState();syncInputs();render();
+}
+function syncInputs(){
+  document.getElementById('b-base').value=S.buffs.base||0;
+  document.getElementById('b-vice').checked=!!S.buffs.vice;
+  document.getElementById('b-vicesup').checked=!!S.buffs.viceSup;
+  document.getElementById('b-chancellor').checked=!!S.buffs.chancellor;
+  document.getElementById('b-academy').value=S.academy;
+  const grid=document.getElementById('inv-grid');delete grid.dataset.built;
+  const fe=document.getElementById('fceq');delete fe.dataset.built;
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.getElementById('b-academy').innerHTML=Array.from({length:ACADEMY_MAX+1},(_,i)=>`<option value="${i}">${i===0?'火晶前':'火晶Lv.'+i}</option>`).join('');
+load();syncInputs();render();
+</script>
+</body>
+</html>

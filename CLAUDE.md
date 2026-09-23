@@ -22,6 +22,7 @@ wos/
 ├── hero-gear-calc.html        # 英雄装備バフ計算（旧 wos-search / index.html）
 ├── ocr-phase1.html            # スクショ解析 Phase 1（袋の中の数値OCR、Tesseract.js）
 ├── city-relocation.html       # 都市移転ガイド
+├── war-academy.html           # 戦争学園 研究計算（盾兵。データは公式Wikiのスクショから転記）
 ├── beta/sw.js                 # 確認版（gh-pages の beta/）用：旧SWの登録解除のみ
 ├── src/                       # hero-gear-calc.html のロジックの TypeScript 版 + テスト（Jest）
 │   ├── calc/heroGearBuffs.ts
@@ -49,7 +50,7 @@ wos/
 
 ```
 git fetch origin gh-pages <開発ブランチ名>
-git diff --name-status origin/<開発ブランチ名> origin/gh-pages -- index.html gear-gem-calculator.html fc-calculator.html phase2.html phase3.html heal-calculator.html resource-calc.html event-scheduler.html canyon-battle.html hero-gear-calc.html ocr-phase1.html city-relocation.html manifest.json sw.js beta/sw.js .nojekyll
+git diff --name-status origin/<開発ブランチ名> origin/gh-pages -- index.html gear-gem-calculator.html fc-calculator.html phase2.html phase3.html heal-calculator.html resource-calc.html event-scheduler.html canyon-battle.html hero-gear-calc.html ocr-phase1.html city-relocation.html war-academy.html manifest.json sw.js beta/sw.js .nojekyll
 ```
 
 出力が空であれば同一バージョン。差分がある場合は `gh-pages` にのみ存在する変更（直接編集されたhotfixなど）を先に開発ブランチへ取り込んでから、新しい作業を始めること。
@@ -67,7 +68,7 @@ git diff --name-status origin/<開発ブランチ名> origin/gh-pages -- index.h
 - `beta/sw.js` は登録を解除するだけの Service Worker。以前の `beta/` は本番と同じ cache-first の SW を `beta/` スコープで登録していたため、スマホに古い確認版が残り続けていた。これを差し替えて解除させる（反映後、1回目の再読み込みで解除され、2回目から新しい確認版が表示される）。確認版のページ自体は SW を登録しない。
 - 確認版と本番は同一オリジンなので localStorage を共有する。確認版で本番データを壊さないよう、パスに `/beta/` を含むときは保存キーを分ける（`fc-calculator.html` では `IS_BETA` 判定で `fc3` → `beta_fc3`）。確認版はヘッダーに「確認版」バッジを表示する。本番データで確認したいときは 💾 バックアップを本番でコピーし確認版で復元する。
 - `beta/` のURLは本番 `sw.js` の `APP_URLS` に含まれないため、本番の SW にもキャッシュされない（ただし GitHub Pages のHTTPキャッシュで反映に数分かかることがある）。
-- 現時点で `IS_BETA` 対応済みなのは `fc-calculator.html` のみ。`gh-pages` の `beta/` に残っている他のページ（index / gear-gem-calculator / resource-calc / heal-calculator）は旧来のコピーで、保存キーが本番と共通。これらを `beta/` で確認する場合は、先に同じ対応（保存キー分離・SW登録スキップ・バッジ）を入れてからコピーすること。新しいページは最初からこの対応を入れる。
+- 現時点で `IS_BETA` 対応済みなのは `fc-calculator.html` と `war-academy.html`（`wa1` → `beta_wa1`）。`gh-pages` の `beta/` に残っている他のページ（index / gear-gem-calculator / resource-calc / heal-calculator）は旧来のコピーで、保存キーが本番と共通。これらを `beta/` で確認する場合は、先に同じ対応（保存キー分離・SW登録スキップ・バッジ）を入れてからコピーすること。新しいページは最初からこの対応を入れる。
 
 ## ブランチ運用
 
@@ -177,7 +178,7 @@ The 6-piece attack bonus uses the **6th-lowest-ranked** (minimum) equipped part'
 
 `sw.js` is shared by the 5 pages that make up the installable app — `index.html` (home) and the 4 tools linked from it: `gear-gem-calculator.html`, `fc-calculator.html`, `resource-calc.html`, `heal-calculator.html`. Each of those 5 pages registers it with `{scope:'./'}` (the `wos/` directory root) so that the bare root URL (`/`) is covered too — a single-file scope can't cover a directory-index request.
 
-Registering at the directory root would, by default, let the service worker intercept every page under `wos/`, including the independent tools (`phase2.html`, `phase3.html`, `event-scheduler.html`, `canyon-battle.html`, `hero-gear-calc.html`, `ocr-phase1.html`, `city-relocation.html`) that were never meant to be part of this offline app. To prevent that, `sw.js`'s `fetch` handler checks the request URL against an explicit allowlist (`APP_URLS`, built from `APP_FILES`) and does nothing (`return` without calling `respondWith`) for anything not in it — those pages fall through to a normal, uncached network request. Only the 5 pages don't register the service worker at all.
+Registering at the directory root would, by default, let the service worker intercept every page under `wos/`, including the independent tools (`phase2.html`, `phase3.html`, `event-scheduler.html`, `canyon-battle.html`, `hero-gear-calc.html`, `ocr-phase1.html`, `city-relocation.html`, `war-academy.html`) that were never meant to be part of this offline app. To prevent that, `sw.js`'s `fetch` handler checks the request URL against an explicit allowlist (`APP_URLS`, built from `APP_FILES`) and does nothing (`return` without calling `respondWith`) for anything not in it — those pages fall through to a normal, uncached network request. Only the 5 pages don't register the service worker at all.
 
 `sw.js` implements a **cache-first** strategy for the allowlisted files:
 - On install: caches `APP_FILES` (`./`, `./index.html`, and the 4 tool pages, plus `./manifest.json`/`./sw.js`) under a versioned cache key — precached in full on first visit to *any* of the 5 pages, so all 5 work offline even if the others were never individually visited
