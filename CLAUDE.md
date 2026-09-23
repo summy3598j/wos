@@ -16,7 +16,7 @@ wos/
 ├── phase2.html                # スクショ解析 Phase 2（テンプレートマッチ）
 ├── phase3.html                # スクショ解析 Phase 3（アイコン照合＋ROIデジット認識）
 ├── heal-calculator.html       # 治療計算ツール
-├── resource-calc.html         # 都市資源生産量計算
+├── resource-calc.html         # 都市資源生産量計算（入力はゲーム画面のバフ適用後の生産量。FCチェックで24時間稼働）
 ├── event-scheduler.html       # 予定告知メーカー
 ├── canyon-battle.html         # 峡谷合戦 完全ガイド
 ├── hero-gear-calc.html        # 英雄装備バフ計算（旧 wos-search / index.html）
@@ -68,7 +68,7 @@ git diff --name-status origin/<開発ブランチ名> origin/gh-pages -- index.h
 - `beta/sw.js` は登録を解除するだけの Service Worker。以前の `beta/` は本番と同じ cache-first の SW を `beta/` スコープで登録していたため、スマホに古い確認版が残り続けていた。これを差し替えて解除させる（反映後、1回目の再読み込みで解除され、2回目から新しい確認版が表示される）。確認版のページ自体は SW を登録しない。
 - 確認版と本番は同一オリジンなので localStorage を共有する。確認版で本番データを壊さないよう、パスに `/beta/` を含むときは保存キーを分ける（`fc-calculator.html` では `IS_BETA` 判定で `fc3` → `beta_fc3`）。確認版はヘッダーに「確認版」バッジを表示する。本番データで確認したいときは 💾 バックアップを本番でコピーし確認版で復元する。
 - `beta/` のURLは本番 `sw.js` の `APP_URLS` に含まれないため、本番の SW にもキャッシュされない（ただし GitHub Pages のHTTPキャッシュで反映に数分かかることがある）。
-- 現時点で確認版対応済みなのは `fc-calculator.html`・`war-academy.html`（`wa1` → `beta_wa1`）・`index.html`（保存データなし。SW登録スキップとバッジのみ）。`index.html` は `beta/` 配下では、`BETA_READY` に入っていないツールへのリンクを本番（`../`）に書き換える。確認版対応したツールは `BETA_READY` に追加すること。`gh-pages` の `beta/` に残っている他のページ（gear-gem-calculator / resource-calc / heal-calculator）は旧来のコピーで、保存キーが本番と共通。これらを `beta/` で確認する場合は、先に同じ対応（保存キー分離・SW登録スキップ・バッジ）を入れてからコピーすること。新しいページは最初からこの対応を入れる。
+- 現時点で確認版対応済みなのは `fc-calculator.html`・`war-academy.html`（`wa1` → `beta_wa1`）・`resource-calc.html`（`wos_resource_calc_v2` → `beta_wos_resource_calc_v2`）・`index.html`（保存データなし。SW登録スキップとバッジのみ）。`index.html` は `beta/` 配下では、`BETA_READY` に入っていないツールへのリンクを本番（`../`）に書き換える。確認版対応したツールは `BETA_READY` に追加すること。`gh-pages` の `beta/` に残っている他のページ（gear-gem-calculator / heal-calculator）は旧来のコピーで、保存キーが本番と共通。これらを `beta/` で確認する場合は、先に同じ対応（保存キー分離・SW登録スキップ・バッジ）を入れてからコピーすること。新しいページは最初からこの対応を入れる。
 
 ## ブランチ運用
 
