@@ -1,9 +1,10 @@
-const CACHE='wos-v10';
+const CACHE='wos-v11';
 // オフライン対応の対象（ホームから辿れる4ツール＋ホーム自身）。他の独立ツールは対象外。
 const APP_FILES=['./','./index.html','./gear-gem-calculator.html','./fc-calculator.html','./resource-calc.html','./heal-calculator.html','./manifest.json','./sw.js'];
 const APP_URLS=new Set(APP_FILES.map(f=>new URL(f,self.registration.scope).href));
 self.addEventListener('install',e=>{
-  e.waitUntil(caches.open(CACHE).then(c=>c.addAll(APP_FILES)));
+  // HTTPキャッシュを経由すると更新直後でも古いファイルがオフライン用キャッシュに入るため、必ずネットワークから取得する
+  e.waitUntil(caches.open(CACHE).then(c=>c.addAll(APP_FILES.map(f=>new Request(f,{cache:'reload'})))));
   self.skipWaiting();
 });
 self.addEventListener('activate',e=>{
