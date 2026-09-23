@@ -22,7 +22,7 @@ wos/
 ├── hero-gear-calc.html        # 英雄装備バフ計算（旧 wos-search / index.html）
 ├── ocr-phase1.html            # スクショ解析 Phase 1（袋の中の数値OCR、Tesseract.js）
 ├── city-relocation.html       # 都市移転ガイド
-├── war-academy.html           # 戦争学園 研究計算（盾兵。データは公式Wikiのスクショから転記）
+├── war-academy.html           # 戦争学園 研究計算（盾兵10項目。データは公式Wikiのスクショから転記）
 ├── beta/sw.js                 # 確認版（gh-pages の beta/）用：旧SWの登録解除のみ
 ├── src/                       # hero-gear-calc.html のロジックの TypeScript 版 + テスト（Jest）
 │   ├── calc/heroGearBuffs.ts
