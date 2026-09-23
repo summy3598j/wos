@@ -324,10 +324,10 @@ const INV_FIELDS = [
 // ============================================================
 // STATE
 // ============================================================
-// gh-pages の dev/ 配下（スマホ確認用）では本番と保存データを分ける
-const IS_DEV=location.pathname.includes('/dev/');
-const LS_KEY=IS_DEV?'dev_fc3':'fc3';
-if(IS_DEV) document.getElementById('dev-badge').outerHTML='<span style="font-size:9px;font-weight:700;color:#0d1b2a;background:#f0c040;border-radius:4px;padding:0 4px;margin-left:4px;">確認版</span>';
+// gh-pages の beta/ 配下（スマホ確認用）では本番と保存データを分ける
+const IS_BETA=location.pathname.includes('/beta/');
+const LS_KEY=IS_BETA?'beta_fc3':'fc3';
+if(IS_BETA) document.getElementById('dev-badge').outerHTML='<span style="font-size:9px;font-weight:700;color:#0d1b2a;background:#f0c040;border-radius:4px;padding:0 4px;margin-left:4px;">確認版</span>';
 
 const defState = () => ({
   buildings: Object.fromEntries(BUILDINGS.map(b=>[b.id,{from:{fc:0,sub:0},to:{fc:5,sub:0},enabled:true}])),
@@ -743,6 +743,6 @@ document.getElementById('b-chancellor').checked = S.buffs.chancellor||false;
 document.getElementById('b-mat').value       = S.buffs.matReduce||0;
 render();
 </script>
-<script>if(!location.pathname.includes("/dev/")&&"serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("./sw.js",{scope:"./"});});}</script>
+<script>if(!location.pathname.includes("/beta/")&&"serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("./sw.js",{scope:"./"});});}</script>
 </body>
 </html>

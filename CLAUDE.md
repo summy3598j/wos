@@ -21,6 +21,8 @@ wos/
 ├── canyon-battle.html         # 峡谷合戦 完全ガイド
 ├── hero-gear-calc.html        # 英雄装備バフ計算（旧 wos-search / index.html）
 ├── ocr-phase1.html            # スクショ解析 Phase 1（袋の中の数値OCR、Tesseract.js）
+├── city-relocation.html       # 都市移転ガイド
+├── beta/sw.js                 # 確認版（gh-pages の beta/）用：旧SWの登録解除のみ
 ├── src/                       # hero-gear-calc.html のロジックの TypeScript 版 + テスト（Jest）
 │   ├── calc/heroGearBuffs.ts
 │   ├── calc/heroGearBuffs.test.ts
@@ -47,24 +49,25 @@ wos/
 
 ```
 git fetch origin gh-pages <開発ブランチ名>
-git diff --name-status origin/<開発ブランチ名> origin/gh-pages -- index.html gear-gem-calculator.html fc-calculator.html phase2.html phase3.html heal-calculator.html resource-calc.html event-scheduler.html canyon-battle.html hero-gear-calc.html ocr-phase1.html manifest.json sw.js .nojekyll
+git diff --name-status origin/<開発ブランチ名> origin/gh-pages -- index.html gear-gem-calculator.html fc-calculator.html phase2.html phase3.html heal-calculator.html resource-calc.html event-scheduler.html canyon-battle.html hero-gear-calc.html ocr-phase1.html city-relocation.html manifest.json sw.js beta/sw.js .nojekyll
 ```
 
 出力が空であれば同一バージョン。差分がある場合は `gh-pages` にのみ存在する変更（直接編集されたhotfixなど）を先に開発ブランチへ取り込んでから、新しい作業を始めること。
 
-### 確認版（dev/）— スマホでの動作確認
+### 確認版（beta/）— スマホでの動作確認
 
-動作確認はスマホで行うため、開発中の変更も GitHub Pages に公開する必要がある。ただし本番ページには他の利用者がいるので、確認中の版で本番ファイルを上書きしない。確認版は `gh-pages` の **`dev/` 配下**に置く（例: `https://summy3598j.github.io/wos/dev/fc-calculator.html`）。
+動作確認はスマホで行うため、開発中の変更も GitHub Pages に公開する必要がある。ただし本番ページには他の利用者がいるので、確認中の版で本番ファイルを上書きしない。確認版は `gh-pages` の **`beta/` 配下**に置く（例: `https://summy3598j.github.io/wos/beta/fc-calculator.html`）。
 
 1. 開発ブランチで変更 → commit・push
-2. 変更したHTMLを `gh-pages` の `dev/` にコピー → commit・push（開発ブランチからの一方通行ルールはここでも同じ）
-3. スマホで `dev/` のURLを開いて確認。問題があれば 1 に戻る
+2. 変更したHTMLを `gh-pages` の `beta/` にコピー → commit・push（開発ブランチからの一方通行ルールはここでも同じ）
+3. スマホで `beta/` のURLを開いて確認。問題があれば 1 に戻る
 4. 確認OKなら、同じファイルを `gh-pages` のルート（本番）に反映し、`sw.js` のキャッシュバージョンと各ページのバージョン表示を上げる
 
-- `dev/` は `gh-pages` にのみ存在し、開発ブランチには置かない（中身は開発ブランチのファイルのコピー）。上の同期チェックの対象にも含めない。
-- 確認版と本番は同一オリジンなので localStorage を共有する。確認版で本番データを壊さないよう、パスに `/dev/` を含むときは保存キーを分ける（`fc-calculator.html` では `IS_DEV` 判定で `fc3` → `dev_fc3`）。確認版はヘッダーに「確認版」バッジを表示し、Service Worker を登録しない。本番データで確認したいときは 💾 バックアップを本番でコピーし確認版で復元する。
-- `dev/` のURLは `sw.js` の `APP_URLS` に含まれないため、Service Worker にキャッシュされずネットワークから取得される（ただし GitHub Pages のHTTPキャッシュで反映に数分かかることがある）。
-- 現時点で `IS_DEV` 対応済みなのは `fc-calculator.html` のみ。他のツールを `dev/` で確認する場合は、先に同じ対応（保存キー分離・SW登録スキップ・バッジ）を入れること。
+- `beta/` のHTMLは開発ブランチのファイルのコピーで、開発ブランチには置かない。上の同期チェックの対象にも含めない。例外は `beta/sw.js` で、開発ブランチの `beta/sw.js` をそのまま `gh-pages` の `beta/sw.js` に反映する。
+- `beta/sw.js` は登録を解除するだけの Service Worker。以前の `beta/` は本番と同じ cache-first の SW を `beta/` スコープで登録していたため、スマホに古い確認版が残り続けていた。これを差し替えて解除させる（反映後、1回目の再読み込みで解除され、2回目から新しい確認版が表示される）。確認版のページ自体は SW を登録しない。
+- 確認版と本番は同一オリジンなので localStorage を共有する。確認版で本番データを壊さないよう、パスに `/beta/` を含むときは保存キーを分ける（`fc-calculator.html` では `IS_BETA` 判定で `fc3` → `beta_fc3`）。確認版はヘッダーに「確認版」バッジを表示する。本番データで確認したいときは 💾 バックアップを本番でコピーし確認版で復元する。
+- `beta/` のURLは本番 `sw.js` の `APP_URLS` に含まれないため、本番の SW にもキャッシュされない（ただし GitHub Pages のHTTPキャッシュで反映に数分かかることがある）。
+- 現時点で `IS_BETA` 対応済みなのは `fc-calculator.html` のみ。`gh-pages` の `beta/` に残っている他のページ（index / gear-gem-calculator / resource-calc / heal-calculator）は旧来のコピーで、保存キーが本番と共通。これらを `beta/` で確認する場合は、先に同じ対応（保存キー分離・SW登録スキップ・バッジ）を入れてからコピーすること。新しいページは最初からこの対応を入れる。
 
 ## ブランチ運用
 
@@ -174,7 +177,7 @@ The 6-piece attack bonus uses the **6th-lowest-ranked** (minimum) equipped part'
 
 `sw.js` is shared by the 5 pages that make up the installable app — `index.html` (home) and the 4 tools linked from it: `gear-gem-calculator.html`, `fc-calculator.html`, `resource-calc.html`, `heal-calculator.html`. Each of those 5 pages registers it with `{scope:'./'}` (the `wos/` directory root) so that the bare root URL (`/`) is covered too — a single-file scope can't cover a directory-index request.
 
-Registering at the directory root would, by default, let the service worker intercept every page under `wos/`, including the independent tools (`phase2.html`, `phase3.html`, `event-scheduler.html`, `canyon-battle.html`, `hero-gear-calc.html`, `ocr-phase1.html`) that were never meant to be part of this offline app. To prevent that, `sw.js`'s `fetch` handler checks the request URL against an explicit allowlist (`APP_URLS`, built from `APP_FILES`) and does nothing (`return` without calling `respondWith`) for anything not in it — those pages fall through to a normal, uncached network request. Only the 5 pages don't register the service worker at all.
+Registering at the directory root would, by default, let the service worker intercept every page under `wos/`, including the independent tools (`phase2.html`, `phase3.html`, `event-scheduler.html`, `canyon-battle.html`, `hero-gear-calc.html`, `ocr-phase1.html`, `city-relocation.html`) that were never meant to be part of this offline app. To prevent that, `sw.js`'s `fetch` handler checks the request URL against an explicit allowlist (`APP_URLS`, built from `APP_FILES`) and does nothing (`return` without calling `respondWith`) for anything not in it — those pages fall through to a normal, uncached network request. Only the 5 pages don't register the service worker at all.
 
 `sw.js` implements a **cache-first** strategy for the allowlisted files:
 - On install: caches `APP_FILES` (`./`, `./index.html`, and the 4 tool pages, plus `./manifest.json`/`./sw.js`) under a versioned cache key — precached in full on first visit to *any* of the 5 pages, so all 5 work offline even if the others were never individually visited
@@ -188,7 +191,7 @@ Registering at the directory root would, by default, let the service worker inte
 1. Edit the relevant `.html` file directly — no build step required for any tool.
 2. Open the file in a browser to test (or serve with any static HTTP server: `python3 -m http.server`).
 3. For `src/` (hero-gear-calc logic tests): `npm install && npm test` (Jest).
-4. Commit and push to this branch. スマホ確認は `gh-pages` の `dev/` に反映して行い（「確認版（dev/）」参照）、確認後に本番（`gh-pages` ルート）へ反映する。
+4. Commit and push to this branch. スマホ確認は `gh-pages` の `beta/` に反映して行い（「確認版（beta/）」参照）、確認後に本番（`gh-pages` ルート）へ反映する。
 
 ## Conventions
 
