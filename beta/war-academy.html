@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>戦争学園 研究計算</title>
+<title>戦争学園計算</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 body{background:#0d1b2a;color:#e2e8f0;font-family:'Hiragino Sans','Noto Sans JP',sans-serif;max-width:480px;margin:0 auto;min-height:100dvh;overscroll-behavior:none;-webkit-user-select:none;user-select:none;}
@@ -84,17 +84,40 @@ input,select{outline:none;}
 .help-close{display:block;width:100%;background:#1e3a5c;color:#60a5fa;border-radius:9px;padding:9px;font-size:13px;font-weight:700;margin-top:12px;text-align:center;cursor:pointer;}
 .bkup-ta{width:100%;background:#0a1520;border:1px solid #334155;border-radius:6px;color:#94a3b8;font-size:11px;padding:6px 8px;min-height:70px;resize:none;-webkit-user-select:text;user-select:text;font-family:monospace;margin-top:5px;}
 .bkup-btn{display:block;width:100%;border-radius:8px;padding:8px;font-size:13px;font-weight:700;text-align:center;cursor:pointer;margin-top:6px;background:#1e3a5c;color:#60a5fa;}
+.mode-bar{display:flex;background:#0a1520;border-bottom:1px solid #1e3a5c;}
+.mode-btn{flex:1;padding:6px 0;font-size:12px;font-weight:700;color:#64748b;border-bottom:2px solid transparent;}
+.mode-btn.on{color:#93c5fd;border-bottom-color:#3b82f6;}
+.b-card{margin:6px 8px 0;background:#112233;border:1px solid #1e3a5c;border-radius:9px;overflow:hidden;}
+.b-sides{display:flex;align-items:flex-start;gap:6px;}
+.b-side{flex:1;display:flex;flex-direction:column;gap:3px;}
+.b-side-lbl{font-size:9px;color:#475569;text-align:center;}
+.b-pair{display:flex;gap:4px;}
+.b-spn{flex:1;display:flex;flex-direction:column;gap:2px;}
+.b-spn .spbtn{width:auto;height:20px;}
+.b-box{background:#0d1b2a;border:1.5px solid #334155;border-radius:6px;min-height:32px;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.b-v1{font-size:14px;font-weight:700;line-height:1.2;}
+.b-v2{font-size:8px;color:#475569;line-height:1;}
+.b-arr{color:#334155;font-size:13px;padding-top:30px;}
+.r-fc{color:#f97316;}
+.r-rfc{color:#a78bfa;}
 .bkup-btn.restore{background:#1a3a1a;color:#4ade80;border:1px solid #2d5a2d;}
 </style>
 </head>
 <body>
 
 <div class="hdr">
-  <h1>⚔️ 戦争学園 研究計算 <span style="font-size:9px;color:#64748b;font-weight:400;">v10</span><span id="beta-badge"></span></h1>
+  <h1>⚔️ 戦争学園計算 <span style="font-size:9px;color:#64748b;font-weight:400;">v10</span><span id="beta-badge"></span></h1>
   <button class="hdr-btn" onclick="showModal('help-modal')">？</button>
   <button class="hdr-btn" onclick="showBackup()">💾</button>
   <button class="hdr-btn" onclick="clearAll()">クリア</button>
 </div>
+
+<div class="mode-bar">
+  <button class="mode-btn" id="m-research" onclick="setMode('research')">研究</button>
+  <button class="mode-btn" id="m-building" onclick="setMode('building')">建物（火晶強化）</button>
+</div>
+
+<div id="mode-research">
 
 <div class="buff-strip">
   <div class="buff-row">
@@ -106,8 +129,7 @@ input,select{outline:none;}
     <span class="buff-lbl">研究速度</span>
     <input class="buff-inp" type="number" id="b-base" value="0" min="0" inputmode="decimal" oninput="onInput()">
     <span class="buff-lbl">%</span>
-    <span class="buff-lbl" style="margin-left:6px;">戦争学園</span>
-    <select class="buff-sel" id="b-academy" onchange="onInput()"></select>
+    <span class="buff-lbl" style="margin-left:6px;" id="academy-lbl"></span>
   </div>
 </div>
 
@@ -126,23 +148,75 @@ input,select{outline:none;}
 
 <div class="foot">
   研究コスト・時間・前提条件は Whiteout Survival 公式Wiki（盾兵）の値。槍兵・弓兵も同じコスト。<br>
-  火晶→微粒子の交換レートの初期値（火晶10→微粒子13）は攻略サイトの記載で、ゲーム内では未確認。違う場合は上の欄で変更してください。
+  火晶→微粒子の交換レート（火晶10→微粒子13、1日最大200回）は公式Wiki（戦争学園）の記載。<br>
+  前提条件の「戦争学園 火晶Lv」は建物タブの目標レベルで判定します。
+</div>
+</div>
+
+<div id="mode-building" style="display:none;">
+<div class="buff-strip">
+  <div class="buff-row">
+    <label class="buff-chk"><input type="checkbox" id="bb-vice" onchange="onBVice('vice')"><span>副官</span><span class="buff-tag">+10%</span></label>
+    <label class="buff-chk"><input type="checkbox" id="bb-vicesup" onchange="onBVice('sup')"><span>副官(至高)</span><span class="buff-tag">+15%</span></label>
+    <label class="buff-chk"><input type="checkbox" id="bb-lords" onchange="onBInput()"><span>領主指令</span><span class="buff-tag">+20%</span></label>
+    <label class="buff-chk"><input type="checkbox" id="bb-chancellor" onchange="onBInput()"><span>執政官</span><span class="buff-tag">+10%</span></label>
+  </div>
+  <div class="buff-row">
+    <span class="buff-lbl">建造速度</span>
+    <input class="buff-inp" type="number" id="bb-base" value="0" min="0" inputmode="decimal" oninput="onBInput()">
+    <span class="buff-lbl">%</span>
+    <span class="buff-lbl">ペット</span>
+    <select class="buff-sel" id="bb-pet" onchange="onBInput()">
+      <option value="0">なし</option><option value="3">Lv1 +3%</option><option value="6">Lv2 +6%</option><option value="9">Lv3 +9%</option><option value="12">Lv4 +12%</option><option value="15">Lv5 +15%</option>
+    </select>
+    <span class="buff-lbl">アグネス</span>
+    <select class="buff-sel" id="bb-agnes" onchange="onBInput()">
+      <option value="0">なし</option><option value="2">Lv1 -2h</option><option value="3">Lv2 -3h</option><option value="4">Lv3 -4h</option><option value="6">Lv4 -6h</option><option value="8">Lv5 -8h</option>
+    </select>
+    <span class="buff-lbl">ジンマン建造スキル</span>
+    <select class="buff-sel" id="bb-mat" onchange="onBInput()">
+      <option value="0">なし</option><option value="3">Lv1 +3%</option><option value="6">Lv2 +6%</option><option value="9">Lv3 +9%</option><option value="12">Lv4 +12%</option><option value="15">Lv5 +15%</option>
+    </select>
+  </div>
+</div>
+
+<div class="time-strip" id="btime-strip"></div>
+
+<div class="inv-strip">
+  <div class="inv-top">
+    <span class="inv-title">所持アイテム</span>
+    <span class="inv-unit">火晶・精製:個 / 資材:M単位</span>
+  </div>
+  <div class="inv-cols" id="binv-grid"></div>
+  <div class="fceq" id="bfc-all"></div>
+</div>
+
+<div id="b-card"></div>
+
+<div class="foot">
+  建造コスト・時間・前提条件は Whiteout Survival 公式Wiki（戦争学園）の値。計算式とバフは火晶計算ツールと同じ。<br>
+  公式Wikiの表では FC1 の建造は 2秒・コストなしのため、現在レベルは FC1 から設定します。
+</div>
 </div>
 
 <div id="help-modal" onclick="if(event.target===this)hideModal(this.id)">
   <div class="help-box">
-    <div class="help-ttl">⚔️ 戦争学園 研究計算 使い方</div>
+    <div class="help-ttl">⚔️ 戦争学園計算 使い方</div>
     <div class="help-sec">
       <h3>操作</h3>
       <p>各研究の「現在」と「目標」のレベルを▲▼で設定すると、必要な資源・鋼材・火晶微粒子・研究時間を合計します。長押しで連続変更。MAXで目標を最大レベルにします。</p>
     </div>
     <div class="help-sec">
       <h3>前提条件</h3>
-      <p>目標までの各レベルに必要な前提条件を表示します。赤は未達（戦争学園の火晶Lvが足りない、または前提研究の目標レベルが足りない）、緑は達成済みです。前提研究は「目標」レベルで判定します。</p>
+      <p>目標までの各レベルに必要な前提条件を表示します。赤は未達、緑は達成済みです。前提研究は各研究の「目標」レベル、戦争学園の火晶Lvは建物タブの「目標」レベルで判定します。</p>
     </div>
     <div class="help-sec">
       <h3>研究バフ</h3>
       <p>研究速度には、副執政官・執政官を除いた研究速度（%）を入力します。副執政官(10%)と副執政官(至高)(15%)はどちらか一方のみ選択可。執政官は+10%。研究時間 = 基本時間 ÷ (1 + 研究速度合計/100)。</p>
+    </div>
+    <div class="help-sec">
+      <h3>建物（火晶強化）</h3>
+      <p>戦争学園の現在・目標の火晶レベル（FC）と段階を▲▼で設定すると、必要な火晶・精製火晶・資材・建造時間を計算します。バフの扱いは火晶計算ツールと同じです（副官と副官(至高)はどちらか一方、領主指令は建設時間-20%、アグネスは1段ごとに短縮、ジンマン建造スキルは資材のみ削減）。</p>
     </div>
     <div class="help-sec">
       <h3>火晶換算</h3>
@@ -297,7 +371,31 @@ const TIERS=[
   {n:4,name:'ティア4（T11解放）',req:'戦争学園 火晶Lv.5・戦斧/庇護/軍団 Lv.12'},
   {n:5,name:'ティア5',req:'烈日盾兵 Lv.1'},
 ];
-const ACADEMY_MAX=10;
+// 戦争学園の火晶強化（公式Wiki）。火晶計算ツールの STAGE_DATA と同じ形式：
+// index = 到達FCレベル-1。sub は FC(n-1)-1〜4 の各段、comp は FCn 到達の段のコスト。資材は1段あたり M 単位、days は1段あたり。
+// FC1 は建造 2秒・コストなしなので扱わない（現在レベルの下限を FC1 にする）。
+const B_SUB=5;
+const B_MIN_FC=1,B_MAX_FC=10;
+const BLD=[
+  null,
+  {sub:{fc:71,rfc:0}, comp:{fc:71,rfc:0}, meat:36,wood:36,coal:7.2,iron:1.8,days:1.8,pre:2},
+  {sub:{fc:107,rfc:0},comp:{fc:107,rfc:0},meat:39,wood:39,coal:7.9,iron:1.9,days:2.2,pre:3},
+  {sub:{fc:126,rfc:0},comp:{fc:126,rfc:0},meat:41,wood:41,coal:8.2,iron:2.0,days:2.4,pre:4},
+  {sub:{fc:150,rfc:0},comp:{fc:150,rfc:0},meat:42,wood:42,coal:8.4,iron:2.1,days:2.8,pre:5},
+  {sub:{fc:90,rfc:4}, comp:{fc:45,rfc:9}, meat:48,wood:48,coal:9.6,iron:2.4,days:3.0,pre:6},
+  {sub:{fc:108,rfc:6},comp:{fc:54,rfc:13},meat:54,wood:54,coal:10, iron:2.7,days:3.6,pre:7},
+  {sub:{fc:108,rfc:9},comp:{fc:54,rfc:18},meat:66,wood:66,coal:13, iron:3.3,days:4.0,pre:8},
+  {sub:{fc:126,rfc:13},comp:{fc:63,rfc:27},meat:72,wood:72,coal:14,iron:3.6,days:2.6,pre:9},
+  {sub:{fc:157,rfc:31},comp:{fc:78,rfc:63},meat:84,wood:84,coal:16,iron:4.2,days:4.0,pre:10},
+];
+const B_INV=[
+  {id:'fc',  name:'🔥 火晶', m:false},
+  {id:'rfc', name:'⚗️ 精製', m:false},
+  {id:'meat',name:'🥩 生肉', m:true},
+  {id:'wood',name:'🪵 木材', m:true},
+  {id:'coal',name:'🪨 石炭', m:true},
+  {id:'iron',name:'🔩 鉄鉱', m:true},
+];
 const INV_FIELDS=[
   {id:'meat', name:'🥩 生肉', i:0,m:true},
   {id:'wood', name:'🪵 木材', i:1,m:true},
@@ -317,7 +415,10 @@ if(IS_BETA) document.getElementById('beta-badge').outerHTML='<span style="font-s
 const defState=()=>({
   cur:Object.fromEntries(RESEARCH.map(r=>[r.id,0])),
   tgt:Object.fromEntries(RESEARCH.map(r=>[r.id,0])),
-  academy:1,
+  mode:'research',
+  bld:{from:{fc:1,sub:0},to:{fc:1,sub:0}},
+  bbuffs:{base:0,pet:0,agnes:0,vice:false,viceSup:false,lords:false,chancellor:false,mat:0},
+  binv:{fc:0,rfc:0,meat:0,wood:0,coal:0,iron:0},
   buffs:{base:0,vice:false,viceSup:false,chancellor:false},
   inv:{meat:0,wood:0,coal:0,iron:0,steel:0,shard:0},
   rate:{fc:10,shard:13},
@@ -333,7 +434,11 @@ function applyLoaded(d){
     const t=Math.min(mx,Math.max(c,parseInt(d.tgt?.[r.id])||0));
     s.cur[r.id]=c; s.tgt[r.id]=t;
   });
-  s.academy=Math.min(ACADEMY_MAX,Math.max(0,parseInt(d.academy)||0));
+  s.mode=d.mode==='building'?'building':'research';
+  const lv=o=>{let fc=Math.min(B_MAX_FC,Math.max(B_MIN_FC,parseInt(o?.fc)||B_MIN_FC));let sub=fc===B_MAX_FC?0:Math.min(4,Math.max(0,parseInt(o?.sub)||0));return {fc,sub};};
+  if(d.bld){s.bld.from=lv(d.bld.from);s.bld.to=lv(d.bld.to);if(gssi(s.bld.to)<gssi(s.bld.from))s.bld.to={...s.bld.from};}
+  if(d.bbuffs) s.bbuffs={...s.bbuffs,...d.bbuffs};
+  if(d.binv) B_INV.forEach(f=>{s.binv[f.id]=parseFloat(d.binv[f.id])||0;});
   if(d.buffs) s.buffs={...s.buffs,...d.buffs};
   if(d.inv) INV_FIELDS.forEach(f=>{s.inv[f.id]=parseFloat(d.inv[f.id])||0;});
   if(d.rate) s.rate={fc:parseFloat(d.rate.fc)||10,shard:parseFloat(d.rate.shard)||13};
@@ -367,7 +472,6 @@ function onInput(){
   S.buffs.vice=document.getElementById('b-vice').checked;
   S.buffs.viceSup=document.getElementById('b-vicesup').checked;
   S.buffs.chancellor=document.getElementById('b-chancellor').checked;
-  S.academy=parseInt(document.getElementById('b-academy').value)||0;
   save();render();
 }
 function onInv(k,el){S.inv[k]=parseFloat(el.value)||0;save();renderSummary();}
@@ -386,7 +490,7 @@ function rangeCost(id,from,to){
   for(let l=from+1;l<=to;l++){const d=r.lv[l-1];d.c.forEach((v,i)=>c[i]+=v);t+=d.t;}
   return {c,t};
 }
-function preOk(p){return p[0]==='A'?S.academy>=p[1]:S.tgt[p[0]]>=p[1];}
+function preOk(p){return p[0]==='A'?S.bld.to.fc>=p[1]:S.tgt[p[0]]>=p[1];}
 function preLabel(p){return p[0]==='A'?`戦争学園 火晶Lv.${p[1]}`:`${RMAP[p[0]].name} ${p[1]}`;}
 function totals(){
   const c=[0,0,0,0,0,0];let t=0;
@@ -396,10 +500,73 @@ function totals(){
 const fcEq=sh=>Math.ceil(sh*S.rate.fc/S.rate.shard);
 
 // ============================================================
+// BUILDING（火晶計算ツールと同じ計算式）
+// ============================================================
+function gssi(l){return l.fc*B_SUB+l.sub;}
+function bRange(from,to){
+  const t={fc:0,rfc:0,meat:0,wood:0,coal:0,iron:0,days:0,stages:0,pre:0};
+  for(let ss=gssi(from)+1;ss<=gssi(to);ss++){
+    const lvl=Math.ceil(ss/B_SUB),s=((ss-1)%B_SUB)+1,d=BLD[lvl-1];
+    if(!d) continue;
+    const c=s===B_SUB?d.comp:d.sub;
+    t.fc+=c.fc;t.rfc+=c.rfc;t.meat+=d.meat;t.wood+=d.wood;t.coal+=d.coal;t.iron+=d.iron;t.days+=d.days;t.stages++;
+    t.pre=Math.max(t.pre,d.pre);
+  }
+  return t;
+}
+function bBuffs(){
+  const b=S.bbuffs;
+  const accel=b.lords?20:0,speed=(b.base||0)+(b.pet||0)+(b.viceSup?15:b.vice?10:0)+(b.chancellor?10:0);
+  const agnesD=(b.agnes||0)/24;
+  const tBuf=d=>d*(1-accel/100)/(1+speed/100);
+  return {accel,speed,tBufA:(d,n)=>Math.max(0,tBuf(d)-n*agnesD),mBuf:v=>v*(1-(b.mat||0)/100),hasT:accel>0||speed>0||b.agnes>0};
+}
+function badj(fot,field,dir){
+  const l=S.bld[fot];
+  if(field==='fc'){
+    l.fc=Math.max(B_MIN_FC,Math.min(B_MAX_FC,l.fc+dir));
+    if(l.fc===B_MAX_FC) l.sub=0;
+  }else{
+    let ns=l.sub+dir;
+    if(ns>4){if(l.fc<B_MAX_FC){l.fc++;ns=0;}else ns=0;}
+    else if(ns<0){if(l.fc>B_MIN_FC){l.fc--;ns=4;}else ns=0;}
+    l.sub=l.fc===B_MAX_FC?0:ns;
+  }
+  if(gssi(S.bld.from)>gssi(S.bld.to)){
+    if(fot==='from') S.bld.to={...S.bld.from}; else S.bld.from={...S.bld.to};
+  }
+  save();render();
+}
+function onBVice(type){
+  const v=document.getElementById('bb-vice'),s=document.getElementById('bb-vicesup');
+  if(type==='vice'&&v.checked) s.checked=false;
+  if(type==='sup'&&s.checked) v.checked=false;
+  onBInput();
+}
+function onBInput(){
+  const b=S.bbuffs;
+  b.base=parseFloat(document.getElementById('bb-base').value)||0;
+  b.pet=parseInt(document.getElementById('bb-pet').value)||0;
+  b.agnes=parseInt(document.getElementById('bb-agnes').value)||0;
+  b.mat=parseFloat(document.getElementById('bb-mat').value)||0;
+  b.vice=document.getElementById('bb-vice').checked;
+  b.viceSup=document.getElementById('bb-vicesup').checked;
+  b.lords=document.getElementById('bb-lords').checked;
+  b.chancellor=document.getElementById('bb-chancellor').checked;
+  save();render();
+}
+function onBInv(k,el){S.binv[k]=parseFloat(el.value)||0;save();renderBuilding();}
+function setMode(m){S.mode=m;save();render();}
+
+// ============================================================
 // FORMAT
 // ============================================================
 function fmtM(v){const m=v/1e6;return m>=1000?(m/1000).toFixed(2)+'B':(m>=100?m.toFixed(0):m>=10?m.toFixed(1):m.toFixed(2)).replace(/\.?0+$/,'')+'M';}
 const fmtN=v=>Math.round(v).toLocaleString();
+function fmtR(v){return v>=1000?(v/1000).toFixed(2)+'B':(Math.round(v*10)/10).toFixed(1)+'M';}
+const fcLabel=fc=>String(fc);
+const subLabel=sub=>sub===0?'完':`${sub}段`;
+const lvName=l=>l.sub===0?`FC${l.fc}`:`FC${l.fc}-${l.sub}`;
 function fmtT(sec){
   const tot=Math.round(sec);
   if(tot<=0) return '0';
@@ -411,7 +578,55 @@ function fmtT(sec){
 // ============================================================
 // RENDER
 // ============================================================
-function render(){renderSummary();renderTiers();}
+function render(){
+  const r=S.mode==='research';
+  document.getElementById('mode-research').style.display=r?'':'none';
+  document.getElementById('mode-building').style.display=r?'none':'';
+  document.getElementById('m-research').className='mode-btn'+(r?' on':'');
+  document.getElementById('m-building').className='mode-btn'+(r?'':' on');
+  document.getElementById('academy-lbl').textContent=`戦争学園 目標 ${lvName(S.bld.to)}（建物タブ）`;
+  renderSummary();renderTiers();renderBuilding();
+}
+function renderBuilding(){
+  const B=bBuffs(),x=bRange(S.bld.from,S.bld.to);
+  const daysB=B.tBufA(x.days,x.stages);
+  document.getElementById('btime-strip').innerHTML=x.days>0
+    ?`<span class="time-lbl">建造時間</span><span class="time-val">${fmtT(x.days*86400)}</span>${B.hasT?`<span class="time-arr">→ バフ後</span><span class="time-buf">${fmtT(daysB*86400)}</span>`:''}<span class="time-lbl">（${x.stages}段）</span>`
+    :`<span class="time-lbl">目標レベルを設定すると建造時間を計算します</span>`;
+  const grid=document.getElementById('binv-grid');
+  if(!grid.dataset.built){
+    grid.innerHTML='<div class="inv-ch"></div><div class="inv-ch">必要</div><div class="inv-ch">所持</div><div class="inv-ch">不足</div>'
+      +B_INV.map(f=>`<div class="inv-name">${f.name}</div><div class="inv-req" id="bq-${f.id}"></div><input class="inv-inp" type="number" min="0" inputmode="decimal" id="bi-${f.id}" oninput="onBInv('${f.id}',this)"><div class="inv-lack" id="bl-${f.id}"></div>`).join('');
+    grid.dataset.built='1';
+    B_INV.forEach(f=>{document.getElementById(`bi-${f.id}`).value=S.binv[f.id]||'';});
+  }
+  B_INV.forEach(f=>{
+    const req=f.m?B.mBuf(x[f.id]):x[f.id],own=S.binv[f.id]||0,lack=req-own;
+    document.getElementById(`bq-${f.id}`).textContent=f.m?fmtR(req):fmtN(req);
+    const el=document.getElementById(`bl-${f.id}`);
+    if(req<=0){el.textContent='';el.className='inv-lack';}
+    else if(lack>0){el.textContent=f.m?fmtR(lack):fmtN(lack);el.className='inv-lack ng';}
+    else{el.textContent='✓';el.className='inv-lack ok';}
+  });
+  const sh=totals().c[5];
+  document.getElementById('bfc-all').innerHTML=sh>0
+    ?`火晶 合計 <b>${fmtN(x.fc+fcEq(sh))}</b>（建物 ${fmtN(x.fc)} ＋ 研究の微粒子の火晶換算 ${fmtN(fcEq(sh))}）`
+    :`火晶 合計 <b>${fmtN(x.fc)}</b>（研究タブで目標を設定すると微粒子の火晶換算を加算）`;
+  const bs=(fot,field,dir)=>`<button class="spbtn" onclick="badj('${fot}','${field}',${dir})">${dir>0?'▲':'▼'}</button>`;
+  const spn=(fot,field,val,color,lbl)=>`<div class="b-spn">${bs(fot,field,1)}<div class="b-box"><span class="b-v1" style="color:${color}">${val}</span><span class="b-v2">${lbl}</span></div>${bs(fot,field,-1)}</div>`;
+  const side=(fot,l,lbl,color)=>`<div class="b-side"><div class="b-side-lbl">${lbl}</div><div class="b-pair">${spn(fot,'fc',fcLabel(l.fc),color,'FC')}${spn(fot,'sub',subLabel(l.sub),'#94a3b8','段')}</div></div>`;
+  const res=x.stages>0
+    ?`<span class="r-fc">🔥${fmtN(x.fc)}</span><span class="r-rfc">⚗️${fmtN(x.rfc)}</span><span class="r-day">⏱${fmtT(x.days*86400)}</span>${B.hasT?`<span class="r-dayb">→${fmtT(daysB*86400)}</span>`:''}<span class="r-mat">🥩${fmtR(B.mBuf(x.meat))} 🪵${fmtR(B.mBuf(x.wood))} 🪨${fmtR(B.mBuf(x.coal))} 🔩${fmtR(B.mBuf(x.iron))}</span>`
+    :`<span class="r-mat">目標を上げるとコストを表示</span>`;
+  document.getElementById('b-card').innerHTML=`<div class="r-card" style="margin:0;">
+    <div class="r-hdr"><span class="r-name">⚔️ 戦争学園</span><span class="r-desc">${lvName(S.bld.from)} → ${lvName(S.bld.to)}</span><span class="r-max">最大FC${B_MAX_FC}</span></div>
+    <div class="r-body">
+      <div class="b-sides">${side('from',S.bld.from,'現在','#e2e8f0')}<div class="b-arr">→</div>${side('to',S.bld.to,'目標',gssi(S.bld.to)>gssi(S.bld.from)?'#fbbf24':'#e2e8f0')}</div>
+      <div class="r-res">${res}</div>
+      ${x.pre?`<div class="r-pre"><span class="pq">前提:</span><span class="pq">大溶鉱炉 FC${x.pre}</span></div>`:''}
+    </div>
+  </div>`;
+}
 function renderSummary(){
   const T=totals();
   document.getElementById('time-strip').innerHTML=T.t>0
@@ -525,7 +740,16 @@ function syncInputs(){
   document.getElementById('b-vice').checked=!!S.buffs.vice;
   document.getElementById('b-vicesup').checked=!!S.buffs.viceSup;
   document.getElementById('b-chancellor').checked=!!S.buffs.chancellor;
-  document.getElementById('b-academy').value=S.academy;
+  const b=S.bbuffs;
+  document.getElementById('bb-base').value=b.base||0;
+  document.getElementById('bb-pet').value=b.pet||0;
+  document.getElementById('bb-agnes').value=b.agnes||0;
+  document.getElementById('bb-mat').value=b.mat||0;
+  document.getElementById('bb-vice').checked=!!b.vice;
+  document.getElementById('bb-vicesup').checked=!!b.viceSup;
+  document.getElementById('bb-lords').checked=!!b.lords;
+  document.getElementById('bb-chancellor').checked=!!b.chancellor;
+  delete document.getElementById('binv-grid').dataset.built;
   const grid=document.getElementById('inv-grid');delete grid.dataset.built;
   const fe=document.getElementById('fceq');delete fe.dataset.built;
 }
@@ -533,7 +757,6 @@ function syncInputs(){
 // ============================================================
 // INIT
 // ============================================================
-document.getElementById('b-academy').innerHTML=Array.from({length:ACADEMY_MAX+1},(_,i)=>`<option value="${i}">${i===0?'火晶前':'火晶Lv.'+i}</option>`).join('');
 load();syncInputs();render();
 </script>
 </body>
