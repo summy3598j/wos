@@ -196,7 +196,7 @@ input,select{outline:none;}
 
 <div class="foot">
   建造コスト・時間・前提条件は Whiteout Survival 公式Wiki（戦争学園）の値。計算式とバフは火晶計算ツールと同じ。<br>
-  FC0→FC1 は公式Wikiの表どおり1段（建造2秒・コストなし・前提 大溶鉱炉FC1）で、途中の段はありません。
+  公式Wikiの表では FC1 の建造は 2秒・コストなしのため、現在レベルは FC1 から設定します。
 </div>
 </div>
 
@@ -379,11 +379,11 @@ const TIERS=[
 ];
 // 戦争学園の火晶強化（公式Wiki）。火晶計算ツールの STAGE_DATA と同じ形式：
 // index = 到達FCレベル-1。sub は FC(n-1)-1〜4 の各段、comp は FCn 到達の段のコスト。資材は1段あたり M 単位、days は1段あたり。
-// FC0→FC1 は途中段のない1段（建造2秒・コストなし）なので sub:null。
+// FC1 は建造 2秒・コストなしなので扱わない（現在レベルの下限を FC1 にする）。
 const B_SUB=5;
-const B_MIN_FC=0,B_MAX_FC=10;
+const B_MIN_FC=1,B_MAX_FC=10;
 const BLD=[
-  {sub:null,comp:{fc:0,rfc:0},meat:0,wood:0,coal:0,iron:0,days:2/86400,pre:1},
+  null,
   {sub:{fc:71,rfc:0}, comp:{fc:71,rfc:0}, meat:36,wood:36,coal:7.2,iron:1.8,days:1.8,pre:2},
   {sub:{fc:107,rfc:0},comp:{fc:107,rfc:0},meat:39,wood:39,coal:7.9,iron:1.9,days:2.2,pre:3},
   {sub:{fc:126,rfc:0},comp:{fc:126,rfc:0},meat:41,wood:41,coal:8.2,iron:2.0,days:2.4,pre:4},
@@ -422,7 +422,7 @@ const defState=()=>({
   cur:Object.fromEntries(RESEARCH.map(r=>[r.id,0])),
   tgt:Object.fromEntries(RESEARCH.map(r=>[r.id,0])),
   mode:'research',
-  bld:{from:{fc:0,sub:0},to:{fc:0,sub:0}},
+  bld:{from:{fc:1,sub:0},to:{fc:1,sub:0}},
   bbuffs:{base:0,pet:0,agnes:0,vice:false,viceSup:false,lords:false,chancellor:false,mat:0},
   binv:{fc:0,rfc:0,meat:0,wood:0,coal:0,iron:0},
   buffs:{base:0,vice:false,viceSup:false,chancellor:false},
@@ -441,7 +441,7 @@ function applyLoaded(d){
     s.cur[r.id]=c; s.tgt[r.id]=t;
   });
   s.mode=d.mode==='building'?'building':'research';
-  const lv=o=>{let fc=Math.min(B_MAX_FC,Math.max(B_MIN_FC,parseInt(o?.fc)||B_MIN_FC));let sub=(fc===B_MAX_FC||fc===0)?0:Math.min(4,Math.max(0,parseInt(o?.sub)||0));return {fc,sub};};
+  const lv=o=>{let fc=Math.min(B_MAX_FC,Math.max(B_MIN_FC,parseInt(o?.fc)||B_MIN_FC));let sub=fc===B_MAX_FC?0:Math.min(4,Math.max(0,parseInt(o?.sub)||0));return {fc,sub};};
   if(d.bld){s.bld.from=lv(d.bld.from);s.bld.to=lv(d.bld.to);if(gssi(s.bld.to)<gssi(s.bld.from))s.bld.to={...s.bld.from};}
   if(d.bbuffs) s.bbuffs={...s.bbuffs,...d.bbuffs};
   if(d.binv) B_INV.forEach(f=>{s.binv[f.id]=parseFloat(d.binv[f.id])||0;});
@@ -510,13 +510,12 @@ const fcEq=sh=>Math.ceil(sh*S.rate.fc/S.rate.shard);
 // ============================================================
 function gssi(l){return l.fc*B_SUB+l.sub;}
 function bRange(from,to){
-  const t={fc:0,rfc:0,meat:0,wood:0,coal:0,iron:0,days:0,stages:0,agStages:0,pre:0};
+  const t={fc:0,rfc:0,meat:0,wood:0,coal:0,iron:0,days:0,stages:0,pre:0};
   for(let ss=gssi(from)+1;ss<=gssi(to);ss++){
     const lvl=Math.ceil(ss/B_SUB),s=((ss-1)%B_SUB)+1,d=BLD[lvl-1];
-    if(!d||(s!==B_SUB&&!d.sub)) continue;
+    if(!d) continue;
     const c=s===B_SUB?d.comp:d.sub;
     t.fc+=c.fc;t.rfc+=c.rfc;t.meat+=d.meat;t.wood+=d.wood;t.coal+=d.coal;t.iron+=d.iron;t.days+=d.days;t.stages++;
-    if(d.sub) t.agStages++; // FC0→FC1（2秒）はアグネスの1段短縮の対象にしない
     t.pre=Math.max(t.pre,d.pre);
   }
   return t;
@@ -532,10 +531,7 @@ function badj(fot,field,dir){
   const l=S.bld[fot];
   if(field==='fc'){
     l.fc=Math.max(B_MIN_FC,Math.min(B_MAX_FC,l.fc+dir));
-    if(l.fc===B_MAX_FC||l.fc===0) l.sub=0;
-  }else if(l.fc===0||(l.fc===1&&l.sub===0&&dir<0)){
-    // FC0 と FC1 の間には途中段がない
-    l.fc=dir>0?1:0;l.sub=0;
+    if(l.fc===B_MAX_FC) l.sub=0;
   }else{
     let ns=l.sub+dir;
     if(ns>4){if(l.fc<B_MAX_FC){l.fc++;ns=0;}else ns=0;}
@@ -599,7 +595,7 @@ function render(){
 }
 function renderBuilding(){
   const B=bBuffs(),x=bRange(S.bld.from,S.bld.to);
-  const daysB=B.tBufA(x.days,x.agStages);
+  const daysB=B.tBufA(x.days,x.stages);
   document.getElementById('btime-strip').innerHTML=x.days>0
     ?`<span class="time-lbl">建造時間</span><span class="time-val">${fmtT(x.days*86400)}</span>${B.hasT?`<span class="time-arr">→ バフ後</span><span class="time-buf">${fmtT(daysB*86400)}</span>`:''}<span class="time-lbl">（${x.stages}段）</span>`
     :`<span class="time-lbl">目標レベルを設定すると建造時間を計算します</span>`;
