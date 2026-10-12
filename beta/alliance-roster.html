@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>WOS 同盟名簿ビューア</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Hiragino Sans',sans-serif;background:#12121f;color:#e2e8f0;font-size:14px;padding:12px 12px 40px}
+h1{font-size:17px;color:#7dd3fc;display:flex;align-items:center;gap:6px}
+.sub{font-size:11px;color:#94a3b8;margin:2px 0 10px}
+.box{background:#1c1c33;border:1px solid #2d2d4d;border-radius:10px;padding:10px;margin-bottom:10px}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.lbl{font-size:11px;color:#94a3b8;margin:8px 0 4px}
+.lbl:first-child{margin-top:0}
+button,.btn{background:#2a2a4a;color:#e2e8f0;border:1px solid #3d3d66;border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;font-family:inherit}
+.btn.pri{background:#0369a1;border-color:#0ea5e9}
+.chip{padding:4px 9px;border-radius:14px;font-size:12px;opacity:.45}
+.chip.on{opacity:1;background:#164e63;border-color:#22d3ee}
+.chip b{font-weight:600;color:#94a3b8;margin-left:3px}
+input[type=search],select{background:#0f0f1d;color:#e2e8f0;border:1px solid #3d3d66;border-radius:8px;padding:6px 8px;font-size:14px;font-family:inherit}
+input[type=search]{flex:1;min-width:140px}
+.drop{display:block;cursor:pointer;border:2px dashed #3d3d66;border-radius:10px;padding:22px 10px;text-align:center;color:#94a3b8;font-size:13px}
+.drop.over{border-color:#22d3ee;color:#e2e8f0}
+.tw{overflow:auto;max-height:75vh;border:1px solid #2d2d4d;border-radius:10px;background:#16162a}
+table{border-collapse:separate;border-spacing:0;width:100%;font-size:13px}
+th,td{padding:6px 8px;border-bottom:1px solid #26264a;white-space:nowrap;text-align:left}
+th{position:sticky;top:0;background:#23234a;color:#cbd5e1;font-size:12px;cursor:pointer;user-select:none;z-index:2}
+th .ar{color:#22d3ee;margin-left:2px}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+td.stk,th.stk{position:sticky;left:0;background:#16162a;z-index:1}
+th.stk{z-index:3;background:#23234a}
+tr:nth-child(even) td{background:#1a1a31}
+tr:nth-child(even) td.stk{background:#1a1a31}
+.tag{display:inline-block;border-radius:5px;padding:1px 6px;font-size:12px;font-weight:600}
+.bar{display:inline-block;height:6px;border-radius:3px;background:#0ea5e9;vertical-align:middle;margin-left:6px;opacity:.7}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.stat{background:#16162a;border:1px solid #2d2d4d;border-radius:8px;padding:8px}
+.stat h3{font-size:12px;color:#94a3b8;font-weight:600;margin-bottom:4px}
+.stat table{font-size:12px}
+.stat td,.stat th{padding:2px 4px;border:none;position:static;background:none;cursor:default}
+.stat tr:nth-child(even) td{background:none}
+.muted{color:#64748b}
+.note{font-size:11px;color:#94a3b8;margin-top:6px;white-space:pre-wrap}
+details summary{cursor:pointer;font-size:13px;color:#cbd5e1}
+</style>
+</head>
+<body>
+<h1>同盟名簿ビューア<span id="dev-badge"></span></h1>
+<div class="sub">スプレッドシート（.xlsx / .csv）を読み込んで並べ替え・絞り込み・集計します。データは端末内にのみ保存されます。</div>
+
+<div class="box" id="loadBox">
+  <label class="drop" id="drop">
+    <input type="file" id="file" accept=".xlsx,.csv,.tsv,.txt" hidden>
+    📂 ファイルを選択 またはここにドロップ
+    <div id="fileInfo" class="note" style="margin-top:6px"></div>
+  </label>
+  <div class="row" id="sheetRow" style="margin-top:8px;display:none">
+    <span class="lbl" style="margin:0">シート</span><select id="sheetSel"></select>
+    <button id="clearBtn" style="margin-left:auto">データ消去</button>
+  </div>
+</div>
+
+<div id="main" style="display:none">
+  <div class="box">
+    <div class="row"><input type="search" id="q" placeholder="名前などで検索"><button id="resetF">絞り込み解除</button></div>
+    <div id="filters"></div>
+    <details style="margin-top:8px"><summary>表示する列</summary><div class="row" id="colToggles" style="margin-top:6px"></div></details>
+  </div>
+  <div class="box"><div class="row" style="justify-content:space-between"><span id="count" class="muted"></span><span class="muted" style="font-size:11px">見出しをタップで並べ替え</span></div></div>
+  <div class="tw"><table id="tbl"></table></div>
+  <div class="box" style="margin-top:10px"><div class="lbl" style="margin-top:0">集計（絞り込み後）</div><div class="grid" id="stats"></div></div>
+</div>
+
+<script>
+const IS_BETA=location.pathname.includes('/beta/');
+const LS_KEY=IS_BETA?'beta_roster1':'roster1';
+if(IS_BETA)document.getElementById('dev-badge').outerHTML='<span style="font-size:9px;font-weight:700;color:#0d1b2a;background:#f0c040;border-radius:4px;padding:0 4px;margin-left:4px;">確認版</span>';
+
+/* ---------- xlsx reader (zip + XML, no external library) ---------- */
+async function unzip(buf){
+  const dv=new DataView(buf),u8=new Uint8Array(buf);let eocd=-1;
+  for(let i=u8.length-22;i>=Math.max(0,u8.length-65557);i--)if(dv.getUint32(i,true)===0x06054b50){eocd=i;break}
+  if(eocd<0)throw new Error('zip形式ではありません');
+  const n=dv.getUint16(eocd+10,true);let p=dv.getUint32(eocd+16,true);const files={};const td=new TextDecoder();
+  for(let k=0;k<n;k++){
+    const method=dv.getUint16(p+10,true),csize=dv.getUint32(p+20,true),nl=dv.getUint16(p+28,true),el=dv.getUint16(p+30,true),cl=dv.getUint16(p+32,true),off=dv.getUint32(p+42,true);
+    const name=td.decode(u8.subarray(p+46,p+46+nl));p+=46+nl+el+cl;
+    const ds=off+30+dv.getUint16(off+26,true)+dv.getUint16(off+28,true);
+    files[name]={method,data:u8.subarray(ds,ds+csize)};
+  }
+  return async name=>{
+    const f=files[name];if(!f)return null;
+    if(f.method===0)return td.decode(f.data);
+    if(f.method!==8)throw new Error('未対応の圧縮形式');
+    const s=new Blob([f.data]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+    return await new Response(s).text();
+  };
+}
+const xml=t=>new DOMParser().parseFromString(t,'application/xml');
+const byTag=(el,tag)=>el.getElementsByTagNameNS('*',tag);
+function colIdx(ref){let c=0;for(const ch of ref.replace(/\d+/g,''))c=c*26+ch.charCodeAt(0)-64;return c-1}
+async function readXlsx(buf){
+  const get=await unzip(buf);
+  const ssT=await get('xl/sharedStrings.xml');
+  const ss=ssT?[...byTag(xml(ssT),'si')].map(si=>[...byTag(si,'t')].map(t=>t.textContent).join('')):[];
+  const wb=xml(await get('xl/workbook.xml'));
+  const rels=xml(await get('xl/_rels/workbook.xml.rels'));const relMap={};
+  for(const r of byTag(rels,'Relationship'))relMap[r.getAttribute('Id')]=r.getAttribute('Target');
+  const sheets=[];
+  for(const s of byTag(wb,'sheet')){
+    const rid=s.getAttribute('r:id')||s.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships','id');
+    let tgt=relMap[rid]||'';tgt=tgt.startsWith('/')?tgt.slice(1):'xl/'+tgt.replace(/^\.\//,'');
+    const sx=xml(await get(tgt)||'<x/>');const rows=[];
+    for(const r of byTag(sx,'row')){
+      const ri=+r.getAttribute('r')-1,row=[];
+      for(const c of byTag(r,'c')){
+        const t=c.getAttribute('t'),v=byTag(c,'v')[0];let val=null;
+        if(t==='s'&&v)val=ss[+v.textContent];
+        else if(t==='inlineStr')val=[...byTag(c,'t')].map(x=>x.textContent).join('');
+        else if(t==='b'&&v)val=v.textContent==='1';
+        else if(v)val=(t==='str'||t==='e')?v.textContent:(isNaN(+v.textContent)?v.textContent:+v.textContent);
+        row[colIdx(c.getAttribute('r'))]=val;
+      }
+      rows[ri]=row;
+    }
+    sheets.push({name:s.getAttribute('name'),rows:Array.from(rows,r=>r||[])});
+  }
+  return sheets;
+}
+function readCsv(text){
+  const d=text.split('\n')[0].includes('\t')?'\t':',';const rows=[];let row=[],f='',q=false;
+  for(let i=0;i<text.length;i++){const ch=text[i];
+    if(q){if(ch==='"'){if(text[i+1]==='"'){f+='"';i++}else q=false}else f+=ch}
+    else if(ch==='"')q=true;else if(ch===d){row.push(f);f=''}
+    else if(ch==='\n'||ch==='\r'){if(ch==='\r'&&text[i+1]==='\n')i++;row.push(f);rows.push(row);row=[];f=''}
+    else f+=ch}
+  if(f||row.length){row.push(f);rows.push(row)}
+  return [{name:'CSV',rows:rows.map(r=>r.map(v=>v===''?null:(isNaN(+v)?v:+v)))}];
+}
+
+/* ---------- column typing ---------- */
+const DEFAULT_HIDDEN=['No.'];
+function loginMin(v){
+  if(v==null||v==='')return Infinity;const s=String(v);
+  if(/オンライン|online/i.test(s))return 0;
+  const m=s.match(/(\d+)\s*(分|時間|日|週|ヶ月|か月|カ月)/);if(!m)return Infinity;
+  return +m[1]*{分:1,時間:60,日:1440,週:10080,ヶ月:43200,か月:43200,カ月:43200}[m[2]];
+}
+function levelKey(v){
+  if(v==null||v==='')return -1;const s=String(v);const m=s.match(/(\d+)/);if(!m)return -1;
+  return /火晶|FC/i.test(s)?100+ +m[1]:+m[1];
+}
+const RANK_ORDER=['R5','R4','R3','R2','R1'];
+function rankKey(v){const i=RANK_ORDER.indexOf(v);return i<0?RANK_ORDER.length+(v?0:1):i}
+function detectType(name,vals){
+  const nn=vals.filter(v=>v!=null&&v!=='');
+  if(/ログイン/.test(name)||nn.length&&nn.every(v=>loginMin(v)<Infinity))return 'login';
+  if(/^(レベル|Lv|火晶)/i.test(name)||nn.length&&nn.every(v=>/^(火晶)?Lv\.?\s*\d+$/i.test(v)))return 'level';
+  if(/階級|ランク/.test(name))return 'rank';
+  if(nn.length&&nn.every(v=>typeof v==='number'))return /戦力|総力|パワー/.test(name)?'power':'num';
+  const uniq=new Set(nn);if(uniq.size&&uniq.size<=12&&uniq.size<nn.length/2)return 'cat';
+  return 'text';
+}
+function sortKey(t,v){
+  if(t==='login')return loginMin(v);
+  if(t==='level')return levelKey(v);
+  if(t==='rank')return rankKey(v);
+  if(t==='power'||t==='num')return v==null?-Infinity:v;
+  return v==null?'':String(v);
+}
+function fmtPower(v){
+  if(v==null)return '<span class="muted">—</span>';
+  if(v>=1e8)return (v/1e8).toFixed(2)+'億';
+  if(v>=1e4)return (v/1e4).toFixed(0)+'万';
+  return v.toLocaleString();
+}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const PAL=['#0ea5e9','#22c55e','#f59e0b','#a78bfa','#f472b6','#14b8a6','#ef4444','#84cc16','#e879f9','#fb923c','#94a3b8','#38bdf8'];
+const RANK_COL={R5:'#f43f5e',R4:'#f59e0b',R3:'#22c55e',R2:'#38bdf8',R1:'#94a3b8'};
+
+/* ---------- state ---------- */
+let S={sheets:[],sheetIdx:0,fileName:'',hidden:{},sort:null,filters:{},q:''};
+let cols=[],data=[],notes=[];
+function save(){try{localStorage.setItem(LS_KEY,JSON.stringify(S))}catch(e){}}
+function load(){try{const s=JSON.parse(localStorage.getItem(LS_KEY));if(s&&s.sheets)S=Object.assign(S,s)}catch(e){}}
+
+function pickSheet(){
+  const sh=S.sheets[S.sheetIdx];if(!sh)return;
+  const rows=sh.rows;let h=rows.findIndex(r=>r.filter(v=>v!=null&&v!=='').length>=2);if(h<0)h=0;
+  const head=rows[h]||[];const width=Math.max(head.length,...rows.map(r=>r.length));
+  const body=rows.slice(h+1).filter(r=>r.some(v=>v!=null&&v!==''));
+  cols=[];for(let i=0;i<width;i++){
+    const name=head[i]!=null?String(head[i]):'列'+(i+1);const vals=body.map(r=>r[i]??null);
+    cols.push({i,name,type:detectType(name,vals)});
+  }
+  data=body.map(r=>cols.map(c=>r[c.i]??null));
+  notes=[];
+  S.sheets.forEach((s,k)=>{if(k!==S.sheetIdx)s.rows.forEach(r=>r.forEach(v=>{if(typeof v==='string'&&/^(注記|備考|※)/.test(v))notes.push(v)}))});
+  const key=sh.name;
+  if(!S.hidden[key]){S.hidden[key]={};cols.forEach(c=>{if(DEFAULT_HIDDEN.includes(c.name))S.hidden[key][c.name]=true})}
+  if(!S.filters[key])S.filters[key]={};
+}
+const sheetKey=()=>S.sheets[S.sheetIdx]?.name;
+const isHidden=c=>!!S.hidden[sheetKey()]?.[c.name];
+const nameCol=()=>cols.find(c=>/名前|名|name/i.test(c.name)&&c.type==='text')||cols.find(c=>c.type==='text');
+const migrantRank=()=>{const c=cols.find(c=>c.type==='rank');return c&&data.some(r=>r[cols.indexOf(c)]==='移民')?c:null};
+
+function filtered(){
+  const f=S.filters[sheetKey()]||{},q=S.q.trim().toLowerCase();
+  return data.filter(r=>{
+    for(const k in f){const ci=cols.findIndex(c=>c.name===k);if(ci<0||!f[k].length)continue;if(!f[k].includes(catVal(cols[ci],r[ci])))return false}
+    if(q&&!r.some(v=>v!=null&&String(v).toLowerCase().includes(q)))return false;
+    return true;
+  });
+}
+function catVal(c,v){
+  if(c.type==='level'){if(v==null)return '（空欄）';const m=String(v).match(/火晶/);return m?String(v):'火晶前'}
+  if(c.type==='login'){const m=loginMin(v);if(m===Infinity)return '（空欄）';if(m<=60)return '1時間以内';if(m<=1440)return '24時間以内';if(m<=4320)return '3日以内';return '3日超'}
+  return v==null?'（空欄）':String(v);
+}
+const filterable=c=>['rank','cat','level','login'].includes(c.type);
+function catOptions(c){
+  const ci=cols.indexOf(c);const cnt=new Map();data.forEach(r=>{const k=catVal(c,r[ci]);cnt.set(k,(cnt.get(k)||0)+1)});
+  let keys=[...cnt.keys()];
+  if(c.type==='rank')keys.sort((a,b)=>rankKey(a)-rankKey(b));
+  else if(c.type==='level')keys.sort((a,b)=>(b==='火晶前'?99:levelKey(b))-(a==='火晶前'?99:levelKey(a)));
+  else if(c.type==='login'){const o=['1時間以内','24時間以内','3日以内','3日超','（空欄）'];keys.sort((a,b)=>o.indexOf(a)-o.indexOf(b))}
+  return keys.map(k=>[k,cnt.get(k)]);
+}
+
+/* ---------- render ---------- */
+function render(){
+  const has=S.sheets.length>0;
+  document.getElementById('main').style.display=has?'':'none';
+  document.getElementById('sheetRow').style.display=has?'':'none';
+  document.getElementById('fileInfo').textContent=has?`読み込み済み: ${S.fileName}`:'';
+  if(!has)return;
+  document.getElementById('sheetSel').innerHTML=S.sheets.map((s,k)=>`<option value="${k}"${k===S.sheetIdx?' selected':''}>${esc(s.name)}</option>`).join('');
+  document.getElementById('q').value=S.q;
+  renderFilters();renderToggles();renderTable();
+}
+function renderFilters(){
+  const f=S.filters[sheetKey()];
+  document.getElementById('filters').innerHTML=cols.filter(filterable).map(c=>{
+    const sel=f[c.name]||[];
+    return `<div class="lbl">${esc(c.name)}</div><div class="row">`+catOptions(c).map(([k,n])=>`<button class="chip${!sel.length||sel.includes(k)?' on':''}" data-f="${esc(c.name)}" data-v="${esc(k)}">${esc(k)}<b>${n}</b></button>`).join('')+'</div>';
+  }).join('');
+}
+function renderToggles(){
+  document.getElementById('colToggles').innerHTML=cols.map(c=>`<button class="chip${isHidden(c)?'':' on'}" data-col="${esc(c.name)}">${esc(c.name)}</button>`).join('');
+}
+function cell(c,v,maxP){
+  if(c.type==='power'){const w=maxP&&v?Math.max(2,Math.round(v/maxP*50)):0;return `<td class="num">${fmtPower(v)}${w?`<span class="bar" style="width:${w}px"></span>`:''}</td>`}
+  if(c.type==='num')return `<td class="num">${v==null?'<span class="muted">—</span>':v.toLocaleString()}</td>`;
+  if(v==null||v==='')return '<td><span class="muted">—</span></td>';
+  if(c.type==='rank'){const col=RANK_COL[v]||'#64748b';return `<td><span class="tag" style="background:${col}33;color:${col}">${esc(v)}</span></td>`}
+  if(c.type==='level'){const fc=/火晶/.test(v);return `<td>${fc?`<span class="tag" style="background:#f9731633;color:#fb923c">${esc(v)}</span>`:`<span class="muted">${esc(v)}</span>`}</td>`}
+  if(c.type==='login'){const m=loginMin(v);const col=m===0?'#22c55e':m<=60?'#86efac':m<=1440?'#e2e8f0':m<=4320?'#f59e0b':'#ef4444';return `<td style="color:${col}">${esc(v)}</td>`}
+  if(c.type==='cat'){const opts=[...new Set(data.map(r=>r[cols.indexOf(c)]).filter(x=>x!=null))].sort();const col=PAL[opts.indexOf(v)%PAL.length];return `<td><span class="tag" style="background:${col}26;color:${col}">${esc(v)}</span></td>`}
+  return `<td>${esc(v)}</td>`;
+}
+function renderTable(){
+  let rows=filtered();
+  if(S.sort){const ci=cols.findIndex(c=>c.name===S.sort.col);if(ci>=0){const t=cols[ci].type,d=S.sort.dir;
+    rows=rows.map((r,k)=>[r,k]).sort((a,b)=>{const x=sortKey(t,a[0][ci]),y=sortKey(t,b[0][ci]);
+      const c=typeof x==='string'?x.localeCompare(y,'ja'):(x===y?0:x<y?-1:1);return c*d||a[1]-b[1]}).map(p=>p[0])}}
+  const vis=cols.filter(c=>!isHidden(c));const nc=nameCol();
+  const maxP={};vis.forEach(c=>{if(c.type==='power')maxP[c.name]=Math.max(0,...data.map(r=>r[cols.indexOf(c)]||0))});
+  const th=vis.map(c=>{const ar=S.sort&&S.sort.col===c.name?`<span class="ar">${S.sort.dir>0?'▲':'▼'}</span>`:'';
+    return `<th class="${c===nc?'stk ':''}${c.type==='power'||c.type==='num'?'num':''}" data-sort="${esc(c.name)}">${esc(c.name)}${ar}</th>`}).join('');
+  const tb=rows.map(r=>'<tr>'+vis.map(c=>{let h=cell(c,r[cols.indexOf(c)],maxP[c.name]);if(c===nc)h=h.replace('<td','<td class="stk"');return h}).join('')+'</tr>').join('');
+  document.getElementById('tbl').innerHTML=`<thead><tr>${th}</tr></thead><tbody>${tb||`<tr><td colspan="${vis.length}" class="muted">該当なし</td></tr>`}</tbody>`;
+  document.getElementById('count').textContent=`${rows.length} / ${data.length} 人`;
+  renderStats(rows);
+}
+function renderStats(rows){
+  const out=[];const mr=migrantRank(),mi=mr?cols.indexOf(mr):-1;
+  cols.filter(filterable).forEach(c=>{
+    const ci=cols.indexOf(c);const opts=catOptions(c).map(x=>x[0]);
+    const cnt=k=>rows.filter(r=>catVal(c,r[ci])===k).length;
+    const split=mr&&c!==mr;
+    let h=`<div class="stat"><h3>${esc(c.name)}</h3><table>`;
+    if(split)h+='<tr><th></th><th class="num">全体</th><th class="num">既存</th><th class="num">移民</th></tr>';
+    opts.forEach(k=>{const all=cnt(k);if(!all&&rows.length!==data.length)return;
+      h+=`<tr><td>${esc(k)}</td><td class="num">${all}</td>`;
+      if(split){const m=rows.filter(r=>catVal(c,r[ci])===k&&r[mi]==='移民').length;h+=`<td class="num">${all-m}</td><td class="num">${m}</td>`}
+      h+='</tr>'});
+    h+=`<tr><td class="muted">合計</td><td class="num muted">${rows.length}</td>`;
+    if(split){const m=rows.filter(r=>r[mi]==='移民').length;h+=`<td class="num muted">${rows.length-m}</td><td class="num muted">${m}</td>`}
+    out.push(h+'</tr></table></div>');
+  });
+  cols.filter(c=>c.type==='power').forEach(c=>{
+    const ci=cols.indexOf(c);const v=rows.map(r=>r[ci]).filter(x=>typeof x==='number').sort((a,b)=>b-a);
+    if(!v.length)return;const sum=v.reduce((a,b)=>a+b,0);
+    out.push(`<div class="stat"><h3>${esc(c.name)}</h3><table>
+      <tr><td>合計</td><td class="num">${fmtPower(sum)}</td></tr>
+      <tr><td>平均</td><td class="num">${fmtPower(sum/v.length)}</td></tr>
+      <tr><td>中央値</td><td class="num">${fmtPower(v[Math.floor((v.length-1)/2)])}</td></tr>
+      <tr><td>最大</td><td class="num">${fmtPower(v[0])}</td></tr>
+      <tr><td>上位10合計</td><td class="num">${fmtPower(v.slice(0,10).reduce((a,b)=>a+b,0))}</td></tr>
+      <tr><td class="muted">データあり</td><td class="num muted">${v.length}人</td></tr></table></div>`);
+  });
+  document.getElementById('stats').innerHTML=out.join('')+(notes.length?`<div class="note" style="grid-column:1/-1">${notes.map(esc).join('\n')}</div>`:'');
+}
+
+/* ---------- events ---------- */
+async function handleFile(file){
+  try{
+    const buf=await file.arrayBuffer();
+    const isZip=new Uint8Array(buf.slice(0,2)).join()==='80,75';
+    S.sheets=isZip?await readXlsx(buf):readCsv(new TextDecoder().decode(buf));
+    S.fileName=file.name;S.sheetIdx=0;S.sort=null;S.q='';
+    const best=S.sheets.reduce((b,s,k)=>s.rows.length>S.sheets[b].rows.length?k:b,0);S.sheetIdx=best;
+    pickSheet();save();render();
+  }catch(e){alert('読み込みに失敗しました: '+e.message)}
+}
+const fileEl=document.getElementById('file'),drop=document.getElementById('drop');
+fileEl.onchange=()=>{if(fileEl.files[0])handleFile(fileEl.files[0]);fileEl.value=''};
+drop.ondragover=e=>{e.preventDefault();drop.classList.add('over')};
+drop.ondragleave=()=>drop.classList.remove('over');
+drop.ondrop=e=>{e.preventDefault();drop.classList.remove('over');if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0])};
+document.getElementById('sheetSel').onchange=e=>{S.sheetIdx=+e.target.value;S.sort=null;pickSheet();save();render()};
+document.getElementById('clearBtn').onclick=()=>{if(!confirm('読み込んだデータを消去しますか？'))return;S={sheets:[],sheetIdx:0,fileName:'',hidden:{},sort:null,filters:{},q:''};save();render()};
+document.getElementById('q').oninput=e=>{S.q=e.target.value;save();renderTable()};
+document.getElementById('resetF').onclick=()=>{S.filters[sheetKey()]={};S.q='';save();render()};
+document.getElementById('filters').onclick=e=>{
+  const b=e.target.closest('[data-f]');if(!b)return;const f=S.filters[sheetKey()],k=b.dataset.f,v=b.dataset.v;
+  const c=cols.find(c=>c.name===k);const all=catOptions(c).map(x=>x[0]);
+  let sel=f[k]&&f[k].length?f[k]:[];
+  if(!sel.length)sel=[v];else if(sel.includes(v))sel=sel.filter(x=>x!==v);else sel=[...sel,v];
+  f[k]=sel.length===all.length?[]:sel;save();renderFilters();renderTable();
+};
+document.getElementById('colToggles').onclick=e=>{
+  const b=e.target.closest('[data-col]');if(!b)return;const h=S.hidden[sheetKey()];h[b.dataset.col]=!h[b.dataset.col];save();renderToggles();renderTable();
+};
+document.getElementById('tbl').onclick=e=>{
+  const th=e.target.closest('[data-sort]');if(!th)return;const col=th.dataset.sort;const c=cols.find(x=>x.name===col);
+  const first=['power','num','level'].includes(c.type)?-1:1;
+  if(!S.sort||S.sort.col!==col)S.sort={col,dir:first};else if(S.sort.dir===first)S.sort.dir=-first;else S.sort=null;
+  save();renderTable();
+};
+load();if(S.sheets.length)pickSheet();render();
+</script>
+</body>
+</html>
